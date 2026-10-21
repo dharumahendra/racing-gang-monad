@@ -1,6 +1,6 @@
-# PRD — MEPET (nama kerja)
+# PRD — Racing Gang
 
-**Versi:** Draft 1.0 · 21 Oktober 2026
+**Versi:** Draft 1.2 · 21 Oktober 2026
 **Lomba:** Monad Blitz Jogja Vol. 2 · Sabtu, 24 Oktober 2026 · GIK UGM
 **Tim:** Bayu (Smart Contract) · Dharu (Backend) · Raka (Frontend)
 
@@ -143,6 +143,23 @@ Setiap NFT menyimpan ID run yang membuktikan kelulusan pemiliknya.
 
 Kenapa soulbound: menjamin mobil hanya dimiliki orang yang benar-benar lulus syaratnya. Kelangkaan dijaga oleh tingkat kesulitan dan batas suplai yang tidak bisa diubah setelah deploy.
 
+### 6.4 Alur pembelian dan siapa mengecek apa
+
+1. Selama run, backend memverifikasi setiap mepet, lalu relayer mencatatnya ke kontrak `RunRegistry`.
+2. Saat mepet ke-N tercatat dalam satu run (≤100 detik, dengan mobil yang disyaratkan), **kontrak** menandai pemain lulus dan memancarkan event `Qualified`.
+3. Backend membaca event itu dan menyimpannya di database **hanya sebagai cache** untuk tampilan garasi.
+4. Pemain klik Beli → backend mengecek dan menyisihkan koin, lalu menandatangani voucher.
+5. Pemain memanggil `CarNFT.buy()` dari wallet sambil membayar MON. Kontrak mengecek voucher, status lulus di `RunRegistry`, harga, suplai, dan kepemilikan ganda, lalu mint NFT soulbound.
+6. Koin baru dipotong setelah event `Purchased` terbaca.
+
+| Syarat | Dicek oleh | Bisa dicurangi backend? |
+|---|---|---|
+| Task (N mepet dalam 1 run) | Kontrak | Tidak diam-diam: backend harus memalsukan catatan mepet, yang tercatat publik dan bisa ketahuan lewat audit |
+| Koin cukup | Backend (lewat voucher) | Bisa, tapi ketahuan: saldo koin bisa dihitung ulang dari event on-chain |
+| Bayar MON | Kontrak | Tidak bisa |
+
+**Sumber kebenaran status lulus adalah kontrak.** Database backend tidak pernah menjadi gerbang pembelian.
+
 ## 7. Room dan penonton
 
 - Pemain (host) membuat room dan mendapat **kode 6 karakter** yang berlaku **15 menit** sejak dibuat. Run yang sedang berjalan saat kode kedaluwarsa tetap selesai normal.
@@ -165,7 +182,7 @@ Kenapa soulbound: menjamin mobil hanya dimiliki orang yang benar-benar lulus sya
 
 ### 9.1 Peran blockchain
 
-- **Gerbang pembelian dicek kontrak.** Kontrak sendiri yang menandai pemain "lulus syarat" berdasarkan catatan mepet on-chain. Backend tidak bisa menjual mobil kepada pemain yang belum lulus.
+- **Gerbang pembelian dicek kontrak.** Kontrak hanya mengizinkan pembelian oleh pemain yang punya catatan lulus on-chain. Backend tidak bisa melewatinya diam-diam: satu-satunya cara adalah memalsukan catatan mepet, dan itu tercatat publik serta bisa ketahuan lewat audit.
 - **Bukti skill terlihat publik.** Setiap mepet (run, waktu dalam run, jenis kendaraan) bisa dilihat siapa pun. Setiap NFT menunjuk ke run yang membuktikannya.
 - **Bisa diaudit.** Setiap catatan mepet membawa hash log input. Log lengkap dipublikasikan setelah run. Halaman audit menghitung ulang mepet dan mencocokkannya dengan chain.
 - **Seed tidak dipilih tim.** Seed lalu lintas diturunkan dari hash blok Monad dan dihitung ulang oleh kontrak.
@@ -208,7 +225,7 @@ Kenapa soulbound: menjamin mobil hanya dimiliki orang yang benar-benar lulus sya
 4. Lalu lintas berkecepatan seragam (penyederhanaan v1).
 5. Koin dikreditkan saat mepet sudah tercatat on-chain.
 6. Harga MON dan batas suplai adalah nilai testnet.
-7. Nama game masih nama kerja.
+7. Nama game: **Racing Gang**.
 
 ## 13. Kepatuhan aturan lomba
 
@@ -217,7 +234,33 @@ Kenapa soulbound: menjamin mobil hanya dimiliki orang yang benar-benar lulus sya
 - Repo publik, dan proyek ter-deploy di Monad testnet.
 - Jangan memakai nama, aset, atau UI Racing Limits.
 
-## 14. Glosarium
+## 14. Roadmap jangka panjang (setelah lomba)
+
+Prinsip: aktivitas on-chain harus datang dari **pemain yang terus kembali**, bukan dari transaksi buatan.
+
+| Fase | Fitur | Peran on-chain |
+|---|---|---|
+| **1. Lomba (MVP)** | Run, mepet terverifikasi, 4 mobil soulbound, room penonton | Catatan mepet live, gerbang pembelian, NFT soulbound |
+| **2. Retensi harian** | **Tantangan harian:** semua pemain melewati jalan yang sama, dengan seed dari hash blok Monad pada jam tertentu | Seed bisa diverifikasi siapa pun; leaderboard harian on-chain |
+| | **Ghost race:** tantang hantu dari run terbaik teman atau juara harian | Log input yang hash-nya on-chain diputar ulang |
+| | **Odometer mobil:** NFT mengumpulkan statistik seumur hidup (total mepet, mepet truk, red zone yang dilewati); pencapaian membuka kosmetik | Statistik per token di kontrak |
+| **3. Musim dan komunitas** | **Season** 4–8 minggu: peta, syarat, set mobil, dan suplai baru; mobil lama diberi label musimnya | Registry baru per musim (syarat tetap immutable) |
+| | **Trofi soulbound:** juara harian, lulus Tier 4 di Season 1, selamat dari 3 red zone | Resume skill yang bisa dibaca aplikasi lain |
+| | **Crew dan target komunitas:** skor tim mingguan; misalnya "1 juta mepet membuka peta baru" | Progres bersama yang terlihat live |
+| **4. Ekosistem** | **Mode streamer:** penonton live YouTube/Twitch mengganggu streamer lewat kode room; lencana "Penjegal terbaik" yang bisa diklaim dengan wallet | Kanal akuisisi; penonton menjadi pemain |
+| | **Turnamen bersponsor:** pool hadiah untuk pemuncak leaderboard, dibagi otomatis oleh kontrak | Pembagian hadiah transparan; berbasis skill, bukan taruhan |
+| | **Protokol terbuka:** status lulus dan trofi bisa dipakai game atau komunitas lain | Data skill sebagai infrastruktur bersama di Monad |
+| | **Mainnet + lencana Pioneer** untuk pemain testnet saat lomba | Kesinambungan pengguna awal |
+
+Keberlanjutan biaya:
+- Pencatatan per mepet hanya untuk run ranked dan tantangan harian; run santai cukup dicatat ringkasannya.
+- Sponsor turnamen atau musim ikut menanggung gas.
+
+Batasan yang dijaga: tidak ada taruhan pada hasil run, dan tidak ada token yang bisa diperdagangkan.
+
+**Untuk pitch**, cukup sebut tiga hal: tantangan harian dengan seed dari blok Monad, season, dan mode streamer.
+
+## 15. Glosarium
 
 | Istilah | Arti |
 |---|---|
