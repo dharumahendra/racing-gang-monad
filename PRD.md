@@ -229,8 +229,8 @@ Kenapa soulbound: menjamin mobil hanya dimiliki orang yang benar-benar lulus sya
 
 ## 13. Kepatuhan aturan lomba
 
-- Aturan standar Monad Blitz: proyek harus baru, coding dan pembuatan aset dimulai pada jam acara. Riset dan perencanaan sebelumnya diperbolehkan; dokumen ini adalah perencanaan.
-- Konfirmasi ke panitia soal menyiapkan aset sebelum hari H. Utamakan aset berlisensi CC0, dan simpan bukti lisensinya.
+- Repo ini **bukan** repo submission lomba, jadi tidak terikat aturan Monad Blitz soal waktu mulai coding dan pembuatan aset.
+- Utamakan aset berlisensi CC0, dan simpan bukti lisensinya.
 - Repo publik, dan proyek ter-deploy di Monad testnet.
 - Jangan memakai nama, aset, atau UI Racing Limits.
 
