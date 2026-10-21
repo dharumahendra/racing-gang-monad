@@ -1,0 +1,254 @@
+{
+ "name": "golden-2",
+ "runId": "0x986763b499ce985246ec11ef789695bceae0eac13713b2917bc19ed1ffc392b8",
+ "seed": "0x9b45f26bbb6cd1b0d3c89336a2c76abb84e060d0d9a61dff9e46d26555d19c88",
+ "carTier": 2,
+ "configVersion": 1,
+ "entries": [
+  {
+   "tick": 2,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 68,
+   "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 98,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 147,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 174,
+   "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 196,
+   "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 217,
+   "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 240,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 259,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 286,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 356,
+   "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 377,
+   "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 401,
+   "kind": 3,
+   "data": 0
+  }
+ ],
+ "expected": {
+  "endTick": 425,
+  "endReason": "CRASH",
+  "nearMisses": 15,
+  "finalHash": "0x2eae7c1b144e122c5d7cb537f52e9da80095b0a0750ba31f64ed86404978ef22",
+  "events": [
+   {
+    "type": "NEAR_MISS",
+    "tick": 69,
+    "index": 1,
+    "vehicleId": 0,
+    "vehicleType": 1,
+    "coins": 200,
+    "inputHash": "0x7855f608d3cc03fa5dd774c2bb2d37549085c994339d700eea5c84733e32d1ce"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 99,
+    "index": 2,
+    "vehicleId": 2,
+    "vehicleType": 1,
+    "coins": 200,
+    "inputHash": "0x4d15824919cd55a63c5656b0e750b3f353c3e0506a577bc4abae8d351177501a"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 125,
+    "index": 3,
+    "vehicleId": 4,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x4d15824919cd55a63c5656b0e750b3f353c3e0506a577bc4abae8d351177501a"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 147,
+    "index": 4,
+    "vehicleId": 6,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0xb0dc0312bff2af4932b8360caa7221709f3034b7b4d8184d241adf2d30d2110c"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 172,
+    "index": 5,
+    "vehicleId": 9,
+    "vehicleType": 1,
+    "coins": 200,
+    "inputHash": "0xb0dc0312bff2af4932b8360caa7221709f3034b7b4d8184d241adf2d30d2110c"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 194,
+    "index": 6,
+    "vehicleId": 10,
+    "vehicleType": 1,
+    "coins": 200,
+    "inputHash": "0xb1d820c401c8fb4ee034ccc72d8eea6a3e074d39941f9fb42ffdcc4f39be864c"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 216,
+    "index": 7,
+    "vehicleId": 12,
+    "vehicleType": 1,
+    "coins": 200,
+    "inputHash": "0x779cdde7908529291af4d9379c089a34c36724bc7b6374fdf2ebf86a99579a34"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 238,
+    "index": 8,
+    "vehicleId": 15,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x004ce150981100e3e7fb1b221886b71980012a09b3579a276b0e30cc1a885f1b"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 261,
+    "index": 9,
+    "vehicleId": 16,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x0831b15b16db6001a6c820a22265b9c147628ed2d1c161b4a1de55797006cc02"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 284,
+    "index": 10,
+    "vehicleId": 18,
+    "vehicleType": 1,
+    "coins": 200,
+    "inputHash": "0x0831b15b16db6001a6c820a22265b9c147628ed2d1c161b4a1de55797006cc02"
+   },
+   {
+    "type": "DISRUPTION_WARN",
+    "tick": 300,
+    "d": {
+     "id": "n0",
+     "source": "NPC",
+     "kind": "RED",
+     "lanes": [
+      0
+     ],
+     "warnTick": 300,
+     "activeTick": 360,
+     "durationIndex": 0,
+     "endTick": 450
+    }
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 307,
+    "index": 11,
+    "vehicleId": 21,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x46c36935fdceae2e7d9d034e6ecf96c07eac10e96a94725445cd41b3971d99f9"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 333,
+    "index": 12,
+    "vehicleId": 22,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x46c36935fdceae2e7d9d034e6ecf96c07eac10e96a94725445cd41b3971d99f9"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 355,
+    "index": 13,
+    "vehicleId": 25,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x46c36935fdceae2e7d9d034e6ecf96c07eac10e96a94725445cd41b3971d99f9"
+   },
+   {
+    "type": "DISRUPTION_ACTIVE",
+    "tick": 360,
+    "d": {
+     "id": "n0",
+     "source": "NPC",
+     "kind": "RED",
+     "lanes": [
+      0
+     ],
+     "warnTick": 300,
+     "activeTick": 360,
+     "durationIndex": 0,
+     "endTick": 450
+    }
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 377,
+    "index": 14,
+    "vehicleId": 26,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x81fccdd4d0f41dd89e78dc326524e26ecd5c6d622c4c18e0dfbbb0f1a97dc786"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 402,
+    "index": 15,
+    "vehicleId": 28,
+    "vehicleType": 1,
+    "coins": 200,
+    "inputHash": "0x2eae7c1b144e122c5d7cb537f52e9da80095b0a0750ba31f64ed86404978ef22"
+   },
+   {
+    "type": "CRASH",
+    "tick": 425,
+    "vehicleId": 30
+   }
+  ]
+ }
+}
