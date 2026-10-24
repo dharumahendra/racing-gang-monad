@@ -22,17 +22,17 @@
     "slug": "sppg-truck",
     "image": {
       "path": "images/sppg-truck.png",
-      "bytes": 206287,
+      "bytes": 198515,
       "width": 1024,
       "height": 1024,
-      "sha256": "9c41d639667f878e98a5881b39da3871a37b62b42582965d2e3e80642fe27d27"
+      "sha256": "61f0bdfcbc5ad8ccac55838e9ea8b9016efc255c451c7043ca1341cb21333530"
     },
     "modelStatus": "exported",
     "model": {
       "path": "models/sppg-truck.glb",
-      "bytes": 866732,
+      "bytes": 840932,
       "meshes": 100,
-      "sha256": "7b392b5b9cee15d78ddcf93c1cca2131bb25891cc858093fb9ba166fea30da52"
+      "sha256": "010f1b19c1cde18a7ec1d754b70fe4bd80f7884511decf7d7219119f69227914"
     }
   },
   {

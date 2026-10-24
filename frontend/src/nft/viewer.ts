@@ -16,12 +16,12 @@ function label(kind:'box'|'cab'|'flag'){
     c.strokeStyle='#9f8844';c.lineWidth=9;
     c.beginPath();c.arc(1024,206,126,0,Math.PI*2);c.stroke();
     c.lineWidth=3;c.beginPath();c.arc(1024,206,106,0,Math.PI*2);c.stroke();
-    c.fillStyle='#143988';c.font='bold 76px Arial';c.fillText('BGN',1024,233);
+    c.fillStyle='#143988';c.font='bold 45px Arial';c.fillText('BANGUN',1024,222);
     if(kind==='box'){
-      c.font='bold 116px Arial';c.fillText('SATUAN PELAYANAN',1024,533);c.fillText('PEMENUHAN GIZI',1024,670);
-      c.font='bold 41px Arial';c.fillText('SPPG  •  MAKAN BERGIZI GRATIS',1024,823);
+      c.font='bold 140px Arial';c.fillText('SATUAN P BALAP',1024,610);
+      c.font='bold 41px Arial';c.fillText('RACING GANG',1024,823);
     }else {
-      c.font='bold 123px Arial';c.fillText('BADAN GIZI',1024,553);c.fillText('NASIONAL',1024,710);
+      c.font='bold 130px Arial';c.fillText('BANGUN',1024,553);c.fillText('BALAP',1024,710);
     }
   }
   const t=new CanvasTexture(canvas);t.colorSpace=SRGBColorSpace;return t;

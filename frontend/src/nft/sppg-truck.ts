@@ -21,7 +21,7 @@ function axleCylinder(parent:Group,name:string,radius:number,width:number,materi
 
 /** Compact Indonesian delivery truck. Metres, Y up, front +Z; independent of gameplay tiers. */
 export function createSppgTruck(decals:Decals={}){
-  const p=new Group();p.name='SPPG Delivery Truck';
+  const p=new Group();p.name='Satuan P Balap — Bangun';
   const paint=new MeshPhysicalMaterial({name:'Pearl white automotive paint',color:'#dde3e5',metalness:.12,roughness:.27,clearcoat:1,clearcoatRoughness:.18});
   const cargo=standard('Satin insulated cargo panels','#e3e7e7',.08,.48);
   const aluminium=standard('Brushed aluminium trim','#a3afb7',.78,.3);
@@ -90,7 +90,7 @@ export function createSppgTruck(decals:Decals={}){
     box(p,'mirror glass',[.118,.245,.012],chrome,sx(1.035),1.73,1.876,.025);
     box(p,'door sill step',[.14,.065,.39],plastic,sx(.87),.53,.95,.015);
     box(p,'side indicator',[.022,.045,.105],amber,sx(.872),1.19,2.07,.008);
-    if(decals.cab)quad(p,'BGN cab lettering',[[sx(.858),.88,.84],[sx(.858),.88,1.48],[sx(.858),1.22,1.48],[sx(.858),1.22,.84]],new MeshStandardMaterial({name:'Cab service decal',map:decals.cab,transparent:true,roughness:.55,side:DoubleSide}),side>0);
+    if(decals.cab)quad(p,'Bangun cab lettering',[[sx(.858),.88,.84],[sx(.858),.88,1.48],[sx(.858),1.22,1.48],[sx(.858),1.22,.84]],new MeshStandardMaterial({name:'Cab service decal',map:decals.cab,transparent:true,roughness:.55,side:DoubleSide}),side>0);
     const arch:Point[]=Array.from({length:25},(_,i)=>{const a=i/24*Math.PI;return [sx(.87),.36+Math.sin(a)*.453,1.52+Math.cos(a)*.453];});
     tube(p,'front wheel arch trim',arch,.021,plastic);
   }
@@ -106,7 +106,7 @@ export function createSppgTruck(decals:Decals={}){
     // Modest rivet detail stays intentional at NFT thumbnail size.
     for(let i=0;i<8;i++)for(const y of [.825,2.66])axleCylinder(p,'cargo rivet',.008,.008,chrome,side*1.012,y,-1.96+i*.37,8);
     for(const z of [-1.98,.60])box(p,'cargo amber side marker',[.018,.065,.13],amber,side*1.014,.9,z,.012);
-    if(decals.box)quad(p,'SPPG cargo lettering',[[side*1.009,1.06,-1.91],[side*1.009,1.06,.52],[side*1.009,2.46,.52],[side*1.009,2.46,-1.91]],new MeshStandardMaterial({name:'Printed SPPG identity',map:decals.box,transparent:true,roughness:.56,side:DoubleSide}),side>0);
+    if(decals.box)quad(p,'Satuan P Balap lettering',[[side*1.009,1.06,-1.91],[side*1.009,1.06,.52],[side*1.009,2.46,.52],[side*1.009,2.46,-1.91]],new MeshStandardMaterial({name:'Printed Bangun Balap identity',map:decals.box,transparent:true,roughness:.56,side:DoubleSide}),side>0);
     const arch:Point[]=Array.from({length:25},(_,i)=>{const a=i/24*Math.PI;return [side*.96,.36+Math.sin(a)*.425,-1.37+Math.cos(a)*.425];});
     tube(p,'rear wheel mudguard',arch,.035,plastic);
     box(p,'rear mudflap',[.26,.30,.025],rubber,side*.86,.23,-1.80);

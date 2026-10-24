@@ -16,14 +16,14 @@
   {
     "id": 2,
     "slug": "sppg-truck",
-    "name": "SPPG Delivery Truck",
-    "description": "A white Indonesian nutrition-service box truck, built procedurally from the user-supplied reference. Independent Racing Gang collectible; no gameplay tier or performance benefit.",
+    "name": "Satuan P Balap",
+    "description": "A white Bangun Balap box truck with Satuan P Balap livery, used as Racing Gang’s free Starter appearance. This collectible artwork does not unlock paid tiers or provide a performance benefit.",
     "preview": {
       "kind": "local",
       "model": "sppg-truck.glb",
       "source": "procedural"
     },
-    "credits": "Procedural Three.js interpretation of the reference supplied by the user on 2026-10-24. This is not an official SPPG/BGN product or an imported manufacturer model."
+    "credits": "Procedural Three.js interpretation of the reference supplied by the user on 2026-10-24. Bangun Balap is fictional Racing Gang branding, not an official service vehicle or an imported manufacturer model."
   },
   {
     "id": 3,
