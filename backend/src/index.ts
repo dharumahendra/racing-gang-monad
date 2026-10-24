@@ -10,7 +10,7 @@ if (existsSync('.env')) process.loadEnvFile('.env');
 const env = loadEnv();
 
 const { db, close } = openDb(env.DATABASE_URL);
-const chain = createChain(env);
+const chain = createChain(env, undefined, db);
 const { app, ctx } = await buildApp({
   env,
   db,
