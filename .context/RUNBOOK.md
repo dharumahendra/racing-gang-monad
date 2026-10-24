@@ -1,6 +1,6 @@
 # Runbook — Racing Gang (lokal dan demo)
 
-Status 24 Oktober 2026. Kontrak sudah di Monad testnet dan `CHAIN_MODE=live` sudah diuji di anvil (`live-e2e`), dan pada 24 Okt juga jalan terhadap testnet dari server lokal (bot: mepet tercatat, audit cocok). Kontrak di-deploy ulang 24 Okt (RunRegistry `0xE3c8…daCA`, CarNFT `0xD8A1…A736`); `deployments/monad-testnet.json` masih menunjuk kontrak lama (BACKEND_PLAN §P2). RPC publik Monad membatasi 15 request/detik per IP; siapkan RPC cadangan di `MONAD_RPC_URL`. Langkah di bawah memakai `CHAIN_MODE=mock` kecuali disebut lain. Tx hash/blok mock bukan bukti Monad; cek `chainMode` di `/config` atau `/health`.
+Status 24 Oktober 2026. Kontrak sudah di Monad testnet dan `CHAIN_MODE=live` sudah diuji di anvil (`live-e2e`), dan pada 24 Okt juga jalan terhadap testnet dari server lokal (bot: mepet tercatat, audit cocok). Kontrak di-deploy ulang 24 Okt (RunRegistry `0xE3c8…daCA`, CarNFT `0xD8A1…A736`, sudah di `deployments/monad-testnet.json`). Pakai RPC publik Monad (batas 15 request/detik per IP); RPC privat paket gratis belum tentu lebih baik: QuickNode Discover membatasi `getLogs` 5 blok dan bloknya tertinggal ±6 dtk (BACKEND_PLAN §P2). Saldo attester habis ±0,2 MON per run; cek dengan `status` sebelum demo. Langkah di bawah memakai `CHAIN_MODE=mock` kecuali disebut lain. Tx hash/blok mock bukan bukti Monad; cek `chainMode` di `/config` atau `/health`.
 
 ## 1. Prasyarat
 
