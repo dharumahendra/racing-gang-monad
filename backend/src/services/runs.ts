@@ -38,9 +38,14 @@ export class RunManager {
     return this.#sessions.get(runId) ?? this.#recent.get(runId)?.s;
   }
 
+  /** Run aktif di room ini (maksimal satu). */
+  byRoom(code: string): RunSession | undefined {
+    for (const s of this.#sessions.values()) if (s.roomCode === code) return s;
+    return undefined;
+  }
+
   roomBusy(code: string) {
-    for (const s of this.#sessions.values()) if (s.roomCode === code) return true;
-    return false;
+    return this.byRoom(code) !== undefined;
   }
 
   async create(address: Address, carTier: number, roomCode?: string): Promise<CreateRunResponse> {
@@ -72,6 +77,7 @@ export class RunManager {
     const session = new RunSession(this.#deps, row, (s) => this.#release(s));
     this.#sessions.set(runId, session);
     this.#byAddress.set(address, session);
+    if (session.roomCode) this.#deps.notifyRoom?.(session.roomCode);
     return { runId, seed, seedBlock: Number(seedBlock), configVersion: CONFIG_VERSION };
   }
 

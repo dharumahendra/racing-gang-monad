@@ -27,7 +27,15 @@ import { disruptions, nearMisses, runEntries, runs } from '../db/schema';
 import type { Env } from '../env';
 import type { Hub } from '../ws/hub';
 
-export type SessionDeps = { db: Db; chain: Chain; hub: Hub; now: () => number; env: Env };
+export type SessionDeps = {
+  db: Db;
+  chain: Chain;
+  hub: Hub;
+  now: () => number;
+  env: Env;
+  /** Kirim ulang room.state ke penonton saat status run di room berubah. */
+  notifyRoom?: (code: string) => void;
+};
 
 export type SpecDisruption = {
   id: string;
@@ -302,6 +310,7 @@ export class RunSession {
     this.#deps.hub.toRoom(this.roomCode, msg);
     if (this.#claim) this.#compareClaim();
     this.#onFinished(this);
+    if (this.roomCode) this.#deps.notifyRoom?.(this.roomCode);
   }
 
   // ─── Internal ─────────────────────────────────────────────────────────────
@@ -311,6 +320,7 @@ export class RunSession {
     this.lifecycle = 'READY';
     this.#deps.db.update(runs).set({ lifecycle: 'READY', startAt: this.startAt }).where(eq(runs.id, this.runId)).run();
     this.#sendGo();
+    if (this.roomCode) this.#deps.notifyRoom?.(this.roomCode);
   }
 
   #sendGo() {
