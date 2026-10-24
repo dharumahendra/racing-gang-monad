@@ -26,6 +26,7 @@ export async function makeTestApp(envOverrides: Record<string, string> = {}) {
   const { db, close } = openDb(':memory:');
   const chain = new MockChain({ chainId: env.CHAIN_ID, now: clock.now, intervalMs: 0 });
   const { app, ctx } = await buildApp({ env, db, chain, now: clock.now });
+  await app.ready(); // wajib sebelum app.injectWS
   return { app, ctx, db, chain, clock, env, close: async () => { await app.close(); close(); } };
 }
 

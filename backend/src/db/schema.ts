@@ -87,6 +87,8 @@ export const runs = sqliteTable(
     endReason: text('end_reason'),
     endTick: integer('end_tick'),
     nearMisses: integer('near_misses').notNull().default(0),
+    /** Tick terakhir yang sudah diverifikasi sim backend; dipakai untuk menutup run setelah server restart. */
+    verifiedTick: integer('verified_tick').notNull().default(0),
     finalHash: text('final_hash'),
     startAt: integer('start_at'),
     createdAt: integer('created_at').notNull(),

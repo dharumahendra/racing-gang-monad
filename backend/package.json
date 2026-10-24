@@ -8,7 +8,8 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "bot": "tsx scripts/bot.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",
@@ -25,7 +26,9 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
+    "@types/ws": "^8.18.2",
     "drizzle-kit": "^0.31.11",
-    "pino-pretty": "^13.2.0"
+    "pino-pretty": "^13.2.0",
+    "ws": "^8.22.0"
   }
 }

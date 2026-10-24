@@ -88,9 +88,13 @@ export type PlayC2S =
 
 export type PlayS2C =
   | { t: 'pong'; clientMs: number; serverMs: number }
-  /** Tick 1 terjadi di startAt + 33,3 ms. */
-  | { t: 'run.go'; startAt: number }
+  /**
+   * Tick 1 terjadi di startAt + 33,3 ms. `seed` hanya dikirim di mode SEED_SOURCE=event
+   * (seed diambil dari event RunStarted); kalau ada, client wajib memakainya menggantikan seed dari POST /runs.
+   */
+  | { t: 'run.go'; startAt: number; seed?: Hex }
   | DisruptionScheduled
+  /** Saat tersambung ulang, server mengirim ulang semua nearMiss.verified/recorded run aktif; hapus duplikat berdasarkan `index`. */
   | { t: 'nearMiss.verified'; index: number; tick: number; vehicleType: VehicleType; coins: number }
   | NearMissRecorded
   | { t: 'run.qualified'; tier: number; txHash: Hex }
