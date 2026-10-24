@@ -111,8 +111,10 @@ export class Indexer {
       try {
         logs = await publicClient.getLogs({ address: [registry, carNFT], fromBlock: from, toBlock: to });
       } catch (err) {
-        if (this.#o.maxRange <= 10n) throw err;
-        this.#o.maxRange /= 2n;
+        // Rate limit dan gangguan jaringan bukan karena rentang: lempar supaya diulang putaran berikutnya
+        // tanpa mengecilkan rentang (kalau tidak, rentang menyusut permanen dan indexer tertinggal puluhan detik).
+        if (isTransient(err) || this.#o.maxRange <= 1n) throw err;
+        this.#o.maxRange /= 2n; // mis. QuickNode Discover: getLogs maks 5 blok
         continue;
       }
       for (const log of parseEventLogs({ abi, logs })) {
@@ -129,6 +131,14 @@ export class Indexer {
     const saved = this.#o.cursor.get(CURSOR_NAME);
     this.#from = saved !== undefined ? saved + 1n : (this.#o.startBlock ?? (await this.#o.publicClient.getBlockNumber({ cacheTime: 0 })));
   }
+}
+
+/** Error yang hilang sendiri kalau diulang (rate limit RPC publik Monad 15 req/dtk, HTTP 429/5xx, timeout). */
+export function isTransient(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  // Penolakan rentang ("limited to a 5 range", "block range", "more than 10000 results") tetap membelah rentang.
+  if (/\brange\b|query returned more than|too many (results|blocks|logs)/i.test(msg)) return false;
+  return /requests limited|rate limit|too many requests|HTTP request failed|timed? ?out|took too long|ECONNRESET|socket hang up/i.test(msg);
 }
 
 type DecodedLog = ReturnType<typeof parseEventLogs<typeof abi>>[number];
