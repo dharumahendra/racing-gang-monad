@@ -57,8 +57,9 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
         if (closed) return;
         address = a;
         ctx.hub.attachPlayer(a, socket);
-        lastRunId = ctx.runs.active(a)?.runId;
-        ctx.runs.active(a)?.resendOnReconnect();
+        const latest = ctx.runs.latestFor(a);
+        lastRunId = latest?.runId;
+        latest?.resendOnReconnect();
         for (const raw of early.splice(0)) handle(raw);
       })
       .catch((e: unknown) => {

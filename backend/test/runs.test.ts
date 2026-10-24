@@ -196,6 +196,23 @@ describe('/ws/play dan verifikasi', () => {
     await waitFor(() => p.client.recorded.length === p.client.localNearMisses.length, 'semua nearMiss.recorded');
   });
 
+  it('run selesai saat pemain offline: run.result dikirim saat tersambung lagi', async () => {
+    const p = await startPlayer(t);
+    await playToEnd(t, p, async (step) => {
+      if (step === 20) {
+        p.ws.terminate();
+        await tick();
+        t.clock.advance(RUN_TIMEOUT_MS);
+        t.ctx.runs.checkTimeouts(); // server menutup run PARTIAL saat pemain offline
+        expect(p.client.result).toBeNull();
+        p.ws = await connect(t, p.token, (m) => p.client.handle(m));
+        await waitFor(() => p.client.result !== null, 'run.result setelah reconnect');
+      }
+    });
+    expect(p.client.result).toMatchObject({ status: 'PARTIAL', reason: 'TIMEOUT' });
+    expect(p.client.verified.length).toBe(runRow(p.run.runId).nearMisses);
+  });
+
   it('klaim run.end yang berbeda → flag CLAIM_MISMATCH; input terlambat → LATE_INPUT', async () => {
     const p = await startPlayer(t);
     await playToEnd(t, p, (step) => { if (step === 10) p.client.input(1, EntryKind.LEFT); });

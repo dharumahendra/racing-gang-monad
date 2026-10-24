@@ -518,6 +518,7 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 | Deploy server publik (HTTPS/WSS, volume, 1 instance) | Fase 10 | Dharu | Akun hosting dan domain. Image sudah siap |
 | Uji dari HP lewat internet, 3+ HP | Fase 10–11 | Setelah deploy + frontend | URL publik backend dan frontend |
 | Golden test di browser (`/dev/golden`) | D3 | Raka | Sudah dikerjakan di branch `raka/foundation` (`frontend/src/pages/Golden.tsx`); tinggal di-merge |
+| Merge `raka/foundation` ke `main` | Repo | Raka / pemilik repo | Sudah diuji di worktree gabungan (22 Okt): satu-satunya konflik `pnpm-lock.yaml` (selesai dengan `pnpm install`); typecheck semua paket, 200 test (frontend 91), dan build frontend lulus. Klien asli frontend (`PlayClient`, `WatchClient`, room/run/summary API) melawan backend asli: room + run + penonton VERIFIED, mepet cocok, semua pesan server lolos validasi frontend; putus 3 dtk tetap VERIFIED |
 | Uji login Privy + Google sungguhan | Auth | Dharu + Raka | Backend sudah menerima token Privy (diuji dengan kunci dan server Privy tiruan). Untuk uji nyata: ambil **verification key** dan **app secret** dari dashboard Privy, isi `PRIVY_*` di `backend/.env`, daftarkan origin frontend, lalu login Google dari frontend |
 | Konflik `pnpm-lock.yaml` antara branch backend dan `raka/foundation` | Repo | Siapa pun yang merge kedua | Setelah merge, jalankan `pnpm install` lalu commit lockfile baru |
 | Review `protocol.ts` dan integrasi frontend | M0, FE-1–FE-8 | Raka | Lihat catatan frontend di P3 |
@@ -533,6 +534,9 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 - Jangan kirim header `content-type: application/json` tanpa body (mis. `POST /rooms`); Fastify menolaknya dengan 400.
 - Jumlah penonton untuk host: polling `GET /rooms/:code`; `room.state` hanya dikirim ke penonton.
 - Kode error baru: `RATE_LIMITED`, `INTERNAL`, `RUN_NOT_ENDED`, `WALLET_NOT_READY` (409, embedded wallet belum dibuat), `AUTH_PROVIDER_UNAVAILABLE` (503, server Privy tidak bisa dihubungi).
+- `PlayClient` belum memakai `run.go.seed`. Hanya berpengaruh kalau backend terpaksa memakai `SEED_SOURCE=event` (blockhash Monad berbeda dari RPC); kalau terjadi, `PlayClient` harus mengganti sim dengan seed itu sebelum hitung mundur.
+- `pnpm install` di gabungan branch memberi peringatan peer dependency Privy (`react` 16–18 vs 19, `viem` 2.56.5 vs 2.57.7). Belum menyebabkan error di test dan build, tapi perlu dicek saat uji login Google sungguhan.
+- Setelah reconnect, kalau run sudah selesai saat offline, server mengirim `run.result` (sudah ditangani `PlayClient`).
 - Login: kirim access token Privy segar (`getAccessToken()`) sebagai `Authorization: Bearer` di REST dan `?token=` di `/ws/play`, seperti yang sudah dilakukan frontend. Endpoint `/auth/nonce` dan `/auth/verify` tidak ada di production.
 
 ### P4. Keterbatasan yang diketahui

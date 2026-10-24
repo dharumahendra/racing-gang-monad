@@ -74,6 +74,8 @@ export class RunSession {
   watermark = 0;
   flags: string[] = [];
   coins = 0;
+  /** Pesan run.result terakhir; dikirim ulang kalau pemain tersambung lagi setelah run selesai. */
+  lastResult: PlayS2C | null = null;
 
   #deps: SessionDeps;
   #onFinished: (s: RunSession) => void;
@@ -158,15 +160,23 @@ export class RunSession {
   }
 
   /**
-   * Dipanggil saat pemain tersambung ulang: kirim ulang run.go, gangguan yang belum di-ack, dan status
-   * semua mepet (pesan yang dikirim saat offline hilang). Client menghapus duplikat berdasarkan `index`.
+   * Dipanggil saat pemain tersambung ulang: kirim ulang run.go, gangguan yang belum di-ack, status semua
+   * mepet (pesan yang dikirim saat offline hilang), dan run.result kalau run sudah selesai.
+   * Client menghapus duplikat berdasarkan `index`.
    */
   resendOnReconnect() {
-    const { hub, db } = this.#deps;
+    const { hub } = this.#deps;
     if (this.lifecycle === 'READY' || this.lifecycle === 'RUNNING') this.#sendGo();
     for (const d of [...this.#spec.values()].sort((a, b) => a.order - b.order)) {
       if (!d.acked) hub.toPlayer(this.address, this.#scheduledMsg(d));
     }
+    this.#resendNearMisses();
+    // Run selesai saat pemain offline: kirim hasilnya terakhir (client mengabaikan pesan lain setelah run.result).
+    if (this.ended && this.lastResult) hub.toPlayer(this.address, this.lastResult);
+  }
+
+  #resendNearMisses() {
+    const { hub, db } = this.#deps;
     const rows = db.select().from(nearMisses).where(eq(nearMisses.runId, this.runId)).orderBy(asc(nearMisses.idx)).all();
     for (const n of rows) {
       hub.toPlayer(this.address, { t: 'nearMiss.verified', index: n.idx, tick: n.tick, vehicleType: n.vehicleType as VehicleType, coins: n.coins } satisfies PlayS2C);
@@ -306,6 +316,7 @@ export class RunSession {
       t: 'run.result', status: result, reason, endTick, nearMisses: total, coins: this.coins,
       qualifiedTiers: CARS.filter((c) => c.tier > 0 && total >= c.reqNearMiss && this.carTier >= c.minCarTier).map((c) => c.tier),
     };
+    this.lastResult = msg;
     this.#deps.hub.toPlayer(this.address, msg);
     this.#deps.hub.toRoom(this.roomCode, msg);
     if (this.#claim) this.#compareClaim();
