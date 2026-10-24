@@ -6,6 +6,7 @@ import type { Hex, PlayS2C, RunLogResponse, RunSummaryResponse, VoucherResponse 
 import { auditRun } from '@racing-gang/sim';
 import { buildApp } from '../src/app';
 import { MockChain } from '../src/chain/mock';
+import * as seedModule from '../src/chain/seed';
 import { coinLedger, nearMisses, reservations, runEntries, runs } from '../src/db/schema';
 import { startJobs } from '../src/jobs';
 import { addLedgerEntry } from '../src/services/ledger';
@@ -444,6 +445,8 @@ describe('C5 venue demo', () => {
 
 describe('D. batas', () => {
   it('D2 offline sepanjang run lalu watermark 3000 sekaligus: diproses semua dengan cepat, bukan speedhack', async () => {
+    // Seed tetap: run penuh dengan >120 pesan setelah input lepas setir ditambahkan.
+    vi.spyOn(seedModule, 'computeSeed').mockReturnValue(`0x${'12'.padStart(64, '0')}`);
     const p = await startPlayer(t);
     p.client.ready();
     await waitFor(() => p.client.startAt !== null);
@@ -454,9 +457,21 @@ describe('D. batas', () => {
     p.client.advanceTo(RUN_TICKS);
     p.client.watermark();
     p.ws.send = send;
+    expect(p.client.sim.tick).toBe(RUN_TICKS);
+    expect(buffered.length).toBeGreaterThan(120);
     const t0 = performance.now();
-    for (const d of buffered) p.ws.send(d);
-    await waitFor(() => p.client.result !== null, 'run.result', 5000);
+    // Uji backlog verifikasi, bukan banjir pesan (B6b): semua input tetap mendahului
+    // satu watermark akhir, tetapi flush dibagi sesuai batas 120 pesan/detik.
+    for (let i = 0; i < buffered.length; i++) {
+      if (i > 0 && i % 100 === 0) {
+        await tick();
+        await tick();
+        t.clock.advance(1000);
+      }
+      p.ws.send(buffered[i]!);
+    }
+    await waitFor(() => p.client.result !== null || p.client.errors.length > 0, 'run.result', 5000);
+    expect(p.client.errors).toEqual([]);
     const ms = performance.now() - t0;
     expect(p.client.result?.status).toBe('VERIFIED');
     expect(p.client.result?.endTick).toBe(p.client.sim.tick);
