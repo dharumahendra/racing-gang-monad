@@ -156,12 +156,19 @@ describe('satu pengendali per run (dua tab)', () => {
     t.clock.set(a.pc.startAt! + 3000);
     a.pc.advanceTo(a.pc.targetTick(t.clock.now()));
     a.pc.watermark();
-    await tick(); await tick();
+    const session = t.ctx.runs.get(run.runId)!;
+    await waitFor(() => session.lifecycle === 'RUNNING' && session.watermark === a.pc.sim.tick, 'watermark diproses saat RUNNING');
+    expect(session.ended).toBe(false);
+    expect(session.controller).toBe(KEY_A);
     a.ws.terminate(); // halaman ditutup/reload: state sim di memori browser hilang
 
     const reloaded = await tab(token, run, KEY_B);
     await waitFor(() => reloaded.closeCode() !== 0, 'halaman baru ditolak');
     expect(reloaded.closeCode()).toBe(4409);
+    expect(reloaded.msgs.some((m) => m.t === 'error' && m.code === 'NOT_CONTROLLER')).toBe(true);
+    expect(reloaded.msgs.some((m) => m.t === 'run.go')).toBe(false);
+    expect(session.controller).toBe(KEY_A);
+    expect(session.ended).toBe(false);
 
     t.clock.set(a.pc.startAt! + RUN_TIMEOUT_MS + 1000);
     t.ctx.runs.checkTimeouts();
