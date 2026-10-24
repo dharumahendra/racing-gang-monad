@@ -416,3 +416,12 @@ Handoff akhir berisi:
 - Shell cockpit, navigasi responsif, garasi roster/model3D/performance, view putar/reset, font Space Grotesk/Plus Jakarta Sans self-hosted, token warna/spacing/shape dan style HUD/room/hasil diterapkan. Data game/ownership tetap sumber asli; tidak menyalin statistik atau fitur dekoratif dari reference. Theme persistence/antartab/blocked storage tersedia, appearance Privy mengikuti tema.
 - Tes final110FE +4 integrasi backend PASS, typecheck/build PASS,63 kelompok browser PASS. SDK Privy nyata siap pada kedua tema; belum OAuth/akun nyata atau testnet. Inspector sebelum2FAIL5WARN menjadi0FAIL2WARN dengan allowance label teknis sesuai brand. Review independen tidak menemukan Critical/Important. Rincian warning, satu network timeout yang tidak terulang, serta perbaikan harness audio/pending penonton tercatat di laporan.
 - T06 UI data akun makin lengkap; pembelian/transaksi masih membutuhkan ABI/deployment/chain tim. Playtest perangkat/Google nyata tetap pending. Estimasi50jam tidak menjadi timesheet. Tidak deploy atau merge ke main.
+
+## 23. Handoff sistem Kiro - 22 Oktober 2026
+
+Detail di `SYSTEM_IMPLEMENTATION.md` dan `RUNBOOK.md`. Sejarah di atas tetap berlaku sebagai catatan.
+
+- Branch `codex/garage-showcase` kini memuat merge `dharu/worst-case` (`3ac7f2f`).
+- FE live lokal: `VITE_DATA_MODE=live`, API/WS `127.0.0.1:8080`, backend `CHAIN_MODE=mock`. SDK Privy dan modal Google tampil; login Google nyata BLOCKED sampai dashboard mengaktifkan Google, embedded wallet, dan allowed origins, serta App Secret dirotasi.
+- Recovery: `Online.tsx` menampilkan **Periksa run aktif** setelah POST ambigu/409 (`GET /runs/active`), mengadopsi run `CREATED` tanpa pengendali. `PlayClient` mengirim kunci halaman `client`; tab kedua menerima `NOT_CONTROLLER` dan berhenti. Reload tetap membuka summary; tidak ada resume penuh.
+- Chain live dan pembelian `buy()` BLOCKED pada kontrak/ABI Bayu. Perangkat fisik dan Docker belum diuji.

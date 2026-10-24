@@ -35,7 +35,7 @@ Login utama: **Google lewat Privy**. Frontend mengirim access token Privy; backe
 
 `CHAIN_MODE=mock` (default) memakai chain palsu yang meniru aturan `RunRegistry`, jadi seluruh alur bisa dicoba tanpa testnet. Tx hash dan nomor blok di mode ini palsu; jangan dipakai saat demo. `CHAIN_MODE=live` butuh RPC Monad, kunci attester dan voucher signer, alamat kontrak, serta relayer dan indexer live.
 
-Endpoint: `GET /me`, `GET /config`, `GET /health`, `POST /runs`, `GET /runs/:id`, `GET /runs/:id/log`, `POST /rooms`, `GET /rooms/:code`, `POST /vouchers`, `GET /leaderboard`, WebSocket `/ws/play` dan `/ws/watch`, serta `POST /auth/nonce` dan `/auth/verify` kalau SIWE diaktifkan. Detail di `TECH_SPEC.md` §4–5; tipe ada di `packages/config/src/protocol.ts`.
+Endpoint: `GET /me`, `GET /config`, `GET /health`, `POST /runs`, `GET /runs/active` (run aktif milik token, untuk rekonsiliasi POST ambigu), `GET /runs/:id`, `GET /runs/:id/log`, `POST /rooms`, `GET /rooms/:code`, `POST /vouchers`, `GET /leaderboard`, WebSocket `/ws/play` dan `/ws/watch`, serta `POST /auth/nonce` dan `/auth/verify` kalau SIWE diaktifkan. Detail di `TECH_SPEC.md` §4–5; tipe ada di `packages/config/src/protocol.ts`.
 
 ### Docker
 
@@ -44,7 +44,7 @@ docker build -f backend/Dockerfile -t racing-gang-backend .
 docker run -p 8080:8080 -v rg-data:/data --env-file backend/.env racing-gang-backend
 ```
 
-Jalankan **satu instance saja**: state run dan room ada di memori. Database SQLite ada di volume `/data`.
+Jalankan **satu instance saja**: state run dan room ada di memori. Database SQLite ada di volume `/data`. Runbook lengkap (Privy dashboard, HTTPS/WSS, pemulihan kegagalan, checklist demo): [.context/RUNBOOK.md](.context/RUNBOOK.md).
 
 ## Script
 
