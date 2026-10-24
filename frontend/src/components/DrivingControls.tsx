@@ -3,6 +3,7 @@ import { pointerDrivingHandlers, type HeldDrivingInputs, type HoldKind } from '.
 const actions:{kind:HoldKind;label:string;symbol:string}[]=[
   {kind:EntryKind.LEFT,label:'Hold to steer left',symbol:'←'},
   {kind:EntryKind.BRAKE_ON,label:'Hold to brake',symbol:'Brake'},
+  {kind:EntryKind.ACCEL_ON,label:'Hold to accelerate',symbol:'Gas'},
   {kind:EntryKind.RIGHT,label:'Hold to steer right',symbol:'→'},
 ];
 export function DrivingControls({held,enabled}:{held:HeldDrivingInputs;enabled:boolean}) {

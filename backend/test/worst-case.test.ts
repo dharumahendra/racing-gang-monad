@@ -446,7 +446,7 @@ describe('C5 venue demo', () => {
 describe('D. batas', () => {
   it('D2 offline sepanjang run lalu watermark 3000 sekaligus: diproses semua dengan cepat, bukan speedhack', async () => {
     // Seed tetap: run penuh dengan >120 pesan setelah input lepas setir ditambahkan.
-    vi.spyOn(seedModule, 'computeSeed').mockReturnValue(`0x${'12'.padStart(64, '0')}`);
+    vi.spyOn(seedModule, 'computeSeed').mockReturnValue(`0x${'3f'.padStart(64, '0')}`); // CONFIG_VERSION 3: run penuh, >120 input
     const p = await startPlayer(t);
     p.client.ready();
     await waitFor(() => p.client.startAt !== null);

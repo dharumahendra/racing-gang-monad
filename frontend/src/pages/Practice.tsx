@@ -9,7 +9,7 @@ import { AudioControl, RunHud, RunWarnings, CoinPops, FinalCountdown } from '../
 import { useWarningAudio } from '../lib/use-warning-audio';
 import { useRaceFocus } from '../lib/use-race-focus';
 import { useSelectedCar } from '../lib/selected-car';
-import { CARS, toKmh } from '@racing-gang/config';
+import { CARS } from '@racing-gang/config';
 const runId=`0x${'11'.repeat(32)}` as const;
 const seed='0x8cfd1f92705b1e83840e3e257e0120b7fc40a9569070f053c50a1d6ad428d684';
 export function Practice() {
@@ -29,7 +29,7 @@ export function Practice() {
     <DrivingControls held={held} enabled={runner.phase==="running"}/><RunHud view={view} tier={runner.sim.carTier}/>
     <RaceScene runner={runner} revision={revision} onReady={onAssetsReady}/>
     <RunWarnings view={view} enabled={runner.phase==='running'}/><FinalCountdown view={view} enabled={runner.phase==='running'}/>{runner.phase==='running'&&<CoinPops runner={runner}/>}
-    {runner.phase==='idle'&&<div className="race-overlay"><span className="badge">PRACTICE MODE</span><p className="overlay-car">{CARS[runner.sim.carTier].name} · max. {toKmh(CARS[runner.sim.carTier].maxSpeed)} km/h</p><ul className="overlay-controls" aria-label="Controls"><li><kbd>←</kbd> <kbd>A</kbd> Hold left</li><li><kbd>→</kbd> <kbd>D</kbd> Hold right</li><li><kbd>↓</kbd> <kbd>S</kbd> Hold brake</li></ul><button className="button" disabled={!assetsReady} onClick={()=>{audio.unlock();runner.start();setRevision(n=>n+1);}}>{assetsReady?'Start practice':'Loading car…'}</button>{settings.mode==='live'&&<Link className="quiet-link" to="/online">Official online run (counts for coins) →</Link>}</div>}
+    {runner.phase==='idle'&&<div className="race-overlay"><span className="badge">PRACTICE MODE</span><p className="overlay-car">{CARS[runner.sim.carTier].name} · max. {CARS[runner.sim.carTier].maxKmh} km/h</p><ul className="overlay-controls" aria-label="Controls"><li><kbd>←</kbd> <kbd>A</kbd> Hold left</li><li><kbd>→</kbd> <kbd>D</kbd> Hold right</li><li><kbd>↑</kbd> <kbd>W</kbd> Hold gas</li><li><kbd>↓</kbd> <kbd>S</kbd> Hold brake</li></ul><button className="button" disabled={!assetsReady} onClick={()=>{audio.unlock();runner.start();setRevision(n=>n+1);}}>{assetsReady?'Start practice':'Loading car…'}</button>{settings.mode==='live'&&<Link className="quiet-link" to="/online">Official online run (counts for coins) →</Link>}</div>}
     {runner.phase==='countdown'&&<div className="countdown" role="status">{Math.ceil(runner.countdownMs/1000)}</div>}
     {runner.phase==='ended'&&<div className="race-overlay"><span className="badge">PRACTICE RESULT</span><h2>{view.endReason?reason[view.endReason]:'Run finished'}</h2><p>{view.nearMisses} near misses · {view.coins.toLocaleString('en-US')} practice coins<br/>Local result not yet verified by backend or recorded on-chain.</p><button className="button" onClick={()=>{setAttempt(n=>n+1);}}>Retry practice</button></div>}
   </section></>;

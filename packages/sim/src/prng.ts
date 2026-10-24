@@ -22,7 +22,7 @@ export function sfc32(a: number, b: number, c: number, d: number): () => number 
 }
 
 /** Stream dari keccak256(seed ‖ label), dipecah menjadi 4 × uint32 big-endian. */
-export function makeRng(seed: Hex, label: 'traffic' | 'npc'): Rng {
+export function makeRng(seed: Hex, label: 'traffic' | 'traffic-back' | 'npc'): Rng {
   const k = keccak256(encodePacked(['bytes32', 'string'], [seed, label]));
   const word = (i: number) => parseInt(k.slice(2 + i * 8, 10 + i * 8), 16);
   const next = sfc32(word(0), word(1), word(2), word(3));

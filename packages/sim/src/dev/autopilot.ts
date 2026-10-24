@@ -6,6 +6,8 @@ import type { SimView } from '../types';
 export type AutopilotOptions = {
   /** Jangan pernah mengerem. */
   noBrake?: boolean;
+  /** Jangan pernah menekan gas: mobil tetap 40 km/j (untuk test lalu lintas dari belakang). */
+  noGas?: boolean;
   /** Abaikan red zone (untuk test kegagalan red zone). */
   ignoreRed?: boolean;
   /** Abaikan rantai (untuk test rantai). */
@@ -20,6 +22,7 @@ const HOLD_TICKS = 14;
 
 export class Autopilot {
   #braking = false;
+  #accelerating = false;
   /** Lajur tujuan selama setir ditahan. */
   #goal = 0;
   readonly #opts: AutopilotOptions;
@@ -44,13 +47,16 @@ export class Autopilot {
       return [p.x > laneCenter(cur) ? EntryKind.LEFT : EntryKind.RIGHT];
     }
     const rel = Math.max(1, p.speed - TRAFFIC_SPEED);
+    const relBack = TRAFFIC_SPEED - p.speed; // > 0: kendaraan di belakang mendekat
     const tc = Math.ceil(350 / lateral);
 
-    // Lajur aman selama `ticks` ke depan: tidak ada kendaraan yang akan tersusul dalam waktu itu.
+    // Lajur aman selama `ticks` ke depan: tidak ada kendaraan yang akan tersusul, atau menyusul dari belakang.
     const clearFor = (lane: number, ticks: number) =>
       view.vehicles.every((v) => {
         if (v.lane !== lane) return true;
-        if (v.z + v.l / 2 < p.z - HALF_PL - 40) return true; // sudah di belakang
+        if (v.z + v.l / 2 < p.z - HALF_PL - 40) {
+          return relBack <= 0 || p.z - HALF_PL - (v.z + v.l / 2) > relBack * ticks + MARGIN; // di belakang
+        }
         return v.z - v.l / 2 - (p.z + HALF_PL) > rel * ticks + MARGIN;
       });
     const red = (lane: number) => !this.#opts.ignoreRed && view.redLanes.some((r) => r.lane === lane);
@@ -94,6 +100,12 @@ export class Autopilot {
     if (wantBrake !== this.#braking) {
       this.#braking = wantBrake;
       out.push(wantBrake ? EntryKind.BRAKE_ON : EntryKind.BRAKE_OFF);
+    }
+    // Gas ditahan terus kecuali sedang mengerem (rem tetap menang di sim, tapi pemain wajar melepas gas).
+    const wantGas = !wantBrake && !this.#opts.noGas;
+    if (wantGas !== this.#accelerating) {
+      this.#accelerating = wantGas;
+      out.push(wantGas ? EntryKind.ACCEL_ON : EntryKind.ACCEL_OFF);
     }
     return out;
   }

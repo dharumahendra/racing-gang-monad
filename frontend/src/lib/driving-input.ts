@@ -1,7 +1,7 @@
 import { EntryKind, type PlayerInputKind } from '@racing-gang/config';
-export type HoldKind = typeof EntryKind.LEFT | typeof EntryKind.RIGHT | typeof EntryKind.BRAKE_ON;
-const offFor: Record<HoldKind, PlayerInputKind> = {1:EntryKind.LEFT_OFF,2:EntryKind.RIGHT_OFF,3:EntryKind.BRAKE_OFF};
-const keys: Record<string, HoldKind> = {ArrowLeft:EntryKind.LEFT,KeyA:EntryKind.LEFT,ArrowRight:EntryKind.RIGHT,KeyD:EntryKind.RIGHT,ArrowDown:EntryKind.BRAKE_ON,KeyS:EntryKind.BRAKE_ON};
+export type HoldKind = typeof EntryKind.LEFT | typeof EntryKind.RIGHT | typeof EntryKind.BRAKE_ON | typeof EntryKind.ACCEL_ON;
+const offFor: Record<HoldKind, PlayerInputKind> = {1:EntryKind.LEFT_OFF,2:EntryKind.RIGHT_OFF,3:EntryKind.BRAKE_OFF,7:EntryKind.ACCEL_OFF};
+const keys: Record<string, HoldKind> = {ArrowLeft:EntryKind.LEFT,KeyA:EntryKind.LEFT,ArrowRight:EntryKind.RIGHT,KeyD:EntryKind.RIGHT,ArrowDown:EntryKind.BRAKE_ON,KeyS:EntryKind.BRAKE_ON,ArrowUp:EntryKind.ACCEL_ON,KeyW:EntryKind.ACCEL_ON};
 /** Sumber fisik dipisah: keyboard dan pointer yang menahan aksi sama tidak saling melepas. */
 export class HeldDrivingInputs {
   private held = new Map<string, HoldKind>();
