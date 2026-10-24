@@ -32,6 +32,7 @@ describe('endpoint dasar', () => {
   it('/config berisi konstanta game, CARS dengan priceWei, dan alamat kontrak dari deployments', async () => {
     const body = (await t.app.inject({ method: 'GET', url: '/config' })).json();
     expect(body.configVersion).toBe(CONFIG_VERSION);
+    expect(body.chainMode).toBe('mock');
     expect(body.chainId).toBe(10143);
     const d = getDeployment();
     expect(body.contracts).toEqual(d ? { runRegistry: d.runRegistry, carNFT: d.carNFT } : null);

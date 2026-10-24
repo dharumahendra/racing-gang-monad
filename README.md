@@ -33,7 +33,7 @@ pnpm --filter @racing-gang/backend dev # http://localhost:8080
 
 Login utama: **Google lewat Privy**. Frontend mengirim access token Privy; backend memverifikasinya dan memakai embedded wallet pengguna sebagai akun game. Isi `PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY`, dan `PRIVY_APP_SECRET` dari dashboard Privy (secret hanya di backend). `ALLOW_SIWE_LOGIN=true` membuka login SIWE langsung dengan wallet, dipakai bot dan pengembangan.
 
-`CHAIN_MODE=mock` (default) memakai chain palsu yang meniru aturan `RunRegistry`, jadi seluruh alur bisa dicoba tanpa testnet. Tx hash dan nomor blok di mode ini palsu; jangan dipakai saat demo. `CHAIN_MODE=live` butuh RPC Monad, kunci attester dan voucher signer, alamat kontrak, serta relayer dan indexer live.
+`CHAIN_MODE=mock` (default) memakai chain palsu yang meniru aturan `RunRegistry`, jadi seluruh alur bisa dicoba tanpa testnet. Tx hash dan nomor blok di mode ini palsu; jangan dipakai saat demo. `CHAIN_MODE=live` butuh RPC Monad, kunci attester dan voucher signer, serta alamat kontrak (lihat `backend/.env.example`). Wallet attester harus bersaldo > 10 MON; di bawah itu Monad membatasi 1 transaksi per 3 blok. `GET /config` dan `/health` mengembalikan `chainMode`; frontend memblokir pembelian kalau nilainya bukan `live`.
 
 Endpoint: `GET /me`, `GET /config`, `GET /health`, `POST /runs`, `GET /runs/active` (run aktif milik token, untuk rekonsiliasi POST ambigu), `GET /runs/:id`, `GET /runs/:id/log`, `POST /rooms`, `GET /rooms/:code`, `POST /vouchers`, `GET /leaderboard`, WebSocket `/ws/play` dan `/ws/watch`, serta `POST /auth/nonce` dan `/auth/verify` kalau SIWE diaktifkan. Detail di `TECH_SPEC.md` §4–5; tipe ada di `packages/config/src/protocol.ts`.
 
@@ -58,6 +58,7 @@ Jalankan **satu instance saja**: state run dan room ada di memori. Database SQLi
 | `pnpm --filter @racing-gang/backend stress -- --players 25 --spectators 50` | Uji beban: pemain real-time + penonton terhadap server sungguhan; cek mepet cocok dan jeda event loop |
 | `pnpm --filter @racing-gang/backend crash-test -- --players 5 --kill-after 15` | Bunuh server paksa di tengah run, start ulang, cek DB, pemulihan, audit, dan koin |
 | `pnpm --filter @racing-gang/backend bigdb -- --runs 50000` | Ukur endpoint baca dan rencana query di DB besar |
+| `pnpm --filter @racing-gang/backend live-e2e -- --players 3` | Server `CHAIN_MODE=live` melawan kontrak sungguhan di anvil: run, pembelian Tier 1, crash + restart; DB harus sama dengan kontrak. Butuh `anvil` dan `forge build` |
 | `pnpm --filter @racing-gang/sim stats -- --seeds 200` | Statistik balance mepet per mobil (autopilot) |
 | `pnpm --filter @racing-gang/sim fixtures` | Buat ulang golden fixture setelah logika sim atau `CONFIG_VERSION` berubah |
 | `pnpm config:export` | Tulis `contract/config/cars.json` dari `packages/config` |
@@ -70,4 +71,9 @@ GitHub Actions (`.github/workflows/ci.yml`): typecheck, test, build, cek `cars.j
 
 ## Kontrak di Monad testnet
 
-Belum di-deploy. Alamat dan tautan explorer akan ditulis di sini dan di `packages/config/deployments/monad-testnet.json`.
+| Kontrak | Alamat |
+|---|---|
+| RunRegistry | [`0x5DF0f8c94BdcAeCAe74C3db606FfcE9EC09cBD93`](https://testnet.monadvision.com/address/0x5DF0f8c94BdcAeCAe74C3db606FfcE9EC09cBD93) |
+| CarNFT | [`0x6Ac0e6D8e71D36fF31C61F391a4a7CFE2843654b`](https://testnet.monadvision.com/address/0x6Ac0e6D8e71D36fF31C61F391a4a7CFE2843654b) |
+
+Chain ID 10143, blok deploy 73297824. Alamat dan ABI ada di `packages/config/deployments/monad-testnet.json`; langkah deploy dan `setBaseURI` di `contract/README.md`.

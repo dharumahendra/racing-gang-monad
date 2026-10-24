@@ -179,6 +179,8 @@ export type MeResponse = {
 /** GET /config: isi packages/config + alamat kontrak. */
 export type ConfigResponse = {
   configVersion: number;
+  /** `mock`: tx dan voucher palsu; alamat kontrak tetap diisi tapi pembelian on-chain harus diblokir. */
+  chainMode: 'mock' | 'live';
   chainId: number;
   explorerUrl: string | null;
   contracts: { runRegistry: Address; carNFT: Address } | null;

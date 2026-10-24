@@ -54,9 +54,9 @@ jobs:
 
   # Foundry (Bayu). Dilewati otomatis sampai contract/foundry.toml ada.
   contracts:
-    name: Forge fmt, build, test
+    name: Forge fmt, build, test + backend live di anvil
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: contract
@@ -84,6 +84,25 @@ jobs:
       - if: steps.detect.outputs.found == 'true'
         name: forge test
         run: forge test -vvv
+
+      # Backend live terhadap kontrak hasil `forge build` di anvil: ABI cocok, relayer/indexer/voucher, lalu
+      # uji ujung ke ujung server CHAIN_MODE=live (run, pembelian, crash + restart).
+      - if: steps.detect.outputs.found == 'true'
+        uses: pnpm/action-setup@v6
+
+      - if: steps.detect.outputs.found == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - if: steps.detect.outputs.found == 'true'
+        name: Backend live di anvil
+        working-directory: .
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @racing-gang/backend exec vitest run test/abi.test.ts test/live-anvil.test.ts
+          pnpm --filter @racing-gang/backend live-e2e
 
   # Docker image backend (BACKEND_PLAN L). Dilewati otomatis sampai backend/Dockerfile ada.
   backend-docker:
