@@ -70,8 +70,12 @@ jobs:
         run: |
           if [ -f contract/foundry.toml ]; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; echo "Belum ada contract/foundry.toml, job dilewati."; fi
 
+      # Dikunci ke versi lokal tim: anvil 1.8.6 menghasilkan SeedBlockInvalid untuk run yang valid di
+      # live-anvil.test (seedBlock di dalam blok hasil anvil_mine), sedangkan 1.7.1 tidak.
       - if: steps.detect.outputs.found == 'true'
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
 
       - if: steps.detect.outputs.found == 'true'
         name: forge fmt --check
