@@ -102,3 +102,15 @@ body.race-focus .site-header,body.race-focus .bottom-racing-bar{display:none}
 .purchase-stock[data-sold-out='true']{color:var(--danger)}
 .purchase-status,.purchase-blocker{margin:0;font-size:.8571rem;line-height:1.6;color:var(--muted)}
 .purchase-status a{color:var(--accent)}
+
+/* Countdown/run memenuhi viewport; hasil kembali ke layout halaman normal. */
+html.race-focus,body.race-focus,body.race-focus .app-content{overflow:hidden;overscroll-behavior:none}
+body.race-focus .race-shell{position:fixed;inset:0;z-index:100;width:100%;height:100vh;height:100dvh;min-height:0;margin:0;border:0;border-radius:0;overflow:hidden}
+body.race-focus .race-canvas{width:100%;height:100%;min-height:0}
+body.race-focus .race-hud{padding-top:max(16px,env(safe-area-inset-top));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+body.race-focus .driving-controls{bottom:max(14px,env(safe-area-inset-bottom));left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right))}
+body.race-focus .race-toolbar{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 76px);z-index:101;width:auto;max-width:calc(100vw - 28px);margin:0;padding:8px 12px;border-radius:8px;background:var(--paper);gap:12px}
+body.race-focus .race-toolbar p{margin:0}
+body.race-focus .race-mode-title{display:none}
+.race-connection-notice{position:absolute;top:calc(var(--race-hud-h,150px) + 16px);left:12px;z-index:4;max-width:min(340px,calc(100% - 24px));padding:12px;background:var(--paper);border:1px solid var(--line);border-radius:8px}
+.race-connection-notice p{margin:0 0 8px;font-size:.85rem}
