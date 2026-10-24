@@ -9,7 +9,9 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "bot": "tsx scripts/bot.ts"
+    "bot": "tsx scripts/bot.ts",
+    "spectators": "tsx scripts/spectators.ts",
+    "status": "tsx scripts/status.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",
