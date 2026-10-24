@@ -1,0 +1,30 @@
+{
+  "name": "Racing Gang Collectibles — SPPG Delivery Truck",
+  "description": "A white Indonesian nutrition-service box truck, built procedurally from the user-supplied reference. Independent Racing Gang collectible; no gameplay tier or performance benefit. DRAFT: set permanent public HTTPS asset URLs before minting.",
+  "image": "../images/sppg-truck.png",
+  "animation_url": "../models/sppg-truck.glb",
+  "external_url": "../index.html?asset=sppg-truck",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Racing Gang Collectibles"
+    },
+    {
+      "trait_type": "Vehicle",
+      "value": "SPPG Delivery Truck"
+    },
+    {
+      "trait_type": "Gameplay effect",
+      "value": "None"
+    },
+    {
+      "trait_type": "Artwork",
+      "value": "Procedural 3D"
+    }
+  ],
+  "properties": {
+    "collectible_id": 2,
+    "credits": "Procedural Three.js interpretation of the reference supplied by the user on 2026-10-24. This is not an official SPPG/BGN product or an imported manufacturer model.",
+    "draft": true
+  }
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1,
+    "slug": "minecraft-minecart",
+    "name": "Minecraft Minecart",
+    "description": "Simplified Minecraft Minecart by Vlad94077. Independent Racing Gang collectible; no gameplay tier or performance benefit.",
+    "preview": {
+      "kind": "local",
+      "model": "minecraft-minecart.glb",
+      "source": "sketchfab"
+    },
+    "credits": "Simplified Minecraft Minecart by Vlad94077, Sketchfab, CC BY 4.0. Original GLB downloaded from Sketchfab and bundled with embedded textures. Attribution retained.",
+    "sourceUrl": "https://sketchfab.com/3d-models/simplified-minecraft-minecart-e23fb7a1bfca43f881bb8140465873f7",
+    "license": "https://creativecommons.org/licenses/by/4.0/"
+  },
+  {
+    "id": 2,
+    "slug": "sppg-truck",
+    "name": "SPPG Delivery Truck",
+    "description": "A white Indonesian nutrition-service box truck, built procedurally from the user-supplied reference. Independent Racing Gang collectible; no gameplay tier or performance benefit.",
+    "preview": {
+      "kind": "local",
+      "model": "sppg-truck.glb",
+      "source": "procedural"
+    },
+    "credits": "Procedural Three.js interpretation of the reference supplied by the user on 2026-10-24. This is not an official SPPG/BGN product or an imported manufacturer model."
+  },
+  {
+    "id": 3,
+    "slug": "burger-car",
+    "name": "Burger Car",
+    "description": "A sesame-bun vehicle with lettuce, cheese, a patty, blue windshield, red seats and a KK flag. Procedural interpretation of the user-supplied reference. Independent Racing Gang collectible; no gameplay tier or performance benefit.",
+    "preview": {
+      "kind": "local",
+      "model": "burger-car.glb",
+      "source": "procedural"
+    },
+    "credits": "Procedural Three.js interpretation of the burger-vehicle reference supplied by the user on 2026-10-24. Reference characters/branding remain associated with their respective owners."
+  },
+  {
+    "id": 4,
+    "slug": "spongebob-boatmobile",
+    "name": "SpongeBob Boatmobile",
+    "description": "Spongebob Boatmobile | #SketchfabWeeklyChallenge by TheoClarke. Independent Racing Gang collectible; no gameplay tier or performance benefit.",
+    "preview": {
+      "kind": "local",
+      "model": "spongebob-boatmobile.glb",
+      "source": "sketchfab"
+    },
+    "credits": "Spongebob Boatmobile | #SketchfabWeeklyChallenge by TheoClarke, Sketchfab, CC BY 4.0. Original GLB downloaded from Sketchfab and bundled with embedded textures. Attribution retained.",
+    "sourceUrl": "https://sketchfab.com/3d-models/spongebob-boatmobile-sketchfabweeklychallenge-abdca2ced413486b9c943111621d6f39",
+    "license": "https://creativecommons.org/licenses/by/4.0/"
+  }
+]

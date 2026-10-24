@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "slug": "minecraft-minecart",
+    "image": {
+      "path": "images/minecraft-minecart.png",
+      "bytes": 110235,
+      "width": 1920,
+      "height": 1080,
+      "sha256": "386f245b536f7321254a5310160bebab45e926d622a9a4ed67ce11f0ddfd9174"
+    },
+    "modelStatus": "original-downloaded",
+    "model": {
+      "path": "models/minecraft-minecart.glb",
+      "bytes": 10668,
+      "meshes": 5,
+      "sha256": "93298bd3965204c004f7b8463ae5b078431ca47d2586f01f27ed3ad1e382edd9"
+    }
+  },
+  {
+    "id": 2,
+    "slug": "sppg-truck",
+    "image": {
+      "path": "images/sppg-truck.png",
+      "bytes": 206287,
+      "width": 1024,
+      "height": 1024,
+      "sha256": "9c41d639667f878e98a5881b39da3871a37b62b42582965d2e3e80642fe27d27"
+    },
+    "modelStatus": "exported",
+    "model": {
+      "path": "models/sppg-truck.glb",
+      "bytes": 866732,
+      "meshes": 100,
+      "sha256": "7b392b5b9cee15d78ddcf93c1cca2131bb25891cc858093fb9ba166fea30da52"
+    }
+  },
+  {
+    "id": 3,
+    "slug": "burger-car",
+    "image": {
+      "path": "images/burger-car.png",
+      "bytes": 252230,
+      "width": 1024,
+      "height": 1024,
+      "sha256": "c061229c0c52c0e15fe2b2df620701399310e507458a9643ed7b7285dbd32d81"
+    },
+    "modelStatus": "exported",
+    "model": {
+      "path": "models/burger-car.glb",
+      "bytes": 662900,
+      "meshes": 143,
+      "sha256": "ac5c77ab7935118cefc2f50a044c54454130d05de01450dfae4405eca20a5d4e"
+    }
+  },
+  {
+    "id": 4,
+    "slug": "spongebob-boatmobile",
+    "image": {
+      "path": "images/spongebob-boatmobile.png",
+      "bytes": 846592,
+      "width": 1920,
+      "height": 1080,
+      "sha256": "2eff2022bb9b5a303b968e695dac7fbb4a59c801fb55a35b1cbaaa8e19c60622"
+    },
+    "modelStatus": "original-downloaded",
+    "model": {
+      "path": "models/spongebob-boatmobile.glb",
+      "bytes": 1364400,
+      "meshes": 1,
+      "sha256": "e4eeb8752f0528463e9ba9b48257293dae710543a58ed8d024a139777547ccec"
+    }
+  }
+]
