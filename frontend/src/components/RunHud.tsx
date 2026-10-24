@@ -1,7 +1,7 @@
 import { RUN_TICKS, TICK_RATE, toKmh, type DisruptionKind } from '@racing-gang/config';
 import type { SimView } from '@racing-gang/sim';
 import type { LocalRunner } from '../lib/runner';
-import { finalCountdown, nearMissPops, tierTarget, warningViews } from '../lib/hud';
+import { finalCountdown, nearMissPops, rearThreats, tierTarget, warningViews, type RearSide } from '../lib/hud';
 import type { AudioState } from '../lib/warning-audio';
 const names={NITRO:'Forced nitro',SPIKES:'Spikes',RED:'Red zone'};
 export function WarningIcon({kind}:{kind:DisruptionKind}){
@@ -18,6 +18,19 @@ export function RunHud({view,tier,online=false}:{view:SimView;tier:number;online
 export function RunWarnings({view,enabled}:{view:SimView;enabled:boolean}){
   const warnings=enabled?warningViews(view):[];
   return <div className="warning-stack">{warnings.map(w=><div className={`warning-card warning-${w.kind.toLowerCase()}`} key={`${w.id}:${w.activeTick}`} data-warning-kind={w.kind} data-warning-seconds={w.seconds} role="status"><WarningIcon kind={w.kind}/><div><strong>{names[w.kind]}</strong><span>{w.laneLabel}</span></div><b>{w.seconds}<small>s</small></b></div>)}</div>;
+}
+const rearLabel:Record<RearSide,string>={left:'Vehicle nearby at the rear left',same:'Vehicle directly behind',right:'Vehicle nearby at the rear right'};
+const rearGlyph:Record<RearSide,string>={left:'↙',same:'↓',right:'↘'};
+const rearShort:Record<RearSide,string>={left:'Rear L',same:'Behind',right:'Rear R'};
+/**
+ * Indikator kedekatan kendaraan di belakang (lajur pemain atau lajur sebelah), dari posisi SimView.
+ * Terbaca di desktop dan HP lewat gaya `.lane-awareness`/`.lane-signal` yang sudah ada; hilang sendiri saat
+ * ancaman lewat. Murni tampilan, tidak mengubah aturan gameplay.
+ */
+export function RearWarnings({view,enabled}:{view:SimView;enabled:boolean}){
+  const threats=enabled?rearThreats(view):[];
+  if(threats.length===0)return null;
+  return <div className="lane-awareness" aria-label="Rear traffic">{threats.map(t=><div key={t.side} className="lane-signal has-warning" role="status" aria-label={rearLabel[t.side]} data-rear-side={t.side} data-rear-lane={t.lane}><b aria-hidden="true">{rearGlyph[t.side]}</b><small aria-hidden="true">{rearShort[t.side]}</small></div>)}</div>;
 }
 export function CoinPops({runner}:{runner:LocalRunner}){
   return <div className="coin-pops" aria-label="Latest local near misses">{nearMissPops(runner.events,runner.current.tick).map(event=><span key={`${event.index}:${event.tick}`} className="coin-pop" data-local-coins={event.coins}>+{event.coins}<small>local near miss #{event.index}</small></span>)}</div>;

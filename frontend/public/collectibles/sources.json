@@ -1,0 +1,34 @@
+[
+  {
+    "slug": "minecraft-minecart",
+    "uid": "e23fb7a1bfca43f881bb8140465873f7",
+    "title": "Simplified Minecraft Minecart",
+    "author": "Vlad94077",
+    "authorUrl": "https://sketchfab.com/Vlad94077",
+    "sourceUrl": "https://sketchfab.com/3d-models/simplified-minecraft-minecart-e23fb7a1bfca43f881bb8140465873f7",
+    "license": "http://creativecommons.org/licenses/by/4.0/",
+    "downloadable": true,
+    "thumbnailWidth": 1920,
+    "originalModel": "Bundled original GLB from official authenticated Sketchfab download",
+    "retrievedAt": "2026-10-24T04:47:34.266Z",
+    "modelPath": "models/minecraft-minecart.glb",
+    "modelSha256": "93298bd3965204c004f7b8463ae5b078431ca47d2586f01f27ed3ad1e382edd9",
+    "downloadedAt": "2026-10-24T05:07:34.373932+00:00"
+  },
+  {
+    "slug": "spongebob-boatmobile",
+    "uid": "abdca2ced413486b9c943111621d6f39",
+    "title": "Spongebob Boatmobile | #SketchfabWeeklyChallenge",
+    "author": "TheoClarke",
+    "authorUrl": "https://sketchfab.com/TheoClarke",
+    "sourceUrl": "https://sketchfab.com/3d-models/spongebob-boatmobile-sketchfabweeklychallenge-abdca2ced413486b9c943111621d6f39",
+    "license": "http://creativecommons.org/licenses/by/4.0/",
+    "downloadable": true,
+    "thumbnailWidth": 1920,
+    "originalModel": "Bundled original GLB from official authenticated Sketchfab download",
+    "retrievedAt": "2026-10-24T04:47:34.697Z",
+    "modelPath": "models/spongebob-boatmobile.glb",
+    "modelSha256": "e4eeb8752f0528463e9ba9b48257293dae710543a58ed8d024a139777547ccec",
+    "downloadedAt": "2026-10-24T05:07:38.860308+00:00"
+  }
+]

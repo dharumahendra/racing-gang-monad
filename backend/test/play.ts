@@ -1,4 +1,5 @@
 // Helper test: pemain lewat WebSocket in-process (app.injectWS) dengan jam palsu.
+import { performance } from 'node:perf_hooks';
 import type { WebSocket } from 'ws';
 import type { CreateRunResponse, PlayC2S, PlayS2C, WatchC2S, WatchS2C } from '@racing-gang/config/protocol';
 import type { AutopilotOptions } from '@racing-gang/sim/dev';
@@ -9,12 +10,14 @@ type TestApp = Awaited<ReturnType<typeof makeTestApp>>;
 
 export const tick = () => new Promise((r) => setImmediate(r));
 
-export async function waitFor(cond: () => boolean, label = 'kondisi', max = 500) {
-  for (let i = 0; i < max; i++) {
-    if (cond()) return;
-    await tick();
+/** Deadline memakai waktu nyata, terpisah dari jam simulasi yang dimajukan manual. */
+export async function waitFor(cond: () => boolean, label = 'kondisi', timeoutMs = 2000) {
+  const deadline = performance.now() + timeoutMs;
+  while (!cond()) {
+    if (performance.now() >= deadline) throw new Error(`Timeout menunggu ${label}`);
+    // Beri timer/I/O kesempatan berjalan; jumlah putaran setImmediate bukan batas waktu.
+    await new Promise((resolve) => setTimeout(resolve, 5));
   }
-  throw new Error(`Timeout menunggu ${label}`);
 }
 
 export async function connect(t: TestApp, token: string, onMsg: (m: PlayS2C) => void): Promise<WebSocket> {

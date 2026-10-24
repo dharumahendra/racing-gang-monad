@@ -1,7 +1,7 @@
 {
   "name": "Racing Gang — Tier 1",
   "description": "Tier 1 soulbound car on Monad testnet. Artwork rendered from Unity Fan in-game concept car (CC0 author dedication); see asset license documentation.",
-  "image": "1.png",
+  "image": "https://racing-gang-monad.vercel.app/cars/1.png",
   "attributes": [
     {
       "trait_type": "Tier",

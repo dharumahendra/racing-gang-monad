@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { LocalRunner } from './runner';
-import { RUN_TICKS, TICK_RATE } from '@racing-gang/config';
-import { tierTarget, warningViews, laneWarnings, nearMissPops, feedRows, transactionUrl, finalCountdown } from './hud';
+import { RUN_TICKS, TICK_RATE, PLAYER_L, laneCenter } from '@racing-gang/config';
+import { tierTarget, warningViews, laneWarnings, nearMissPops, feedRows, transactionUrl, finalCountdown, rearThreats } from './hud';
 const params={runId:`0x${'11'.repeat(32)}` as const,seed:`0x${'22'.repeat(32)}` as const,carTier:0};
 const view=new LocalRunner(params).current;
 it('does not offer Tier 2 qualification to Starter even with 150 local near misses',()=>{
@@ -31,4 +31,31 @@ it('shows a 5..1 final countdown only in the last five seconds of a running run'
   expect(finalCountdown({...view,tick:RUN_TICKS-1})).toBe(1);
   expect(finalCountdown({...view,tick:RUN_TICKS})).toBeNull();
   expect(finalCountdown({...view,tick:RUN_TICKS-TICK_RATE,ended:true})).toBeNull();
+});
+
+// --- Regresi: peringatan kendaraan dari belakang (dihitung dari posisi SimView) ---
+function vehicle(id:number,lane:number,z:number,l=450){return {id,lane,type:0 as const,x:laneCenter(lane),z,w:180,l};}
+const rearBase={...view,tick:300,player:{...view.player,x:laneCenter(1),z:10000}};
+it('flags vehicles closing from the rear left, directly behind, and rear right by side',()=>{
+ const current={...rearBase,vehicles:[vehicle(1,0,9500),vehicle(2,1,9500),vehicle(3,2,9500)]};
+ expect(rearThreats(current).map(t=>t.side)).toEqual(['left','same','right']);
+ expect(rearThreats(current).map(t=>t.lane)).toEqual([0,1,2]);
+});
+it('ignores vehicles ahead and vehicles two or more lanes away',()=>{
+ const current={...rearBase,vehicles:[vehicle(1,1,10500),vehicle(2,3,9500)]}; // satu di depan, satu 2 lajur
+ expect(rearThreats(current)).toEqual([]);
+});
+it('drops the warning once the player has pulled far enough ahead',()=>{
+ const near={...rearBase,vehicles:[vehicle(1,1,9500)]};  // gap kecil
+ expect(rearThreats(near).map(t=>t.side)).toEqual(['same']);
+ const far={...rearBase,vehicles:[vehicle(1,1,8000)]};   // hidung > REAR_WINDOW di belakang ekor
+ expect(rearThreats(far)).toEqual([]);
+});
+it('keeps only the nearest vehicle per side and never changes gameplay inputs',()=>{
+ const current={...rearBase,vehicles:[vehicle(1,2,9000),vehicle(2,2,9600)]}; // dua di kanan
+ const right=rearThreats(current);
+ expect(right).toHaveLength(1);
+ expect(right[0]).toMatchObject({side:'right',lane:2}); // yang paling dekat (z lebih besar = gap lebih kecil)
+ const playerRear=current.player.z-PLAYER_L/2;
+ expect(right[0].gap).toBe(playerRear-(9600+450/2));
 });

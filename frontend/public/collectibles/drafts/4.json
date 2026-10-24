@@ -1,0 +1,32 @@
+{
+  "name": "Racing Gang Collectibles — SpongeBob Boatmobile",
+  "description": "Spongebob Boatmobile | #SketchfabWeeklyChallenge by TheoClarke. Independent Racing Gang collectible; no gameplay tier or performance benefit. DRAFT: set permanent public HTTPS asset URLs before minting.",
+  "image": "../images/spongebob-boatmobile.png",
+  "animation_url": "../models/spongebob-boatmobile.glb",
+  "external_url": "https://sketchfab.com/3d-models/spongebob-boatmobile-sketchfabweeklychallenge-abdca2ced413486b9c943111621d6f39",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Racing Gang Collectibles"
+    },
+    {
+      "trait_type": "Vehicle",
+      "value": "SpongeBob Boatmobile"
+    },
+    {
+      "trait_type": "Gameplay effect",
+      "value": "None"
+    },
+    {
+      "trait_type": "Artwork",
+      "value": "Sketchfab source"
+    }
+  ],
+  "properties": {
+    "collectible_id": 4,
+    "credits": "Spongebob Boatmobile | #SketchfabWeeklyChallenge by TheoClarke, Sketchfab, CC BY 4.0. Original GLB downloaded from Sketchfab and bundled with embedded textures. Attribution retained.",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://sketchfab.com/3d-models/spongebob-boatmobile-sketchfabweeklychallenge-abdca2ced413486b9c943111621d6f39",
+    "draft": true
+  }
+}

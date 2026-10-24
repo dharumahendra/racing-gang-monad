@@ -1,7 +1,35 @@
-import { CARS, LANES, RUN_TICKS, TICK_RATE, type DisruptionKind } from '@racing-gang/config';
+import { CARS, LANE_WIDTH, LANES, PLAYER_L, RUN_TICKS, TICK_RATE, type DisruptionKind } from '@racing-gang/config';
 import type { SimEvent, SimView } from '@racing-gang/sim';
 import type { PlayS2C, NearMissRecorded } from '@racing-gang/config/protocol';
 export type HudWarning={id:string;kind:DisruptionKind;seconds:number;remainingMs:number;laneLabel:string;activeTick:number;lanes:number[]};
+
+/** Seberapa jauh (cm, hidung-ke-ekor) di belakang pemain sebuah kendaraan masih dianggap ancaman mepet. */
+const REAR_WINDOW = PLAYER_L * 2;
+export type RearSide = 'left' | 'same' | 'right';
+export type RearThreat = { side: RearSide; lane: number; gap: number };
+/**
+ * Kendaraan yang berada dekat di belakang, dihitung dari posisi di SimView (bukan kecepatan mendekat).
+ * Kendaraan yang pusatnya masih di belakang pemain dan hidungnya dekat dengan ekor pemain,
+ * di lajur pemain atau lajur sebelah
+ * (bahaya saat pindah lajur). Saat pemain menjauh, gap melewati REAR_WINDOW dan indikator hilang sendiri.
+ * Hanya tampilan: tidak mengubah tabrakan, mepet, atau logika lain.
+ */
+export function rearThreats(view: SimView): RearThreat[] {
+  const playerLane = Math.min(LANES - 1, Math.max(0, Math.round((view.player.x - LANE_WIDTH / 2) / LANE_WIDTH)));
+  const playerRear = view.player.z - PLAYER_L / 2;
+  const nearest = new Map<RearSide, RearThreat>();
+  for (const v of view.vehicles) {
+    if (v.z > view.player.z) continue;                 // pusat kendaraan di depan pemain: bukan ancaman belakang
+    const delta = v.lane - playerLane;
+    if (Math.abs(delta) > 1) continue;                 // hanya lajur pemain dan lajur bersebelahan
+    const gap = playerRear - (v.z + v.l / 2);           // jarak ekor pemain ke hidung kendaraan (bisa negatif = beririsan)
+    if (gap > REAR_WINDOW) continue;                   // sudah tertinggal jauh: ancaman lewat
+    const side: RearSide = delta < 0 ? 'left' : delta > 0 ? 'right' : 'same';
+    const prev = nearest.get(side);
+    if (!prev || gap < prev.gap) nearest.set(side, { side, lane: v.lane, gap });
+  }
+  return (['left', 'same', 'right'] as const).flatMap(side => { const t = nearest.get(side); return t ? [t] : []; });
+}
 export function tierTarget(carTier:number,count:number){
   const car=CARS.find(c=>c.tier>carTier&&c.minCarTier<=carTier);if(!car)return null;
   return {tier:car.tier,required:car.reqNearMiss,achieved:count>=car.reqNearMiss,percent:Math.min(100,Math.max(0,count/car.reqNearMiss*100))};

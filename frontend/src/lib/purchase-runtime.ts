@@ -85,7 +85,16 @@ export function createPurchaseFlow(o: { deployment: Deployment; address: Address
       address: () => o.wallet.address as Address,
       switchChain: () => o.wallet.switchChain(settings.chain.id),
       balance: () => client.getBalance({ address: o.address }),
-      send: async call => (await walletClient()).sendTransaction({ to: call.to, data: call.data, value: call.value }),
+      // Monad menagih gas berdasarkan gas limit, bukan gas yang terpakai (CLAUDE.md "Aturan teknis").
+      // Jadi FE menghitung limit sendiri (estimasi × 1,1) agar wallet tidak memasang limit kebesaran yang merugikan pembeli.
+      // Kalau estimasi gagal, kirim tanpa override dan biarkan wallet mengestimasi; jangan memblokir pembelian.
+      send: async call => {
+        const wc = await walletClient();
+        const gas = await client.estimateGas({ account: o.address, to: call.to, data: call.data, value: call.value })
+          .then(g => (g * 11n) / 10n)
+          .catch(() => undefined);
+        return wc.sendTransaction({ to: call.to, data: call.data, value: call.value, gas });
+      },
     },
     chain: {
       simulate: async (call, from) => {
