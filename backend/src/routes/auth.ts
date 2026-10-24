@@ -15,7 +15,12 @@ const verifyBody = z.object({
 
 export const JWT_TTL = '12h';
 
+/**
+ * Login SIWE langsung dengan wallet (bot dan pengembangan). Login utama adalah Privy + Google, yang tidak
+ * butuh endpoint di sini: frontend langsung mengirim access token Privy (lihat auth/guard.ts).
+ */
 export async function authRoutes(app: FastifyInstance, ctx: AppContext) {
+  if (!ctx.env.ALLOW_SIWE_LOGIN) return;
   const limit = { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } };
 
   app.post('/auth/nonce', limit, async (req): Promise<AuthNonceResponse> => {

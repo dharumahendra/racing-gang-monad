@@ -120,6 +120,9 @@ jobs:
             -e JWT_SECRET=ci-secret-ci-secret-ci-secret-ci-secret \
             -e PUBLIC_ORIGIN=http://localhost:5173 \
             -e CHAIN_ID=10143 \
+            -e PRIVY_APP_ID=ci-app \
+            -e PRIVY_VERIFICATION_KEY=ci-key \
+            -e PRIVY_APP_SECRET=ci-secret \
             -v rg-data:/data \
             racing-gang-backend:ci
           for i in $(seq 1 30); do

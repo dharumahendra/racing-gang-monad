@@ -3,8 +3,13 @@
 import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { RunChainStatus, RunLifecycle, RunResultStatus } from '@racing-gang/config';
 
+/**
+ * Akun game = alamat wallet. `privy_did` mengikat akun Privy (Google) ke embedded wallet-nya;
+ * diisi sekali saat login Privy pertama dan tidak pernah ditimpa dari client.
+ */
 export const users = sqliteTable('users', {
   address: text('address').primaryKey(),
+  privyDid: text('privy_did').unique(),
   createdAt: integer('created_at').notNull(),
 });
 

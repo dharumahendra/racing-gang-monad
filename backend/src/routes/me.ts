@@ -1,14 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { Hex, MeResponse } from '@racing-gang/config/protocol';
-import { requireAuth } from '../auth/guard';
 import { ownedCars, qualifications, runs } from '../db/schema';
 import { balance, pending, reserved } from '../services/ledger';
 import type { AppContext } from '../app';
 
-export async function meRoutes(app: FastifyInstance, { db }: AppContext) {
+export async function meRoutes(app: FastifyInstance, { db, auth }: AppContext) {
   app.get('/me', async (req): Promise<MeResponse> => {
-    const address = await requireAuth(req);
+    const address = await auth.fromRequest(req);
     const owned = db.select({ tier: ownedCars.tier }).from(ownedCars).where(eq(ownedCars.address, address)).all();
     const qualified = db.select({ tier: qualifications.tier }).from(qualifications).where(eq(qualifications.address, address)).all();
     const best = db
