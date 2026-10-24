@@ -1,6 +1,6 @@
 # contract — Racing Gang
 
-Foundry + OpenZeppelin v5 (bukan workspace pnpm). Spesifikasi: `TECH_SPEC.md` §6, tugas: `TASKS.md` §3.
+Foundry + OpenZeppelin v5 (bukan workspace pnpm). Spesifikasi: `.context/TECH_SPEC.md` §6, tugas: `.context/TASKS.md` §3.
 
 | File | Isi |
 |---|---|
