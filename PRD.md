@@ -40,7 +40,7 @@ Game balap jalan raya berbasis web untuk laptop, terinspirasi game *traffic race
 
 | Peran | Perangkat | Perlu wallet? | Bisa apa |
 |---|---|---|---|
-| Pemain | Laptop (browser) | Ya, login dengan tanda tangan wallet | Main run, kumpulkan koin, buat room, beli mobil |
+| Pemain | Laptop (browser) | Tidak perlu extension: login dengan Google lewat Privy, embedded wallet dibuat otomatis | Main run, kumpulkan koin, buat room, beli mobil |
 | Penonton | HP/laptop (browser) | Tidak | Masuk room dengan kode, kirim gangguan |
 
 ## 5. Gameplay

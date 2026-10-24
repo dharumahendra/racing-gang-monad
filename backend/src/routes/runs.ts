@@ -3,7 +3,6 @@ import { asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Address, CreateRunResponse, Hex, RunLogResponse, RunSummaryResponse } from '@racing-gang/config/protocol';
 import type { EndReasonName, VehicleType } from '@racing-gang/config';
-import { requireAuth } from '../auth/guard';
 import { nearMisses, runEntries, runs } from '../db/schema';
 import { AppError, notFound } from '../errors';
 import type { AppContext } from '../app';
@@ -16,7 +15,7 @@ const idParam = z.object({ id: z.string().regex(/^0x[0-9a-fA-F]{64}$/, 'runId ha
 
 export async function runRoutes(app: FastifyInstance, ctx: AppContext) {
   app.post('/runs', async (req): Promise<CreateRunResponse> => {
-    const address = await requireAuth(req);
+    const address = await ctx.auth.fromRequest(req);
     const { carTier, roomCode } = createBody.parse(req.body);
     return ctx.runs.create(address, carTier, roomCode?.toUpperCase());
   });

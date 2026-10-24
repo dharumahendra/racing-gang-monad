@@ -35,8 +35,29 @@ const schema = z
     VOUCHER_SIGNER_PRIVATE_KEY: privateKey.optional(),
     RUN_REGISTRY_ADDRESS: address.optional(),
     CAR_NFT_ADDRESS: address.optional(),
+    /** Login utama: Privy + Google (PRD §4). App ID publik, sama dengan VITE_PRIVY_APP_ID di frontend. */
+    PRIVY_APP_ID: z.string().min(1).optional(),
+    /** Verification key (PEM, "-----BEGIN PUBLIC KEY-----") dari dashboard Privy; `\n` boleh ditulis literal. */
+    PRIVY_VERIFICATION_KEY: z.string().min(1).optional(),
+    /** Rahasia server Privy untuk membaca embedded wallet pengguna. Jangan pernah dikirim ke frontend. */
+    PRIVY_APP_SECRET: z.string().min(1).optional(),
+    PRIVY_API_URL: z.url().default('https://api.privy.io'),
+    /** Login SIWE langsung dengan wallet: untuk bot dan pengembangan. Matikan di production kecuali untuk uji bot. */
+    ALLOW_SIWE_LOGIN: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   })
   .superRefine((e, ctx) => {
+    const privy = [e.PRIVY_APP_ID, e.PRIVY_VERIFICATION_KEY, e.PRIVY_APP_SECRET];
+    if (privy.some(Boolean) && !privy.every(Boolean)) {
+      for (const key of ['PRIVY_APP_ID', 'PRIVY_VERIFICATION_KEY', 'PRIVY_APP_SECRET'] as const) {
+        if (!e[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'konfigurasi Privy harus lengkap (APP_ID, VERIFICATION_KEY, APP_SECRET)' });
+      }
+    }
+    if (e.NODE_ENV === 'production' && !e.PRIVY_APP_ID) {
+      ctx.addIssue({ code: 'custom', path: ['PRIVY_APP_ID'], message: 'wajib di production: login utama memakai Privy' });
+    }
+    if (!e.PRIVY_APP_ID && !e.ALLOW_SIWE_LOGIN) {
+      ctx.addIssue({ code: 'custom', path: ['PRIVY_APP_ID'], message: 'tidak ada metode login: isi konfigurasi Privy atau set ALLOW_SIWE_LOGIN=true' });
+    }
     if (e.CHAIN_MODE !== 'live') return;
     for (const key of LIVE_REQUIRED) {
       if (!e[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'wajib diisi saat CHAIN_MODE=live' });

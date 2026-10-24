@@ -27,13 +27,15 @@ pnpm test          # config, sim (termasuk golden test), backend
 ## Menjalankan backend
 
 ```bash
-cp backend/.env.example backend/.env   # isi JWT_SECRET (≥ 32 karakter)
+cp backend/.env.example backend/.env   # isi JWT_SECRET (≥ 32 karakter) dan konfigurasi Privy
 pnpm --filter @racing-gang/backend dev # http://localhost:8080
 ```
 
+Login utama: **Google lewat Privy**. Frontend mengirim access token Privy; backend memverifikasinya dan memakai embedded wallet pengguna sebagai akun game. Isi `PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY`, dan `PRIVY_APP_SECRET` dari dashboard Privy (secret hanya di backend). `ALLOW_SIWE_LOGIN=true` membuka login SIWE langsung dengan wallet, dipakai bot dan pengembangan.
+
 `CHAIN_MODE=mock` (default) memakai chain palsu yang meniru aturan `RunRegistry`, jadi seluruh alur bisa dicoba tanpa testnet. Tx hash dan nomor blok di mode ini palsu; jangan dipakai saat demo. `CHAIN_MODE=live` butuh RPC Monad, kunci attester dan voucher signer, alamat kontrak, serta relayer dan indexer live.
 
-Endpoint: `POST /auth/nonce`, `POST /auth/verify`, `GET /me`, `GET /config`, `GET /health`, `POST /runs`, `GET /runs/:id`, `GET /runs/:id/log`, `POST /rooms`, `GET /rooms/:code`, `POST /vouchers`, `GET /leaderboard`, WebSocket `/ws/play` dan `/ws/watch`. Detail di `TECH_SPEC.md` §4–5; tipe ada di `packages/config/src/protocol.ts`.
+Endpoint: `GET /me`, `GET /config`, `GET /health`, `POST /runs`, `GET /runs/:id`, `GET /runs/:id/log`, `POST /rooms`, `GET /rooms/:code`, `POST /vouchers`, `GET /leaderboard`, WebSocket `/ws/play` dan `/ws/watch`, serta `POST /auth/nonce` dan `/auth/verify` kalau SIWE diaktifkan. Detail di `TECH_SPEC.md` §4–5; tipe ada di `packages/config/src/protocol.ts`.
 
 ### Docker
 
@@ -55,7 +57,7 @@ Jalankan **satu instance saja**: state run dan room ada di memori. Database SQLi
 | `pnpm --filter @racing-gang/sim fixtures` | Buat ulang golden fixture setelah logika sim atau `CONFIG_VERSION` berubah |
 | `pnpm config:export` | Tulis `contract/config/cars.json` dari `packages/config` |
 
-Bot hanya untuk testing; jangan dipakai untuk meluluskan akun.
+Bot login dengan SIWE, jadi server harus `ALLOW_SIWE_LOGIN=true`. Bot hanya untuk testing; jangan dipakai untuk meluluskan akun.
 
 ## CI
 

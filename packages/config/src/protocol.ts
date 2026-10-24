@@ -135,6 +135,10 @@ export type ApiErrorCode =
   | 'NOT_FOUND'
   | 'RATE_LIMITED'
   | 'INTERNAL'
+  /** Login Privy berhasil tapi embedded Ethereum wallet belum dibuat. */
+  | 'WALLET_NOT_READY'
+  /** Server Privy tidak bisa dihubungi untuk membaca wallet pengguna. */
+  | 'AUTH_PROVIDER_UNAVAILABLE'
   | 'ACTIVE_RUN_EXISTS'
   | 'RUN_LIMIT'
   | 'RUN_NOT_ENDED'

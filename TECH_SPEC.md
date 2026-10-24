@@ -3,7 +3,7 @@
 **Versi:** Draft 1.3 · 22 Oktober 2026 · pasangan dari `PRD.md`
 **Pemilik bagian:** §3 Dharu · §4–5 Dharu · §6 Bayu · §7.3–7.5 Bayu · §8 Raka
 
-> **Perubahan 1.3 (Dharu, mengikuti implementasi backend):** §3.5 satu baris bisa berisi 2 kendaraan; §3.7 ID gangguan deterministik; §4.1 `run.go.seed` opsional dan pengiriman ulang status mepet saat reconnect; §5.3 estimasi tick tidak negatif selama hitung mundur, timeout `run.ready`, pemulihan setelah restart; §5.4 rumus `warnTick`; §5.6 skema. Alasan tiap keputusan ada di `BACKEND_PLAN.md`. Autentikasi (§5.1) belum diubah: lihat catatan Privy di sana.
+> **Perubahan 1.3 (Dharu, mengikuti implementasi backend):** §3.5 satu baris bisa berisi 2 kendaraan; §3.7 ID gangguan deterministik; §4.1 `run.go.seed` opsional dan pengiriman ulang status mepet saat reconnect; §5.3 estimasi tick tidak negatif selama hitung mundur, timeout `run.ready`, pemulihan setelah restart; §5.4 rumus `warnTick`; §5.6 skema. Alasan tiap keputusan ada di `BACKEND_PLAN.md`. **Login utama diganti ke Privy + Google** (§5.1): backend menerima access token Privy langsung; SIWE hanya jalur bot/pengembangan.
 
 > Aturan emas: **semua logika game hanya ada di `packages/sim`**, dan paket yang sama dipakai oleh frontend, backend, dan halaman audit. Jangan pernah menulis ulang logika game di tempat lain.
 
@@ -20,7 +20,7 @@
          │ watermark, ack, snapshot)  │                                      │ (disrupt)
          ▼                            │                                      ▼
  ┌──────────────────────── backend (Node) ─────────────────────────────────────────────────┐
- │ auth SIWE · runs · rooms · verifikasi (packages/sim) · ledger koin · voucher EIP-712     │
+ │ auth Privy · runs · rooms · verifikasi (packages/sim) · ledger koin · voucher EIP-712    │
  │ chain/relayer (1 tx per blok) · chain/indexer (event → DB → WS)                          │
  └───────┬───────────────────────────────────────────────────────────────┬─────────────────┘
          │ submitBatch() (attester)                                       │ eth_subscribe logs
@@ -31,7 +31,7 @@
 ```
 
 Alur utama:
-1. Pemain login dengan SIWE, lalu `POST /runs` → backend memilih `seedBlock`, menghitung `seed`, dan memasukkan `RunStart` ke antrean relayer.
+1. Pemain login dengan Google lewat Privy (embedded wallet dibuat otomatis), lalu `POST /runs` → backend memilih `seedBlock`, menghitung `seed`, dan memasukkan `RunStart` ke antrean relayer.
 2. Browser menjalankan `packages/sim` secara lokal dan mengirim input (bertanda tick) ke backend lewat WS.
 3. Backend menjalankan `packages/sim` yang sama. Setiap event `NEAR_MISS` masuk ke antrean relayer.
 4. Relayer mengirim `RunRegistry.submitBatch()` sekitar sekali per blok. Kontrak menyimpan hitungan dan menandai kelulusan (`Qualified`).
@@ -337,17 +337,24 @@ Room yang kodenya sudah kedaluwarsa masih bisa dimasuki selama run di dalamnya b
 
 | Method | Path | Auth | Fungsi |
 |---|---|---|---|
-| POST | `/auth/nonce` | — | `{ address }` → `{ nonce }`, berlaku 5 menit |
-| POST | `/auth/verify` | — | `{ message, signature }` (SIWE) → `{ token }` (JWT 12 jam) |
-| GET | `/me` | JWT | `address, coins, coinsPending, coinsReserved, ownedTiers, qualifiedTiers, bestRun` |
+| GET | `/me` | Token | `address, coins, coinsPending, coinsReserved, ownedTiers, qualifiedTiers, bestRun` |
 | GET | `/config` | — | Isi `packages/config` + alamat kontrak |
-| POST | `/rooms` | JWT | → `{ code, expiresAt }` |
+| POST | `/rooms` | Token | → `{ code, expiresAt }` (tanpa body) |
 | GET | `/rooms/:code` | — | Status room |
-| POST | `/runs` | JWT | `{ carTier, roomCode? }` → `{ runId, seed, seedBlock, configVersion }` |
+| POST | `/runs` | Token | `{ carTier, roomCode? }` → `{ runId, seed, seedBlock, configVersion }` |
 | GET | `/runs/:id` | — | Ringkasan, status, daftar mepet + tx hash |
 | GET | `/runs/:id/log` | — | Log lengkap untuk audit (setelah run selesai) |
-| POST | `/vouchers` | JWT | `{ tier }` → `{ voucher, signature, expiresAt }` |
+| POST | `/vouchers` | Token | `{ tier }` → `{ voucher, signature, expiresAt }` |
 | GET | `/leaderboard` | — | P1: mepet terbanyak per run |
+| POST | `/auth/nonce`, `/auth/verify` | — | Hanya jika `ALLOW_SIWE_LOGIN=true`: login SIWE untuk bot dan pengembangan → `{ token }` (JWT game HS256, 12 jam) |
+
+**Login (Privy + Google).** Frontend login dengan Google lewat Privy; embedded Ethereum wallet dibuat otomatis untuk pengguna baru. "Token" di tabel = access token Privy segar dari SDK (`getAccessToken()`), dikirim sebagai `Authorization: Bearer <token>` di REST dan `?token=<token>` di `/ws/play`. Backend:
+
+1. Memverifikasi token: ES256 dengan verification key app Privy, `iss = privy.io`, `aud = PRIVY_APP_ID`, `exp`; `sub` adalah DID Privy.
+2. Saat DID pertama kali dipakai, membaca embedded wallet Ethereum pengguna dari server Privy (`GET {PRIVY_API_URL}/v1/users/{did}`, Basic auth `APP_ID:APP_SECRET`) dan mengikatnya permanen ke DID di tabel `users`. Setelah itu alamat dibaca dari DB. Alamat dari client tidak pernah dipercaya, dan ikatan tidak ditimpa otomatis.
+3. Akun game = alamat wallet itu; koin, run, room, dan voucher terikat ke alamat tersebut.
+
+Error: token tidak valid → 401 `UNAUTHORIZED`; wallet belum dibuat → 409 `WALLET_NOT_READY`; server Privy tidak bisa dihubungi → 503 `AUTH_PROVIDER_UNAVAILABLE`. Di WS semua kegagalan login dikirim sebagai `error UNAUTHORIZED` lalu koneksi ditutup 4401. Token Privy berumur ±1 jam: frontend selalu mengambil token baru sebelum request dan saat menyambung ulang WS.
 
 ### 5.2 Membuat run (`POST /runs`)
 
@@ -551,7 +558,7 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 
 | Rute | Isi |
 |---|---|
-| `/` | Garasi: connect wallet dan SIWE; koin (terkonfirmasi, pending, disisihkan); 5 mobil dengan statistik, syarat, status lulus, status dimiliki, sisa suplai; tombol pilih mobil dan Beli |
+| `/` | Garasi: login Google lewat Privy (embedded wallet); koin (terkonfirmasi, pending, disisihkan); 5 mobil dengan statistik, syarat, status lulus, status dimiliki, sisa suplai; tombol pilih mobil dan Beli |
 | `/play` | Game dan HUD. Opsi "Main solo" atau "Buat room" |
 | `/room` | Host: kode room besar, QR (P1), jumlah penonton, tombol mulai run |
 | `/watch` dan `/watch/:code` | Penonton (mobile-first): masuk dengan kode dan nick; status run; bar energi; tombol Nitro, Rantai, Red zone (3/5/7 dtk); pemilih lajur 1–4; feed gangguan |
@@ -612,11 +619,15 @@ DEPLOYER_PRIVATE_KEY, ATTESTER_ADDRESS, VOUCHER_SIGNER_ADDRESS, TREASURY_ADDRESS
 
 # server
 DATABASE_URL, JWT_SECRET, CHAIN_ID, MONAD_RPC_URL, MONAD_WS_URL,
-ATTESTER_PRIVATE_KEY, VOUCHER_SIGNER_PRIVATE_KEY, RUN_REGISTRY_ADDRESS, CAR_NFT_ADDRESS, CORS_ORIGIN
+ATTESTER_PRIVATE_KEY, VOUCHER_SIGNER_PRIVATE_KEY, RUN_REGISTRY_ADDRESS, CAR_NFT_ADDRESS, CORS_ORIGIN,
+PUBLIC_ORIGIN, CHAIN_MODE, SEED_SOURCE,
+PRIVY_APP_ID, PRIVY_VERIFICATION_KEY, PRIVY_APP_SECRET, PRIVY_API_URL, ALLOW_SIWE_LOGIN
 
 # web
 VITE_API_URL, VITE_WS_URL, VITE_CHAIN_ID, VITE_RPC_URL, VITE_EXPLORER_URL,
-VITE_RUN_REGISTRY_ADDRESS, VITE_CAR_NFT_ADDRESS
+VITE_RUN_REGISTRY_ADDRESS, VITE_CAR_NFT_ADDRESS, VITE_PRIVY_APP_ID, VITE_PRIVY_CLIENT_ID
 ```
+
+`PRIVY_APP_SECRET` hanya ada di backend/hosting; jangan pernah di variabel `VITE_*`. Detail lengkap ada di `backend/.env.example`.
 
 RPC testnet umum: `https://testnet-rpc.monad.xyz` dan `wss://testnet-rpc.monad.xyz`. Cek `CHAIN_ID` dan URL explorer di dokumentasi resmi Monad. Untuk demo dengan banyak pemain, pertimbangkan RPC khusus (misalnya Alchemy atau QuickNode) agar tidak terkena rate limit RPC publik.

@@ -12,6 +12,8 @@ export const TEST_ENV: Record<string, string> = {
   PUBLIC_ORIGIN: 'http://localhost:5173',
   CHAIN_ID: '10143',
   DATABASE_URL: ':memory:',
+  // Test lama memakai login SIWE (jalur bot); login Privy diuji di privy.test.ts.
+  ALLOW_SIWE_LOGIN: 'true',
 };
 
 /** Jam yang bisa dimajukan manual. */
@@ -20,12 +22,12 @@ export function fakeClock(start = 1_760_000_000_000) {
   return { now: () => t, advance: (ms: number) => void (t += ms), set: (v: number) => void (t = v) };
 }
 
-export async function makeTestApp(envOverrides: Record<string, string> = {}) {
+export async function makeTestApp(envOverrides: Record<string, string> = {}, opts: { fetch?: typeof fetch } = {}) {
   const env: Env = loadEnv({ ...TEST_ENV, ...envOverrides });
   const clock = fakeClock();
   const { db, close } = openDb(':memory:');
   const chain = new MockChain({ chainId: env.CHAIN_ID, now: clock.now, intervalMs: 0 });
-  const { app, ctx } = await buildApp({ env, db, chain, now: clock.now });
+  const { app, ctx } = await buildApp({ env, db, chain, now: clock.now, fetch: opts.fetch });
   await app.ready(); // wajib sebelum app.injectWS
   return { app, ctx, db, chain, clock, env, close: async () => { await app.close(); close(); } };
 }

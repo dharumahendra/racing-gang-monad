@@ -83,7 +83,7 @@ Makan siang bergantian supaya pekerjaan di jalur kritis tidak berhenti.
 | DH-1 | P0 | Monorepo pnpm + `packages/config` (TECH_SPEC §2.2) + ekspor JSON untuk kontrak | — | Tiga app bisa meng-import config |
 | DH-2 | P0 | `packages/sim`: PRNG, generator lalu lintas, langkah tick, tabrakan, mepet, hash chain (§3.1–3.6, §3.8). **Kirim stub API ke Raka dalam 30 menit pertama** | DH-1 | Golden test lulus di Node dan browser |
 | DH-3 | P0 | Gangguan di sim: NPC, `trySchedule`, batas, nitro, rantai, red zone (§3.7) | DH-2 | Test: tidak ada lebih dari 2 lajur merah; aba-aba selalu 60 tick |
-| DH-4 | P0 | Server Fastify + WS + SQLite/Drizzle + SIWE + `/me` + `/config` | DH-1 | Login dari web berhasil |
+| DH-4 | P0 | Server Fastify + WS + SQLite/Drizzle + verifikasi token Privy (Google) + `/me` + `/config`; SIWE hanya untuk bot | DH-1 | Login Google dari web berhasil |
 | DH-5 | P0 | `POST /runs`, protokol `/ws/play`, sinkronisasi jam, watermark, loop verifikasi, `run.result` (§4.1, §5.2–5.3) | DH-2, DH-4 | Run lokal dan backend menghasilkan mepet yang sama |
 | DH-6 | P0 | Rooms + `/ws/watch` + energi + penjadwalan gangguan + broadcast (§4.2, §5.4) | DH-3, DH-5 | 3 HP bisa mengganggu satu run dengan aba-aba 2 dtk |
 | DH-7 | P0 | Ledger koin + reservasi + `POST /vouchers` (§5.5) | DH-4, CH-3 | Beli berhasil; koin terpotong tepat sekali |
@@ -102,7 +102,7 @@ Makan siang bergantian supaya pekerjaan di jalur kritis tidak berhenti.
 
 | ID | P | Tugas | Bergantung | Selesai jika |
 |---|---|---|---|---|
-| FE-1 | P0 | Vite + React + TS, routing, wagmi (Monad testnet), connect wallet + SIWE | DH-4 | Login berhasil, chain salah ditangani |
+| FE-1 | P0 | Vite + React + TS, routing, login Google lewat Privy (embedded wallet Monad testnet), kirim access token Privy ke backend | DH-4 | Login berhasil tanpa extension wallet |
 | FE-2 | P0 | Scene game (R3F): jalan 4 lajur, mobil, lalu lintas, rantai, red zone; langkah tetap 30 Hz dengan interpolasi; kamera chase; kontrol `←/A`, `→/D`, `↓/S`. **Mulai dengan kotak placeholder sambil menunggu aset** | stub DH-2 | Stabil 60 fps di laptop demo |
 | FE-3 | P0 | HUD: waktu, kecepatan, mepet dan target, koin run, efek "+100/+200", aba-aba 2 dtk (kedip lajur, ikon, hitung mundur, suara), layar hasil | FE-2 | Semua gangguan terbaca jelas 2 dtk sebelum aktif |
 | FE-4 | P0 | Netcode client: WS, sinkronisasi jam, `input`, `watermark`, `disruption.ack`, `snapshot` (§4.1, §8.3) | DH-5 | Mepet lokal sama dengan `nearMiss.verified` |

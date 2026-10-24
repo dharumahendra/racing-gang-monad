@@ -1,9 +1,10 @@
 // WebSocket pemain: /ws/play?token=<JWT> (TECH_SPEC §4.1, BACKEND_PLAN G3).
 import type { FastifyInstance } from 'fastify';
-import { getAddress } from 'viem';
+import type { RawData } from 'ws';
 import { z } from 'zod';
 import type { Address, Hex, PlayS2C, WsErrorCode } from '@racing-gang/config/protocol';
 import type { AppContext } from '../app';
+import { AppError } from '../errors';
 import { send } from './hub';
 
 const int = z.number().int();
@@ -28,28 +29,46 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
   app.get('/ws/play', { websocket: true, config: { rateLimit: false } }, (socket, req) => {
     const err = (code: WsErrorCode, message: string) => send(socket, { t: 'error', code, message } satisfies PlayS2C);
 
-    let address: Address;
-    try {
-      const token = (req.query as { token?: string }).token ?? '';
-      address = getAddress(app.jwt.verify<{ sub: string }>(token).sub);
-    } catch {
-      // Tutup setelah handshake selesai supaya pesan error sampai ke client.
-      setImmediate(() => {
-        err('UNAUTHORIZED', 'Token tidak valid atau kedaluwarsa');
-        socket.close(4401, 'unauthorized');
-      });
-      return;
-    }
-
-    ctx.hub.attachPlayer(address, socket);
-    let lastRunId: Hex | undefined = ctx.runs.active(address)?.runId;
-    ctx.runs.active(address)?.resendOnReconnect();
-
+    // Verifikasi token bisa async (login Privy pertama membaca wallet dari server Privy).
+    // Pesan yang datang sebelum selesai disimpan lalu diproses berurutan.
+    let address: Address | null = null;
+    let closed = false;
+    const early: RawData[] = [];
+    let lastRunId: Hex | undefined;
     let windowStart = ctx.now();
     let count = 0;
     let lastSnapshotAt = 0;
 
     socket.on('message', (raw) => {
+      if (!address) {
+        if (early.length < MAX_MSG_PER_SEC) early.push(raw);
+        return;
+      }
+      handle(raw);
+    });
+    socket.on('close', () => {
+      closed = true;
+      if (address) ctx.hub.detachPlayer(address, socket);
+    });
+
+    ctx.auth
+      .authenticate((req.query as { token?: string }).token)
+      .then((a) => {
+        if (closed) return;
+        address = a;
+        ctx.hub.attachPlayer(a, socket);
+        lastRunId = ctx.runs.active(a)?.runId;
+        ctx.runs.active(a)?.resendOnReconnect();
+        for (const raw of early.splice(0)) handle(raw);
+      })
+      .catch((e: unknown) => {
+        // Semua kegagalan autentikasi di WS memakai kode UNAUTHORIZED; pesannya menjelaskan penyebab (mis. wallet belum siap).
+        err('UNAUTHORIZED', e instanceof AppError ? e.message : 'Token tidak valid atau kedaluwarsa');
+        setImmediate(() => socket.close(4401, 'unauthorized'));
+      });
+
+    function handle(raw: RawData) {
+      if (!address) return;
       const t = ctx.now();
       if (t - windowStart >= 1000) { windowStart = t; count = 0; }
       if (++count > MAX_MSG_PER_SEC) {
@@ -91,8 +110,6 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
           lastSnapshotAt = t;
           return ctx.hub.toRoom(s.roomCode, { ...msg, t: 'run.snapshot' });
       }
-    });
-
-    socket.on('close', () => ctx.hub.detachPlayer(address, socket));
+    }
   });
 }
