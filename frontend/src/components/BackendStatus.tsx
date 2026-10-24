@@ -15,6 +15,6 @@ export function BackendStatus() {
   }, []);
   if (mode === 'loading') return null;
   return <p className="fixture-notice" role="status" data-chain-mode={mode}>
-    {mode === 'mock' ? 'Mode blockchain simulasi. Hash dan receipt hanya data uji; belum menjadi transaksi testnet.' : mode === 'live' ? 'Pencatatan testnet diaktifkan. Status setiap transaksi tetap mengikuti receipt dan verifikasi server.' : 'Status blockchain belum diketahui. Pencatatan dan transaksi testnet belum dapat dipastikan.'}
+    {mode === 'mock' ? 'Simulated blockchain mode. Hashes and receipts are test data only; not yet real testnet transactions.' : mode === 'live' ? 'Testnet recording is enabled. Each transaction\u2019s status still follows the receipt and server verification.' : 'Blockchain status unknown. Testnet recording and transactions can\u2019t be confirmed yet.'}
   </p>;
 }

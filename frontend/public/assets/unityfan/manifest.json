@@ -1,0 +1,114 @@
+{
+  "provider": "Sketchfab / unityfan777",
+  "retrieved": "2026-10-22",
+  "models": [
+    {
+      "id": "UF001",
+      "name": "FREE Concept Car 001  - public domain (CC0)",
+      "source": "https://sketchfab.com/3d-models/af71d64a89c04f5fb62a06bdd92c045b",
+      "author": "unityfan777",
+      "license": "CC0-1.0 (pernyataan penulis di deskripsi; label Sketchfab: Free Standard)",
+      "sourceSha256": "c2fd61f7b31d312d7c377bb5d7a3c0fc0b9a94dcca5dcbc40021692dac3aa9f1",
+      "sourceBytes": 6225336,
+      "sourceTriangles": 142720,
+      "outputSha256": "aca383cdcd4ce410684eff7601e3bfcf8f8e60ba653221b1f887a62402525f2e",
+      "outputBytes": 1014644,
+      "triangles": 90200,
+      "rotatedY180": true,
+      "scale": 0.01055,
+      "boundsMeters": {
+        "min": [
+          -1.078,
+          0,
+          -2.25
+        ],
+        "max": [
+          1.078,
+          1.566,
+          2.25
+        ]
+      }
+    },
+    {
+      "id": "UF002",
+      "name": "FREE Concept Car 002  - public domain (CC0)",
+      "source": "https://sketchfab.com/3d-models/090898c41395478d9dc4dea261944581",
+      "author": "unityfan777",
+      "license": "CC0-1.0 (pernyataan penulis di deskripsi; label Sketchfab: Free Standard)",
+      "sourceSha256": "5fdffacfb0c738125e5c69099b0cc059325f182829ac17a98eaeedc31a490923",
+      "sourceBytes": 3613052,
+      "sourceTriangles": 108056,
+      "outputSha256": "70c463d81331dbd20829b36d9d17efcb0d5ed61e8af0fe9be4d9429e90e167b5",
+      "outputBytes": 568632,
+      "triangles": 89988,
+      "rotatedY180": true,
+      "scale": 1.06753,
+      "boundsMeters": {
+        "min": [
+          -1.168,
+          0,
+          -2.25
+        ],
+        "max": [
+          1.168,
+          1.294,
+          2.25
+        ]
+      }
+    },
+    {
+      "id": "UF033",
+      "name": "FREE Concept Car 033  - public domain (CC0)",
+      "source": "https://sketchfab.com/3d-models/58f9d30f8e734de8ba05fa64e0e6584a",
+      "author": "unityfan777",
+      "license": "CC0-1.0 (pernyataan penulis di deskripsi; label Sketchfab: Free Standard)",
+      "sourceSha256": "bebd1a45a3c80a893ed1b7a4ce3f58bcbbb7456508424115392a11d253b2c63c",
+      "sourceBytes": 7498008,
+      "sourceTriangles": 219324,
+      "outputSha256": "e73ad3d8c18d2999f1dcf455dcbc345aa6f37418024dbe4f5a22f97f0939b857",
+      "outputBytes": 903044,
+      "triangles": 90147,
+      "rotatedY180": true,
+      "scale": 0.76102,
+      "boundsMeters": {
+        "min": [
+          -0.722,
+          0,
+          -2.25
+        ],
+        "max": [
+          0.722,
+          0.784,
+          2.25
+        ]
+      }
+    },
+    {
+      "id": "UF037",
+      "name": "FREE Concept Car 037 - public domain (CC0)",
+      "source": "https://sketchfab.com/3d-models/646a3a31b0224379b6e767abc34d58dd",
+      "author": "unityfan777",
+      "license": "CC0-1.0 (pernyataan penulis di deskripsi; label Sketchfab: Free Standard)",
+      "sourceSha256": "bf3d50d2e84e58bcea6769ecd9fa36b1413dbdafc691f64987b914c809b31ad4",
+      "sourceBytes": 7212120,
+      "sourceTriangles": 198292,
+      "outputSha256": "860466f71a2193063a939dd90e34e4ca23c9a6da29e56d7757108cf881768a9a",
+      "outputBytes": 669084,
+      "triangles": 91103,
+      "rotatedY180": false,
+      "scale": 0.9313,
+      "boundsMeters": {
+        "min": [
+          -0.855,
+          0,
+          -2.25
+        ],
+        "max": [
+          0.855,
+          0.991,
+          2.25
+        ]
+      }
+    }
+  ]
+}

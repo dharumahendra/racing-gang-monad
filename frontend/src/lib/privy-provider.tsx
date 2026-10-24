@@ -17,14 +17,14 @@ function Bridge({children}:{children:ReactNode}) {
     return()=>session.reset();
   },[ready,authenticated,subject,address,walletsReady]);
   useEffect(()=>{const onFocus=()=>{if(authenticated)void session.refresh();};const t=setInterval(onFocus,60000);window.addEventListener('focus',onFocus);return()=>{clearInterval(t);window.removeEventListener('focus',onFocus);};},[authenticated]);
-  return <AuthContext.Provider value={{configured:true,ready,authenticated,subject:subject||null,name:user?.google?.name||'Pembalap',address:address||null,walletReady:walletsReady,error,getToken:()=>tokenSource.current(),
+  return <AuthContext.Provider value={{configured:true,ready,authenticated,subject:subject||null,name:user?.google?.name||'Racer',address:address||null,walletReady:walletsReady,error,getToken:()=>tokenSource.current(),wallet:embedded?{address:embedded.address,getEthereumProvider:()=>embedded.getEthereumProvider() as Promise<import('viem').EIP1193Provider>,switchChain:(id:number)=>embedded.switchChain(id)}:null,
     login:()=>{setError(null);login({loginMethods:['google']});},
-    logout:()=>{session.reset();void logout().catch(()=>setError('Belum berhasil keluar. Coba lagi.'));},
-    createWallet:()=>{setError(null);void createWallet().catch(()=>setError('Akun balap belum selesai disiapkan. Coba lagi.'));},
+    logout:()=>{session.reset();void logout().catch(()=>setError('Couldn\u2019t sign out. Try again.'));},
+    createWallet:()=>{setError(null);void createWallet().catch(()=>setError('Your racing account isn\u2019t finished setting up. Try again.'));},
   }}>{children}</AuthContext.Provider>;
 }
 export default function Configured({children}:{children:ReactNode}) {
   const {theme}=useTheme();
-  return <PrivyProvider appId={settings.privyAppId} clientId={settings.privyClientId||undefined} config={{loginMethods:['google'],defaultChain:settings.chain,supportedChains:[settings.chain],appearance:{theme,accentColor:theme==='light'?'#0284C7':'#15EAE2',logo:'/favicon.svg',loginMessage:'Masuk dan mulai balapan.'},embeddedWallets:{ethereum:{createOnLogin:'users-without-wallets'}}}}><Bridge>{children}</Bridge></PrivyProvider>;
+  return <PrivyProvider appId={settings.privyAppId} clientId={settings.privyClientId||undefined} config={{loginMethods:['google'],defaultChain:settings.chain,supportedChains:[settings.chain],appearance:{theme,accentColor:'#ed01fe',logo:'/Logo.svg',loginMessage:'Sign in and start racing.'},embeddedWallets:{ethereum:{createOnLogin:'users-without-wallets'}}}}><Bridge>{children}</Bridge></PrivyProvider>;
 }
 

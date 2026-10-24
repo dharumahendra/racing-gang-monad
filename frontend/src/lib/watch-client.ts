@@ -30,38 +30,38 @@ export class WatchClient{
   get pendingAction(){return this.pending!==null;}
   connect(){
     if(this.disposed||this.socket?.readyState===0||this.socket?.readyState===1)return;
-    const generation=++this.generation;this.energy=null;this.room=null;this.snapshot=null;this.result=null;this.boundRun=null;this.recorded.clear();this.scheduled.clear();this.pending=null;this.needsEnergy=false;this.serverExpired=false;this.error=null;this.feedback=generation>1?'Menunggu keadaan room terbaru.':null;this.status='connecting';this.joinedAt=this.now();
+    const generation=++this.generation;this.energy=null;this.room=null;this.snapshot=null;this.result=null;this.boundRun=null;this.recorded.clear();this.scheduled.clear();this.pending=null;this.needsEnergy=false;this.serverExpired=false;this.error=null;this.feedback=generation>1?'Waiting for the latest room state.':null;this.status='connecting';this.joinedAt=this.now();
     try{if(!validRoomCode(this.code))throw new Error();const endpoint=new URL(`${this.baseUrl.replace(/\/$/,'')}/ws/watch`);if(!['ws:','wss:'].includes(endpoint.protocol))throw new Error();endpoint.searchParams.set('room',this.code);const nick=this.nick.trim().slice(0,16);if(nick)endpoint.searchParams.set('nick',nick);const socket=this.factory(endpoint.href);this.socket=socket;
       const active=()=>!this.disposed&&generation===this.generation&&this.socket===socket;
       socket.addEventListener('open',()=>{if(active())this.status='joining';});
       socket.addEventListener('message',event=>{if(active())this.receive(event.data);});
-      socket.addEventListener('close',()=>{if(!active())return;if(this.pending)this.feedback='Status kiriman terakhir belum diketahui. Kiriman tidak diulang.';this.pending=null;this.energy=null;this.socket=null;this.status='disconnected';});
-      socket.addEventListener('error',()=>{if(active())this.error='Koneksi penonton terganggu.';});
-    }catch{this.stop('error','Koneksi penonton belum dapat disiapkan.');}
+      socket.addEventListener('close',()=>{if(!active())return;if(this.pending)this.feedback='The last submission status is unknown. It will not be resent.';this.pending=null;this.energy=null;this.socket=null;this.status='disconnected';});
+      socket.addEventListener('error',()=>{if(active())this.error='Spectator connection interrupted.';});
+    }catch{this.stop('error','Spectator connection could not be set up yet.');}
   }
   private stop(status:WatchClient['status'],message:string){this.generation++;this.pending=null;this.energy=null;this.status=status;this.error=message;const socket=this.socket;this.socket=null;socket?.close();}
   private ready(){if(this.room&&this.energy!==null)this.status='ready';}
   private receive(raw:unknown){
-    let m:WatchS2C;try{if(typeof raw!=='string'||raw.length>65536)throw new Error();const body=JSON.parse(raw);if(!valid(body,this.code))throw new Error();m=body;}catch{this.stop('error','Pesan penonton belum cocok dengan protokol.');return;}
+    let m:WatchS2C;try{if(typeof raw!=='string'||raw.length>65536)throw new Error();const body=JSON.parse(raw);if(!valid(body,this.code))throw new Error();m=body;}catch{this.stop('error','Spectator message did not match the protocol.');return;}
     if(m.t==='room.state'){
-      const next=m.run?.runId;if(next&&this.boundRun&&next!==this.boundRun){this.room=m;this.snapshot=null;this.result=null;this.recorded.clear();this.scheduled.clear();this.stop('changed','Run baru tersedia. Sambungkan lagi untuk mengikutinya.');return;}
-      if(next)this.boundRun=next;if(!m.run&&this.pending){this.feedback='Run berubah sebelum status kiriman dipastikan. Kiriman tidak diulang.';this.pending=null;}
+      const next=m.run?.runId;if(next&&this.boundRun&&next!==this.boundRun){this.room=m;this.snapshot=null;this.result=null;this.recorded.clear();this.scheduled.clear();this.stop('changed','A new run is available. Reconnect to follow it.');return;}
+      if(next)this.boundRun=next;if(!m.run&&this.pending){this.feedback='The run changed before the submission status was confirmed. It will not be resent.';this.pending=null;}
       this.room=m;this.ready();
     }else if(m.t==='energy'){this.energy=m.value;this.needsEnergy=false;this.ready();}
     else if(m.t==='error'){
-      if(m.code==='ROOM_EXPIRED'){this.serverExpired=true;const unknown=this.pending!==null;this.pending=null;this.feedback=`Room kedaluwarsa. Gangguan baru dinonaktifkan; run aktif tetap dapat ditonton.${unknown?' Status kiriman terakhir belum diketahui. Kiriman tidak diulang.':''}`;if(!this.room?.run)this.stop('expired','Room sudah kedaluwarsa.');}
-      else if(m.code==='ROOM_FULL')this.stop('full','Room penuh. Coba lagi setelah ada penonton keluar.');
-      else if(m.code==='RECORD_FAILED')this.error='Pencatatan chain tertunda atau gagal. Ini tidak memastikan saldo.';
-      else this.stop('error',m.code==='ROOM_NOT_FOUND'?'Room tidak ditemukan.':'Server belum dapat membuka room ini.');
+      if(m.code==='ROOM_EXPIRED'){this.serverExpired=true;const unknown=this.pending!==null;this.pending=null;this.feedback=`Room expired. New disruptions are disabled; an active run can still be watched.${unknown?' The last submission status is unknown. It will not be resent.':''}`;if(!this.room?.run)this.stop('expired','Room has expired.');}
+      else if(m.code==='ROOM_FULL')this.stop('full','Room full. Try again after a spectator leaves.');
+      else if(m.code==='RECORD_FAILED')this.error='Chain recording is delayed or failed. This does not confirm a balance.';
+      else this.stop('error',m.code==='ROOM_NOT_FOUND'?'Room not found.':'Server could not open this room yet.');
     }else if(!this.boundRun)return;
     else if(m.t==='run.snapshot'){if(!this.result&&(!this.snapshot||m.tick>=this.snapshot.tick))this.snapshot=m;}
     else if(m.t==='disruption.scheduled'){if(!this.result&&!this.scheduled.has(m.id))this.scheduled.set(m.id,m);}
     else if(m.t==='nearMiss.recorded')this.recorded.set(m.index,m);
-    else if(m.t==='run.result'){if(!this.result){this.result=m;this.pending=null;this.feedback='Run selesai. Hasil gameplay dan pencatatan chain diperiksa terpisah.';}}
+    else if(m.t==='run.result'){if(!this.result){this.result=m;this.pending=null;this.feedback='Run finished. Gameplay result and chain recording are checked separately.';}}
     else if(m.t==='disrupt.accepted'){
-      if(this.pending&&this.pending.runId===this.room?.run?.runId){this.pending=null;this.feedback='Kiriman diterima server. Penerapan pada pemain belum dipastikan.';}
+      if(this.pending&&this.pending.runId===this.room?.run?.runId){this.pending=null;this.feedback='Received by server. Application to the player is not yet confirmed.';}
     }else if(m.t==='disrupt.rejected'&&this.pending){
-      this.pending=null;const labels={ENERGY:'Energi belum cukup. Menunggu angka terbaru dari server.',LIMIT:'Batas gangguan sedang tercapai. Coba setelah jeda.',NO_RUN:'Belum ada run yang berjalan.',RATE:'Terlalu cepat. Beri jeda sebelum kiriman berikutnya.',ROOM_EXPIRED:'Room kedaluwarsa. Gangguan baru dinonaktifkan.'};this.feedback=labels[m.reason];this.needsEnergy=m.reason==='ENERGY';if(m.reason==='ENERGY')this.energy=null;if(m.reason==='ROOM_EXPIRED')this.serverExpired=true;if(m.reason==='NO_RUN'&&this.room)this.room={...this.room,run:null};
+      this.pending=null;const labels={ENERGY:'Not enough energy. Waiting for the latest value from the server.',LIMIT:'The disruption limit is currently reached. Try after a pause.',NO_RUN:'No run is in progress yet.',RATE:'Too fast. Pause before the next submission.',ROOM_EXPIRED:'Room expired. New disruptions are disabled.'};this.feedback=labels[m.reason];this.needsEnergy=m.reason==='ENERGY';if(m.reason==='ENERGY')this.energy=null;if(m.reason==='ROOM_EXPIRED')this.serverExpired=true;if(m.reason==='NO_RUN'&&this.room)this.room={...this.room,run:null};
     }
   }
   canSend(kind:DisruptionKind,durationIndex:DurationIndex=0){
@@ -71,9 +71,9 @@ export class WatchClient{
   send(action:Omit<WatchC2S,'t'>){
     if((action.kind==='SPIKES'||action.kind==='RED')&&!uint(action.lane,LANES-1)||action.kind==='RED'&&!duration(action.durationIndex)||!this.canSend(action.kind,action.durationIndex))return false;
     const message:WatchC2S=action.kind==='NITRO'?{t:'disrupt',kind:'NITRO'}:action.kind==='SPIKES'?{t:'disrupt',kind:'SPIKES',lane:action.lane}:{t:'disrupt',kind:'RED',lane:action.lane,durationIndex:action.durationIndex};
-    this.pending={at:this.now(),runId:this.room!.run!.runId};this.lastSent=this.now();this.needsEnergy=true;this.feedback='Mengirim gangguan…';
-    try{this.socket!.send(JSON.stringify(message));return true;}catch{this.feedback='Status kiriman belum diketahui. Kiriman tidak diulang.';this.stop('uncertain','Sambungkan lagi untuk menyegarkan keadaan room.');return false;}
+    this.pending={at:this.now(),runId:this.room!.run!.runId};this.lastSent=this.now();this.needsEnergy=true;this.feedback='Sending disruption…';
+    try{this.socket!.send(JSON.stringify(message));return true;}catch{this.feedback='Submission status is unknown. It will not be resent.';this.stop('uncertain','Reconnect to refresh the room state.');return false;}
   }
-  pump(){if(this.disposed)return;if(['connecting','joining'].includes(this.status)&&this.now()-this.joinedAt>10000)this.stop('error','Room belum memberikan keadaan terbaru. Coba sambungkan lagi.');else if(this.pending&&this.now()-this.pending.at>5000){this.feedback='Status kiriman belum diketahui. Kiriman tidak diulang.';if(this.expired&&this.room?.run)this.pending=null;else this.stop('uncertain','Sambungkan lagi untuk menyegarkan energi dan keadaan room.');}}
-  dispose(){this.disposed=true;this.stop('closed','Koneksi penonton ditutup.');}
+  pump(){if(this.disposed)return;if(['connecting','joining'].includes(this.status)&&this.now()-this.joinedAt>10000)this.stop('error','Room did not provide the latest state. Try reconnecting.');else if(this.pending&&this.now()-this.pending.at>5000){this.feedback='Submission status is unknown. It will not be resent.';if(this.expired&&this.room?.run)this.pending=null;else this.stop('uncertain','Reconnect to refresh energy and room state.');}}
+  dispose(){this.disposed=true;this.stop('closed','Spectator connection closed.');}
 }

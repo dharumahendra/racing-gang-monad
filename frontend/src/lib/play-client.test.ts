@@ -53,7 +53,7 @@ it('expires offline buffering after the shared grace period instead of retrying 
 });
 it('keeps the simulation running when chain recording fails',async()=>{
   const f=await setup();f.go();f.setTime(4100);f.client.pump();f.socket.receive({t:'error',code:'RECORD_FAILED',message:'rpc'});
-  f.setTime(4200);f.client.pump();expect(f.client.status).toBe('running');expect(f.client.runner.current.tick).toBe(6);expect(f.client.error).toContain('chain');f.client.dispose();
+  f.setTime(4200);f.client.pump();expect(f.client.status).toBe('running');expect(f.client.runner.current.tick).toBe(6);expect(f.client.error).toContain('Chain');f.client.dispose();
 });
 it('does not trust an unsolicited pong and does not publish snapshots faster than the configured cadence',async()=>{
   const f=await setup();f.go();f.setTime(4000);f.client.pump();const count=f.socket.sent.filter(m=>m.t==='snapshot').length;
@@ -108,4 +108,18 @@ it('keeps the adopted seed and state when the reconnect replays run.go',async()=
 it('flushes the terminal watermark before run.end even when the last publication was less than 100ms ago',async()=>{
  const f=await setup();f.go();const reference=new Sim(params);while(!reference.ended)reference.step([]);const endAt=4000+reference.tick*1000/30;
  f.setTime(endAt-10);f.client.pump();f.setTime(endAt+1);f.client.pump();const endIndex=f.socket.sent.findIndex(m=>m.t==='run.end');expect(endIndex).toBeGreaterThan(0);const marks=f.socket.sent.slice(0,endIndex).filter(m=>m.t==='watermark');expect(marks.at(-1).tick).toBe(f.socket.sent[endIndex].tick);f.client.dispose();
+});
+it('sends one random page key on every (re)connect and stops for NOT_CONTROLLER instead of reconnecting',async()=>{
+  const urls:string[]=[];const sockets:Socket[]=[];const client=new PlayClient(params,'ws://localhost/ws/play',()=>1000,url=>{urls.push(url);const s=new Socket();sockets.push(s);return s;});
+  await client.connect(async()=> 'tok');sockets[0].open();sockets[0].close();await client.connect(async()=> 'tok');
+  const keys=urls.map(u=>new URL(u).searchParams.get('client'));expect(keys[0]).toMatch(/^[0-9a-f]{36}$/);expect(keys[1]).toBe(keys[0]);
+  expect(new PlayClient(params,'ws://localhost/ws/play').clientKey).not.toBe(keys[0]);
+  sockets[1].open();sockets[1].receive({t:'error',code:'NOT_CONTROLLER',message:'x'});
+  expect(client.status).toBe('error');expect(client.error).toContain('another tab or device');
+  await client.connect(async()=> 'tok');expect(sockets).toHaveLength(2);client.dispose();
+});
+it('keeps run.qualified events (even after the result) for the Garage hint',async()=>{
+  const f=await setup();f.go();f.socket.receive({t:'run.result',status:'VERIFIED',reason:'TIME_UP',endTick:3000,nearMisses:40,coins:4000,qualifiedTiers:[1]});
+  f.socket.receive({t:'run.qualified',tier:1,txHash:`0x${'aa'.repeat(32)}`});
+  expect([...f.client.qualified.keys()]).toEqual([1]);expect(f.client.status).toBe('result');f.client.dispose();
 });

@@ -21,10 +21,10 @@ try{
       }
     });
   });
-  await page.goto(`${root}/online`);await page.getByRole('heading',{name:'Balapan online sedang disiapkan.'}).waitFor();assert.equal(posts,0);checks.push('online unavailable without Privy/API/WS config; no POST');
+  await page.goto(`${root}/online`);await page.getByRole('heading',{name:'Online racing is being set up.'}).waitFor();assert.equal(posts,0);checks.push('online unavailable without Privy/API/WS config; no POST');
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:`${out}/online-mobile.png`,fullPage:true});await page.setViewportSize({width:1440,height:1000});
-  await page.goto(`${root}/dev/network`);await page.getByRole('button',{name:'Buat run pengujian',exact:true}).click();
-  const connect=page.getByRole('button',{name:'Hubungkan run',exact:true});await connect.waitFor();await page.waitForFunction(()=>document.querySelector('.race-overlay button')?.disabled===false);await connect.click();
+  await page.goto(`${root}/dev/network`);await page.getByRole('button',{name:'Create test run',exact:true}).click();
+  const connect=page.getByRole('button',{name:'Connect run',exact:true});await connect.waitFor();await page.waitForFunction(()=>document.querySelector('.race-overlay button')?.disabled===false);await connect.click();
   await page.waitForSelector('[data-phase="countdown"]');await page.waitForSelector('[data-phase="running"]');assert.equal(posts,1);checks.push('one authenticated POST, clock sync and countdown using +7s server offset');
   await page.keyboard.press('ArrowRight');await page.waitForSelector('[data-lane="2"]');
   await page.keyboard.down('ArrowDown');await page.waitForSelector('[data-braking="true"]');await page.keyboard.up('ArrowDown');await page.waitForSelector('[data-braking="false"]');
@@ -38,17 +38,17 @@ try{
   connections[0].socket.send(JSON.stringify({t:'error',code:'RECORD_FAILED',message:'fixture rpc failure'}));await page.waitForTimeout(150);await page.waitForSelector('[data-network-status="running"]');checks.push('chain recording failure does not stop gameplay');
   await page.screenshot({path:`${out}/network-running.png`,fullPage:true});
   connections[0].socket.close({code:1012,reason:'fixture disconnect'});await page.waitForSelector('[data-network-status="disconnected"]');await page.keyboard.press('ArrowLeft');const disconnectedTick=Number(await page.locator('.race-shell').getAttribute('data-tick'));await page.waitForTimeout(5000);assert(Number(await page.locator('.race-shell').getAttribute('data-tick'))>disconnectedTick,'simulation advances during five-second outage');
-  await page.getByRole('button',{name:'Sambungkan kembali',exact:true}).click();await page.waitForSelector('[data-network-status="running"]');await page.waitForTimeout(200);
+  await page.getByRole('button',{name:'Reconnect',exact:true}).click();await page.waitForSelector('[data-network-status="running"]');await page.waitForTimeout(200);
   assert.equal(connections.length,2);const restored=connections[1].messages;const queued=restored.findIndex(m=>m.t==='input'&&m.kind===1);const mark=restored.findIndex(m=>m.t==='watermark');assert(queued>=0&&mark>queued);assert(!restored.some(m=>m.t==='run.ready'));checks.push('five-second outage advances sim; reconnect flushes queued input before watermark, no second run creation');
   await page.keyboard.up('ArrowDown');
   connections[1].socket.send(JSON.stringify({t:'disruption.scheduled',id:'fixture-early',kind:'SPIKES',lanes:[0],warnTick:15,by:'Fixture'}));await page.waitForTimeout(150);assert.equal(restored.filter(m=>m.t==='disruption.ack'&&m.id==='fixture-early'&&m.applied).length,1);checks.push('replayed disruption receives original ack after reconnect without reapplying SPEC');
   const tx=`0x${'33'.repeat(32)}`;
-  connections[1].socket.send(JSON.stringify({t:'nearMiss.verified',index:1,tick:1,vehicleType:0,coins:100}));await page.getByText('1 mepet diverifikasi · 0 tercatat',{exact:true}).waitFor();
-  connections[1].socket.send(JSON.stringify({t:'nearMiss.recorded',index:1,txHash:tx,blockNumber:9,latencyMs:50}));await page.getByText('1 mepet diverifikasi · 1 tercatat',{exact:true}).waitFor();
+  connections[1].socket.send(JSON.stringify({t:'nearMiss.verified',index:1,tick:1,vehicleType:0,coins:100}));await page.getByText('1 near misses verified · 0 recorded',{exact:true}).waitFor();
+  connections[1].socket.send(JSON.stringify({t:'nearMiss.recorded',index:1,txHash:tx,blockNumber:9,latencyMs:50}));await page.getByText('1 near misses verified · 1 recorded',{exact:true}).waitFor();
   connections[1].socket.send(JSON.stringify({t:'run.result',status:'PARTIAL',reason:'CRASH',endTick:100,nearMisses:1,coins:100,qualifiedTiers:[]}));await page.waitForSelector('[data-official-result="PARTIAL"]');checks.push('verified/recorded remain separate; official server PARTIAL result displayed');
   connections[1].socket.send(JSON.stringify({t:'run.result',status:'VERIFIED',reason:'CRASH',endTick:100,nearMisses:1,coins:999,qualifiedTiers:[]}));connections[1].socket.send(JSON.stringify({t:'error',code:'RUN_ENDED',message:'fixture ended'}));await page.waitForTimeout(150);await page.waitForSelector('[data-official-result="PARTIAL"]');await page.waitForSelector('[data-network-status="result"]');checks.push('terminal result stays immutable under conflicting late messages');
   await page.screenshot({path:`${out}/network-result.png`,fullPage:true});
-  await page.goto(`${root}/play`);await page.getByRole('heading',{name:'Cari celahmu.',exact:true}).waitFor();await page.waitForTimeout(150);assert(closed>=1);assert.deepEqual(errors,[]);checks.push('navigation disposes connection; browser console clean');
+  await page.goto(`${root}/play`);await page.getByRole('heading',{name:'Practice Mode',exact:true}).waitFor();await page.waitForTimeout(150);assert(closed>=1);assert.deepEqual(errors,[]);checks.push('navigation disposes connection; browser console clean');
   const report={status:'PASS',scope:'frontend contract test with Playwright-mocked REST/WS, not real backend or Privy verification',checks,posts,connections:connections.length,errors};
   await writeFile(`${out}/network-report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }catch(error){const state=await page.evaluate(()=>({status:document.querySelector('[data-network-status]')?.getAttribute('data-network-status'),phase:document.querySelector('.race-shell')?.getAttribute('data-phase'),tick:document.querySelector('.race-shell')?.getAttribute('data-tick')}));await writeFile(`${out}/network-failure.json`,JSON.stringify({state,errors,lastMessages:connections.at(-1)?.messages.slice(-12)},null,2));console.log(JSON.stringify({failureState:state}));throw error;}finally{await browser.close();}

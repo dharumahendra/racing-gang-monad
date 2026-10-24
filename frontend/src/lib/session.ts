@@ -11,7 +11,7 @@ export function createSession(api: AuthApi, chainId: number) {
   const clear = () => { generation++; store.setState({ ...initial }); };
   const fail = (error: unknown) => {
     const rejected = typeof error === 'object' && error !== null && ('code' in error && error.code === 4001 || 'name' in error && error.name === 'UserRejectedRequestError');
-    store.setState({ ...initial, status: 'error', error: rejected ? 'Tanda tangan dibatalkan. Coba masuk lagi.' : error instanceof Error ? error.message : 'Login gagal. Periksa wallet dan coba lagi.' });
+    store.setState({ ...initial, status: 'error', error: rejected ? 'Signature canceled. Try signing in again.' : error instanceof Error ? error.message : 'Login failed. Check your wallet and try again.' });
   };
   return Object.assign(store, {
     setIdentity(next: Identity | null) {
@@ -20,7 +20,7 @@ export function createSession(api: AuthApi, chainId: number) {
     logout: clear,
     async login(makeMessage: (nonce: string) => string, sign: (message: string) => Promise<string>) {
       if (store.getState().status === 'signing') return;
-      if (!identity || identity.chainId !== chainId) { fail(new Error('Hubungkan wallet pada jaringan Monad testnet.')); return; }
+      if (!identity || identity.chainId !== chainId) { fail(new Error('Connect your wallet on the Monad testnet network.')); return; }
       const captured = { ...identity }; const current = ++generation;
       store.setState({ ...initial, status: 'signing' });
       try {
@@ -28,7 +28,7 @@ export function createSession(api: AuthApi, chainId: number) {
         const message = makeMessage(nonce); const signature = await sign(message); if (current !== generation) return;
         const token = await api.verify(message, signature); if (current !== generation) return;
         const account = await api.me(token); if (current !== generation) return;
-        if (account.address.toLowerCase() !== captured.address.toLowerCase()) throw new Error('Profil backend tidak cocok dengan wallet. Masuk lagi.');
+        if (account.address.toLowerCase() !== captured.address.toLowerCase()) throw new Error('Backend profile doesn\u2019t match the wallet. Sign in again.');
         store.setState({ status: 'authenticated', token, account, error: null });
       } catch (error) { if (current === generation) fail(error); }
     },
@@ -37,7 +37,7 @@ export function createSession(api: AuthApi, chainId: number) {
       if (!token || !address) return;
       try {
         const account = await api.me(token); if (current !== generation) return;
-        if (account.address.toLowerCase() !== address.toLowerCase()) throw new Error('Profil backend tidak cocok dengan wallet. Masuk lagi.');
+        if (account.address.toLowerCase() !== address.toLowerCase()) throw new Error('Backend profile doesn\u2019t match the wallet. Sign in again.');
         store.setState({ account });
       } catch (error) { if (current === generation) { generation++; fail(error); } }
     },

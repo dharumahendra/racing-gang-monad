@@ -15,10 +15,10 @@ function valid(body:any,id:string):body is RunSummaryResponse{
 }
 export function createSummaryApi(baseUrl:string,fetcher:typeof fetch=fetch){
   return {async read(id:string,signal?:AbortSignal):Promise<RunSummaryResponse>{
-    if(!hex32(id))throw new ApiError('ID run tidak valid.','BAD_REQUEST');if(!baseUrl)throw new ApiError('Layanan hasil belum dikonfigurasi.','NOT_CONFIGURED');
-    let response:Response;try{response=await fetcher(`${baseUrl.replace(/\/$/,'')}/runs/${id}`,{headers:{Accept:'application/json'},signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)});}catch{throw new ApiError('Status run belum dapat diperbarui. Periksa koneksi.','NETWORK');}
-    if(!response.ok)throw new ApiError(response.status===404?'Run tidak ditemukan atau layanan hasil belum tersedia.':'Server belum dapat memberikan status run.',response.status===404?'NOT_FOUND':'API_ERROR');
-    const body=await response.json().catch(()=>null);if(!valid(body,id))throw new ApiError('Respons hasil belum cocok dengan protokol.','INVALID_RESPONSE');return body;
+    if(!hex32(id))throw new ApiError('Invalid run ID.','BAD_REQUEST');if(!baseUrl)throw new ApiError('Results service is not configured.','NOT_CONFIGURED');
+    let response:Response;try{response=await fetcher(`${baseUrl.replace(/\/$/,'')}/runs/${id}`,{headers:{Accept:'application/json'},signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)});}catch{throw new ApiError('Could not update the run status. Check your connection.','NETWORK');}
+    if(!response.ok)throw new ApiError(response.status===404?'Run not found or the results service is not available yet.':'Server could not provide the run status.',response.status===404?'NOT_FOUND':'API_ERROR');
+    const body=await response.json().catch(()=>null);if(!valid(body,id))throw new ApiError('Result response does not match the protocol.','INVALID_RESPONSE');return body;
   }};
 }
 export function summaryStats(summary:RunSummaryResponse){const recorded=summary.nearMissList.filter(row=>row.txHash!==null).length;return {recorded,pending:Math.max(0,summary.nearMisses-recorded),listedCoins:summary.nearMissList.reduce((sum,row)=>sum+row.coins,0)};}
@@ -27,8 +27,8 @@ export class RunSummaryMonitor{
   private busy=false;private closed=false;private generation=0;private request:AbortController|null=null;
   constructor(readonly id:string,private api:Pick<ReturnType<typeof createSummaryApi>,'read'>,private now=()=>Date.now()){}
   async poll(){if(this.closed||this.busy)return;this.busy=true;const generation=this.generation;this.request=new AbortController();
-    try{const next=await this.api.read(this.id,this.request.signal);if(this.closed||generation!==this.generation)return;const old=this.summary;if(old&&(old.player!==next.player||(old.seed!==next.seed&&(old.lifecycle!=='CREATED'||old.startAt!==null))||old.carTier!==next.carTier||old.configVersion!==next.configVersion||old.seedBlock!==next.seedBlock||old.createdAt!==next.createdAt||old.lifecycle==='ENDED'&&next.lifecycle!=='ENDED'))throw new ApiError('Status run berubah tidak konsisten. Data terakhir dipertahankan.','INVALID_RESPONSE');this.summary=next;this.status='ready';this.error=null;this.lastUpdated=this.now();}
-    catch(error){if(!this.closed&&generation===this.generation){this.error=error instanceof Error?error.message:'Hasil belum tersedia.';this.status='error';}}
+    try{const next=await this.api.read(this.id,this.request.signal);if(this.closed||generation!==this.generation)return;const old=this.summary;if(old&&(old.player!==next.player||(old.seed!==next.seed&&(old.lifecycle!=='CREATED'||old.startAt!==null))||old.carTier!==next.carTier||old.configVersion!==next.configVersion||old.seedBlock!==next.seedBlock||old.createdAt!==next.createdAt||old.lifecycle==='ENDED'&&next.lifecycle!=='ENDED'))throw new ApiError('Run status changed inconsistently. The last known data is kept.','INVALID_RESPONSE');this.summary=next;this.status='ready';this.error=null;this.lastUpdated=this.now();}
+    catch(error){if(!this.closed&&generation===this.generation){this.error=error instanceof Error?error.message:'Result is not available yet.';this.status='error';}}
     finally{if(generation===this.generation){this.busy=false;this.request=null;}}
   }
   dispose(){this.closed=true;this.generation++;this.request?.abort();this.request=null;this.busy=false;this.status='closed';}

@@ -6,7 +6,7 @@ export class RunLaunch<T extends {dispose():void}={dispose():void}> {
     const generation=this.epoch;const request=new AbortController();this.request=request;this.busy=true;
     try{
       const token=await getToken();if(generation!==this.epoch)return null;
-      if(!token)throw new ApiError('Sesi berakhir. Masuk lagi.','UNAUTHORIZED');
+      if(!token)throw new ApiError('Session expired. Sign in again.','UNAUTHORIZED');
       const next=await create(token,request.signal);if(generation!==this.epoch){next.dispose();return null;}
       this.client=next;return next;
     }catch(error){if(generation!==this.epoch)return null;throw error;}

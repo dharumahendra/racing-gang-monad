@@ -1,29 +1,40 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LocalRunner } from '../lib/runner';
 import { useDrivingControls } from '../lib/use-driving-controls';
-import { Link } from 'react-router-dom';
 import { RaceScene } from '../components/RaceScene';
-import { AudioControl, RunHud, RunWarnings, CoinPops } from '../components/RunHud';
+import { Link } from 'react-router-dom';
+import { settings } from '../lib/config';
+import { AudioControl, RunHud, RunWarnings, CoinPops, FinalCountdown } from '../components/RunHud';
 import { useWarningAudio } from '../lib/use-warning-audio';
+import { useRaceFocus } from '../lib/use-race-focus';
+import { useSelectedCar } from '../lib/selected-car';
+import { CARS, toKmh } from '@racing-gang/config';
 const runId=`0x${'11'.repeat(32)}` as const;
 const seed='0x8cfd1f92705b1e83840e3e257e0120b7fc40a9569070f053c50a1d6ad428d684';
 export function Practice() {
-  const [attempt,setAttempt]=useState(0);const runner=useMemo(()=>new LocalRunner({runId,seed,carTier:0}),[attempt]);
+  // Mobil yang dipilih di Garasi (hanya yang dimiliki akun; tanpa login = Starter). Statistik dari shared config.
+  const {tier}=useSelectedCar();
+  const [attempt,setAttempt]=useState(0);const runner=useMemo(()=>new LocalRunner({runId,seed,carTier:tier}),[attempt,tier]);
   const [revision,setRevision]=useState(0);
   const [assetsReady,setAssetsReady]=useState(false);const onAssetsReady=useCallback(()=>setAssetsReady(true),[]);
   useEffect(()=>{const t=setInterval(()=>setRevision(n=>n+1),100);return()=>clearInterval(t);},[]);
   useDrivingControls(runner);
   const audio=useWarningAudio(runner,revision);
 
+  // Setelah Mulai latihan: gulir ke scene balap (bagian bawah scene: jalan + mobil terlihat penuh). Ditunda dua frame
+  // supaya header/navigasi sudah disembunyikan mode fokus sebelum posisi gulir dihitung.
+  const shell=useRef<HTMLElement>(null);
+  const scrollToRace=()=>{const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;shell.current?.scrollIntoView({behavior:reduce?'auto':'smooth',block:'end'});};
+  useRaceFocus(runner.phase==='countdown'||runner.phase==='running');
   const view=runner.current;
-  const reason={CRASH:'Menabrak kendaraan',TIME_UP:'Waktu habis',RED_ZONE_FAIL:'Terkena red zone',TIMEOUT:'Waktu koneksi habis'};
-  return <><div className="practice-heading"><div><span className="eyebrow">LATIHAN / MOBIL QUATERNIUS</span><h1>Cari celahmu.</h1></div><p>Latihan lokal tanpa login.<br/>Tidak menambah saldo atau kelulusan resmi.<br/><Link to="/online" className="quiet-link">Lihat kesiapan run online →</Link></p></div><div className="race-toolbar"><span>Peringatan visual + bunyi pendek</span><AudioControl audio={audio}/></div><section className="race-shell" data-phase={runner.phase} data-tick={view.tick} data-lane={view.player.targetLane} data-braking={view.player.braking}>
+  const reason={CRASH:'Hit a vehicle',TIME_UP:'Time up',RED_ZONE_FAIL:'Hit a red zone',TIMEOUT:'Connection timeout'};
+  return <><div className="race-toolbar"><h1 className="race-mode-title">Practice Mode</h1><AudioControl audio={audio}/></div><section ref={shell} className="race-shell" data-phase={runner.phase} data-tick={view.tick} data-lane={view.player.targetLane} data-braking={view.player.braking}>
     <RunHud view={view} tier={runner.sim.carTier}/>
     <RaceScene runner={runner} revision={revision} onReady={onAssetsReady}/>
-    <RunWarnings view={view} enabled={runner.phase==='running'}/>{runner.phase==='running'&&<CoinPops runner={runner}/>}
-    {runner.phase==='idle'&&<div className="race-overlay"><span className="badge">MODE LATIHAN</span><h2>Jalan empat lajur.<br/>Satu kesempatan.</h2><p>Gas otomatis. Panah kiri/kanan untuk pindah lajur, tahan bawah untuk rem.</p><button className="button" disabled={!assetsReady} onClick={()=>{audio.unlock();runner.start();setRevision(n=>n+1);}}>{assetsReady?'Mulai latihan':'Memuat mobil…'}</button></div>}
+    <RunWarnings view={view} enabled={runner.phase==='running'}/><FinalCountdown view={view} enabled={runner.phase==='running'}/>{runner.phase==='running'&&<CoinPops runner={runner}/>}
+    {runner.phase==='idle'&&<div className="race-overlay"><span className="badge">PRACTICE MODE</span><p className="overlay-car">{CARS[runner.sim.carTier].name} · max. {toKmh(CARS[runner.sim.carTier].maxSpeed)} km/h</p><ul className="overlay-controls" aria-label="Controls"><li><kbd>←</kbd> <kbd>A</kbd> Left</li><li><kbd>→</kbd> <kbd>D</kbd> Right</li><li><kbd>↓</kbd> <kbd>S</kbd> Brake</li></ul><button className="button" disabled={!assetsReady} onClick={()=>{audio.unlock();runner.start();setRevision(n=>n+1);requestAnimationFrame(()=>requestAnimationFrame(scrollToRace));}}>{assetsReady?'Start practice':'Loading car…'}</button>{settings.mode==='live'&&<Link className="quiet-link" to="/online">Official online run (counts for coins) →</Link>}</div>}
     {runner.phase==='countdown'&&<div className="countdown" role="status">{Math.ceil(runner.countdownMs/1000)}</div>}
-    {runner.phase==='ended'&&<div className="race-overlay"><span className="badge">HASIL LATIHAN</span><h2>{view.endReason?reason[view.endReason]:'Run selesai'}</h2><p>{view.nearMisses} mepet · {view.coins.toLocaleString('id-ID')} koin latihan<br/>Hasil lokal belum diverifikasi backend atau dicatat on-chain.</p><button className="button" onClick={()=>{setAttempt(n=>n+1);}}>Ulangi latihan</button></div>}
-  </section><div className="practice-controls"><span><kbd>←</kbd> <kbd>A</kbd> Kiri</span><span><kbd>→</kbd> <kbd>D</kbd> Kanan</span><span><kbd>↓</kbd> <kbd>S</kbd> Rem</span><span className="badge">Kamera belakang · NPC aktif</span></div><p className="mobile-game-note">Gunakan keyboard laptop untuk bermain. Panel penonton tetap mendukung HP.</p></>;
+    {runner.phase==='ended'&&<div className="race-overlay"><span className="badge">PRACTICE RESULT</span><h2>{view.endReason?reason[view.endReason]:'Run finished'}</h2><p>{view.nearMisses} near misses · {view.coins.toLocaleString('en-US')} practice coins<br/>Local result not yet verified by backend or recorded on-chain.</p><button className="button" onClick={()=>{setAttempt(n=>n+1);}}>Retry practice</button></div>}
+  </section></>;
 }
 

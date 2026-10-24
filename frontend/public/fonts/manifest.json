@@ -7,10 +7,8 @@
     "bytes": 176288
   },
   {
-    "family": "Space Grotesk",
-    "file": "space-grotesk.ttf",
-    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf",
-    "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/OFL.txt",
-    "bytes": 136676
+    "family": "Akira",
+    "file": "Akira.otf",
+    "bytes": 26320
   }
 ]

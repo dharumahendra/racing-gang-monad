@@ -14,11 +14,11 @@ Berkas License.txt asli disimpan di `public/assets/quaternius/License.txt`. Meta
 
 | Model sumber | Output browser | Pemetaan saat ini |
 |---|---|---|
-| NormalCar1.obj + .mtl | NormalCar1.glb | Starter dan pemain latihan |
-| NormalCar2.obj + .mtl | NormalCar2.glb | Tier 1 dan variasi traffic |
-| SUV.obj + .mtl | SUV.glb | Tier 2 |
-| SportsCar.obj + .mtl | SportsCar.glb | Tier 3 |
-| SportsCar2.obj + .mtl | SportsCar2.glb | Tier 4 |
+| NormalCar1.obj + .mtl | NormalCar1.glb | Tidak dipakai lagi (Starter kini Unity Fan 002) |
+| NormalCar2.obj + .mtl | NormalCar2.glb | Variasi traffic |
+| SUV.obj + .mtl | SUV.glb | Tidak dipakai lagi |
+| SportsCar.obj + .mtl | SportsCar.glb | Tidak dipakai lagi |
+| SportsCar2.obj + .mtl | SportsCar2.glb | Tidak dipakai lagi (Tier 4 kini Khronos Car Concept) |
 | Taxi.obj + .mtl | Taxi.glb | Traffic |
 | Cop.obj + .mtl | Cop.glb | Traffic |
 
@@ -57,3 +57,39 @@ Ilustrasi mobil CSS T02 sudah diganti dengan model Quaternius. Kabin belum dibua
 ## Font design system Stitch
 
 Space Grotesk dan Plus Jakarta Sans disimpan sebagai font variable asli di public/fonts. Keduanya memakai SIL Open Font License1.1; OFL asli dan manifest URL sumber Google Fonts ada di folder yang sama. Berkas font tidak dimodifikasi. Font disajikan lokal tanpa permintaan font CDN saat runtime.
+
+## Khronos Car Concept (Tier 4)
+
+Sumber: https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept — **CC BY 4.0**.
+
+Atribusi wajib: "Car Concept" © 2024 Darmstadt Graphics Group GmbH, dibuat oleh Eric Chadwick, dilisensikan CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Model ini turunan dari "FREE Concept Car 004 - public domain (CC0)" oleh Unity Fan (unityfan777, Sketchfab).
+
+Lisensi CC BY tidak mencakup logo/merek dagang Khronos dan 3D Commerce. Logo tersebut **dihapus**: tekstur pelat nomor dan dinding ban yang memuatnya diganti warna polos, sehingga tidak ada logo Khronos di build.
+
+Perubahan oleh Racing Gang (dapat diulang dengan `node scripts/convert-carconcept.mjs <CarConcept.glb asli>`): varian material dibuang (hanya cat default Carmine); diputar 180° agar depan menghadap -Z; dipusatkan di X/Z, roda di Y=0; skala seragam ke panjang 4,5 m; node di-flatten dan primitive digabung per material; geometri disederhanakan meshopt (≈214 rb ? ≈88 rb segitiga); tekstur =1024 px WebP; kompresi EXT_meshopt_compression. Saat run, kaca transmission diganti material transparan biasa demi performa. Hitbox dan statistik tetap dari packages/config.
+
+Berkas: `public/assets/carconcept/CarConcept.glb`, `LICENSE.md` asli, dan `manifest.json` (URL sumber, SHA256 sumber/output, ukuran, jumlah segitiga, bounding box).
+
+## Poly Haven — HDRI dan aspal
+
+Lisensi: **CC0 1.0** (https://polyhaven.com/license). Diunduh 22 Oktober 2026 dari CDN resmi Poly Haven; berkas tidak dimodifikasi.
+
+| Berkas | Aset | Kredit (tidak wajib) | Pemakaian |
+|---|---|---|---|
+| `derelict_highway_midday_1k.hdr` | https://polyhaven.com/a/derelict_highway_midday | Dimitrios Savva, Jarod Guest | Pantulan lingkungan (scene.environment) di Garage dan run |
+| `asphalt_02_diff/nor_gl/rough_1k.jpg` | https://polyhaven.com/a/asphalt_02 | Rob Tuytel | Permukaan jalan empat lajur, digulir mengikuti jarak tempuh |
+
+Lokasi: `public/assets/polyhaven/` dengan `manifest.json` (URL, ukuran, SHA256). Bila HDRI/tekstur gagal dimuat, scene tetap tampil memakai warna jalan dan pencahayaan lama.
+
+## Unity Fan "FREE Concept Car" (Starter–Tier 3)
+
+Pembuat: Unity Fan (Sketchfab `unityfan777`, https://sketchfab.com/unityfan777). Deskripsi penulis pada setiap model: *"This is public domain (CC0), I'm as the author give it away to the World. This model and design can be used by anybody for anything. No attribution required."* Label lisensi yang ditampilkan Sketchfab untuk model ini adalah "Free Standard"; kami mengikuti pernyataan CC0 penulis dan menyimpan salinan deskripsi lengkap (diambil lewat API Sketchfab 22 Oktober 2026) di `public/assets/unityfan/UFxxx.license.json`. Diunduh lewat API resmi Sketchfab dengan akun pemilik proyek.
+
+| Tier | Model | Sumber | Output |
+|---|---|---|---|
+| Starter (dan latihan) | FREE Concept Car 002 | https://sketchfab.com/3d-models/090898c41395478d9dc4dea261944581 | `UF002.glb` |
+| Tier 1 | FREE Concept Car 001 | https://sketchfab.com/3d-models/af71d64a89c04f5fb62a06bdd92c045b | `UF001.glb` |
+| Tier 2 | FREE Concept Car 033 | https://sketchfab.com/3d-models/58f9d30f8e734de8ba05fa64e0e6584a | `UF033.glb` |
+| Tier 3 | FREE Concept Car 037 | https://sketchfab.com/3d-models/646a3a31b0224379b6e767abc34d58dd | `UF037.glb` |
+
+Perubahan (ulangi dengan `node scripts/convert-unityfan.mjs <folder GLB + .license.json>`): depan ke -Z, pusat X/Z, roda di Y=0, skala seragam ke panjang 4,5 m, flatten + join per material, simplify meshopt ke ±90 rb segitiga, tekstur =1024 px WebP, EXT_meshopt_compression. `manifest.json` memuat SHA256 sumber/output, ukuran, segitiga, dan bounding box. Lencana teks "Unity FAN" milik penulis di bodi model 037 dibiarkan.

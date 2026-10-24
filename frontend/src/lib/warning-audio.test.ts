@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { WarningAudio } from './warning-audio';
 import type { HudWarning } from './hud';
-const warning=(seconds=2,kind:HudWarning['kind']='SPIKES'):HudWarning=>({id:'one',kind,seconds,remainingMs:seconds*1000,laneLabel:'Lajur 1',activeTick:60,lanes:[0]});
+const warning=(seconds=2,kind:HudWarning['kind']='SPIKES'):HudWarning=>({id:'one',kind,seconds,remainingMs:seconds*1000,laneLabel:'Lane 1',activeTick:60,lanes:[0]});
 function host(){const voices:any[]=[];const context={state:'suspended',currentTime:0,destination:{},resume:vi.fn(async()=>{context.state='running';}),close:vi.fn(async()=>{context.state='closed';}),createGain:()=>({gain:{setValueAtTime:vi.fn(),linearRampToValueAtTime:vi.fn()},connect:vi.fn(),disconnect:vi.fn()}),createOscillator:()=>{const voice={frequency:{setValueAtTime:vi.fn()},connect:vi.fn(),disconnect:vi.fn(),start:vi.fn(),stop:vi.fn(),onended:null};voices.push(voice);return voice;}};const factory=vi.fn(()=>context as unknown as AudioContext);return {context,voices,factory};}
 it('creates no audio before a user unlock, then resumes from the explicit gesture',async()=>{
   const h=host();const audio=new WarningAudio(h.factory);audio.update([warning()],true,true);expect(h.factory).not.toHaveBeenCalled();expect(audio.state).toBe('locked');

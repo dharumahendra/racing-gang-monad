@@ -15,7 +15,7 @@ describe('wallet-bound SIWE session', () => {
   it('rejects login on a different chain before asking for a signature', async () => {
     const s = setup(); s.setIdentity({ address: a, chainId: 1 }); let signed = false;
     await s.login(n => n, async () => { signed = true; return 'sig'; });
-    expect(signed).toBe(false); expect(s.getState().error).toMatch(/jaringan/i);
+    expect(signed).toBe(false); expect(s.getState().error).toMatch(/network/i);
   });
   it('clears account and token on account switch', async () => {
     const s = setup(); await s.login(n => n, async () => 'sig'); expect(s.getState().account?.address).toBe(a); s.setIdentity({ address: b, chainId: 10143 });
@@ -42,12 +42,12 @@ describe('wallet-bound SIWE session', () => {
   });
   it('keeps a rejected signature unauthenticated with actionable feedback', async () => {
     const s = setup(); await s.login(n => n, async () => { throw { code: 4001 }; });
-    expect(s.getState().status).toBe('error'); expect(s.getState().error).toMatch(/dibatalkan/i); expect(s.getState().token).toBeNull();
+    expect(s.getState().status).toBe('error'); expect(s.getState().error).toMatch(/canceled/i); expect(s.getState().token).toBeNull();
   });
   it('clears expired tokens when profile refresh fails', async () => {
     let expired = false;
-    const s = setup({ me: async () => { if (expired) throw new Error('Sesi berakhir. Masuk lagi.'); return account; } });
+    const s = setup({ me: async () => { if (expired) throw new Error('Session expired. Sign in again.'); return account; } });
     await s.login(n => n, async () => 'sig'); expired = true; await s.refresh();
-    expect(s.getState().token).toBeNull(); expect(s.getState().account).toBeNull(); expect(s.getState().error).toMatch(/Masuk lagi/);
+    expect(s.getState().token).toBeNull(); expect(s.getState().account).toBeNull(); expect(s.getState().error).toMatch(/Sign in again/);
   });
 });

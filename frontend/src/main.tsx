@@ -11,3 +11,4 @@ import './rooms.css';
 import './result.css';
 
 import './stitch-components.css';
+import './garage.css';

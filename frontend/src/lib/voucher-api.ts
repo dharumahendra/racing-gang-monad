@@ -18,24 +18,24 @@ export function createVoucherApi(baseUrl: string, fetcher: typeof fetch = fetch,
   const endpoint = baseUrl.replace(/\/$/, '');
   return {
     async create(tier: number, buyer: Address, getToken: () => Promise<string | null>, signal?: AbortSignal): Promise<VoucherResponse> {
-      if (!endpoint) throw new ApiError('Layanan voucher belum dikonfigurasi.', 'NOT_CONFIGURED');
-      if (!Number.isInteger(tier) || tier < 1 || tier >= CARS.length || !address(buyer)) throw new ApiError('Mobil atau akun pembeli tidak valid.', 'BAD_REQUEST');
-      if (signal?.aborted) throw new ApiError('Permintaan dibatalkan sebelum reservasi.', 'ABORTED');
+      if (!endpoint) throw new ApiError('The voucher service isn\u2019t configured.', 'NOT_CONFIGURED');
+      if (!Number.isInteger(tier) || tier < 1 || tier >= CARS.length || !address(buyer)) throw new ApiError('Invalid car or buyer account.', 'BAD_REQUEST');
+      if (signal?.aborted) throw new ApiError('Request canceled before reserving.', 'ABORTED');
       let token: string | null;
-      try { token = await getToken(); } catch { throw new ApiError('Sesi belum tersedia. Masuk lagi.', 'UNAUTHORIZED'); }
-      if (signal?.aborted) throw new ApiError('Permintaan dibatalkan sebelum reservasi.', 'ABORTED');
-      if (!token) throw new ApiError('Sesi berakhir. Masuk lagi.', 'UNAUTHORIZED');
+      try { token = await getToken(); } catch { throw new ApiError('Session not available. Sign in again.', 'UNAUTHORIZED'); }
+      if (signal?.aborted) throw new ApiError('Request canceled before reserving.', 'ABORTED');
+      if (!token) throw new ApiError('Session expired. Sign in again.', 'UNAUTHORIZED');
       let response: Response;
       try {
         response = await fetcher(`${endpoint}/vouchers`, {
           method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ tier }),
           signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000),
         });
-      } catch { throw new ApiError('Status reservasi belum diketahui. Periksa saldo reservasi sebelum mencoba lagi.', 'UNKNOWN_OUTCOME'); }
+      } catch { throw new ApiError('Reservation status unknown. Check your reserved balance before trying again.', 'UNKNOWN_OUTCOME'); }
       const body = await response.json().catch(() => null);
-      if (response.status >= 500 || (response.ok && !body)) throw new ApiError('Status reservasi belum diketahui. Periksa saldo reservasi sebelum mencoba lagi.', 'UNKNOWN_OUTCOME');
-      if (!response.ok) throw new ApiError('Voucher belum dapat dibuat. Periksa syarat mobil dan saldo akun.', response.status === 401 ? 'UNAUTHORIZED' : body?.error?.code || 'API_ERROR');
-      if (!valid(body, buyer, tier, now())) throw new ApiError('Respons voucher tidak cocok atau sudah kedaluwarsa. Periksa reservasi akun.', 'INVALID_RESPONSE');
+      if (response.status >= 500 || (response.ok && !body)) throw new ApiError('Reservation status unknown. Check your reserved balance before trying again.', 'UNKNOWN_OUTCOME');
+      if (!response.ok) throw new ApiError('Couldn\u2019t create the voucher. Check the car requirements and account balance.', response.status === 401 ? 'UNAUTHORIZED' : body?.error?.code || 'API_ERROR');
+      if (!valid(body, buyer, tier, now())) throw new ApiError('Voucher response doesn\u2019t match or has expired. Check your account reservation.', 'INVALID_RESPONSE');
       return body;
     },
   };

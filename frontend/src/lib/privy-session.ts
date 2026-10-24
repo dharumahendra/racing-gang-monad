@@ -14,11 +14,11 @@ export function createPrivySession(profile: ((token: string) => Promise<Account>
     if(!profile)return;
     try {
       const token=await source(); if(current!==generation)return;
-      if(!token)throw new Error('Sesi Google berakhir. Masuk lagi.');
+      if(!token)throw new Error('Your Google session expired. Sign in again.');
       const account=await profile(token); if(current!==generation)return;
-      if(account.address.toLowerCase()!==who.address.toLowerCase())throw new Error('Profil game tidak cocok dengan akun balap. Coba masuk lagi.');
+      if(account.address.toLowerCase()!==who.address.toLowerCase())throw new Error('Your game profile doesn\u2019t match your racing account. Try signing in again.');
       store.setState({status:'ready',account,error:null});
-    } catch(error) {if(current===generation)store.setState({status:'error',account:null,error:error instanceof Error?error.message:'Akun game belum dapat dihubungkan.'});}
+    } catch(error) {if(current===generation)store.setState({status:'error',account:null,error:error instanceof Error?error.message:'Couldn\u2019t connect the game account.'});}
   }
   return Object.assign(store, {
     async connect(who:PrivyIdentity,source:()=>Promise<string|null>) {identity={...who};getToken=source;await load();},

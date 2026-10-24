@@ -13,6 +13,6 @@ it('rejects malformed profile amounts instead of displaying invalid balances', a
   await expect(api.me('test')).rejects.toMatchObject({ code: 'INVALID_RESPONSE' });
 });
 
-it.each([['WALLET_NOT_READY',409,/wallet|akun balap.*siap/i],['AUTH_PROVIDER_UNAVAILABLE',503,/layanan.*(belum|tidak)|sementara|Privy/i]] as const)('explains recoverable Privy failure %s without asking the user to change accounts',async(code,status,message)=>{
+it.each([['WALLET_NOT_READY',409,/wallet|racing account.*ready/i],['AUTH_PROVIDER_UNAVAILABLE',503,/service.*(unavailable|temporarily)|temporarily/i]] as const)('explains recoverable Privy failure %s without asking the user to change accounts',async(code,status,message)=>{
   const api=createAuthApi('https://game.test',async()=>Response.json({error:{code,message:'provider detail'}},{status}));await expect(api.me('fresh')).rejects.toMatchObject({code,message:expect.stringMatching(message)});
 });
