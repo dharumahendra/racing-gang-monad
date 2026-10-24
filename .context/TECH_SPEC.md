@@ -59,7 +59,7 @@ Alur utama:
 Semua angka memakai **integer**. Satuan jarak **cm**, satuan kecepatan **cm/tick**. 1 km/j ≈ 0,926 cm/tick.
 
 ```ts
-export const CONFIG_VERSION = 2;
+export const CONFIG_VERSION = 3;              // 2: setir tahan; 3: gas manual mulai 40 km/j + lalu lintas dari belakang
 
 export const TICK_RATE = 30;                 // tick per detik
 export const RUN_TICKS = 3000;               // 100 detik
@@ -76,16 +76,17 @@ export const VEHICLE = {
 } as const;
 
 export const TRAFFIC_SPEED = 74;             // ≈ 80 km/j, seragam
-export const PLAYER_START_SPEED = 93;        // ≈ 100 km/j
+export const PLAYER_START_SPEED = 37;        // ≈ 40 km/j, lebih lambat dari lalu lintas
 export const PLAYER_START_LANE = 1;
-export const MIN_SPEED = 80;                 // ≈ 86 km/j, selalu > TRAFFIC_SPEED
-export const BRAKE_DECEL = 4;                // cm/tick per tick
+export const MIN_SPEED = 37;                 // ≈ 40 km/j, batas bawah rem dan saat gas dilepas
+export const BRAKE_DECEL = 2;                // cm/tick per tick selama ↓ ditahan
+export const COAST = { decel: 1, everyTicks: 2 }; // gas dilepas: −1 cm/tick tiap 2 tick (±16 km/j per detik)
 
 export const NEAR_MISS_MAX_GAP = 180;        // cm, tepi ke tepi
 export const NEAR_MISS_MIN_SPEED = 93;       // ≈ 100 km/j
 
 export const TRAFFIC = {
-  spawnAhead: 20000, despawnBehind: 2000, firstRowS: 3000,
+  spawnAhead: 20000, despawnAhead: 22000, spawnBehind: 6000, despawnBehind: 7000,
   gapStart: 2800, gapEnd: 1600, gapJitter: 800, rampS: 300000,
   twoLanePermilleStart: 150, twoLanePermilleEnd: 500,
   truckPermille: 200,
@@ -104,11 +105,11 @@ export const NPC = {
 };
 
 export const CARS = [
-  { tier: 0, name: 'Starter', maxSpeed: 167, accel: 1, lateral: 30, reqNearMiss: 0,   minCarTier: 0, coinCost: 0,     priceMon: '0',    supply: 0 },
-  { tier: 1, name: 'Tier 1',  maxSpeed: 185, accel: 1, lateral: 32, reqNearMiss: 40,  minCarTier: 0, coinCost: 3000,  priceMon: '0.05', supply: 1000 },
-  { tier: 2, name: 'Tier 2',  maxSpeed: 204, accel: 1, lateral: 35, reqNearMiss: 75,  minCarTier: 1, coinCost: 10000, priceMon: '0.1',  supply: 300 },
-  { tier: 3, name: 'Tier 3',  maxSpeed: 227, accel: 2, lateral: 39, reqNearMiss: 110, minCarTier: 2, coinCost: 25000, priceMon: '0.25', supply: 100 },
-  { tier: 4, name: 'Tier 4',  maxSpeed: 250, accel: 2, lateral: 44, reqNearMiss: 150, minCarTier: 3, coinCost: 50000, priceMon: '0.5',  supply: 30 },
+  { tier: 0, name: 'Starter', maxSpeed: 148, maxKmh: 160, accel: 1, lateral: 30, reqNearMiss: 0,   minCarTier: 0, coinCost: 0,     priceMon: '0',    supply: 0 },
+  { tier: 1, name: 'Tier 1',  maxSpeed: 176, maxKmh: 190, accel: 1, lateral: 32, reqNearMiss: 40,  minCarTier: 0, coinCost: 3000,  priceMon: '0.05', supply: 1000 },
+  { tier: 2, name: 'Tier 2',  maxSpeed: 204, maxKmh: 220, accel: 1, lateral: 35, reqNearMiss: 75,  minCarTier: 1, coinCost: 10000, priceMon: '0.1',  supply: 300 },
+  { tier: 3, name: 'Tier 3',  maxSpeed: 231, maxKmh: 250, accel: 2, lateral: 39, reqNearMiss: 110, minCarTier: 2, coinCost: 25000, priceMon: '0.25', supply: 100 },
+  { tier: 4, name: 'Tier 4',  maxSpeed: 259, maxKmh: 280, accel: 2, lateral: 44, reqNearMiss: 150, minCarTier: 3, coinCost: 50000, priceMon: '0.5',  supply: 30 },
 ] as const;                                     // tier 0 bukan NFT; supply 0 = tak terbatas
 
 export const SPECTATOR = {
@@ -136,7 +137,7 @@ Deploy script kontrak membaca `CARS` dari file JSON hasil ekspor paket ini, sehi
 
 ```ts
 type LogEntry = { tick: number; kind: EntryKind; data: number; seq: number };
-enum EntryKind { LEFT = 1, RIGHT = 2, BRAKE_ON = 3, BRAKE_OFF = 4, LEFT_OFF = 5, RIGHT_OFF = 6, SPEC_NITRO = 10, SPEC_SPIKES = 11, SPEC_RED = 12 }
+enum EntryKind { LEFT = 1, RIGHT = 2, BRAKE_ON = 3, BRAKE_OFF = 4, LEFT_OFF = 5, RIGHT_OFF = 6, ACCEL_ON = 7, ACCEL_OFF = 8, SPEC_NITRO = 10, SPEC_SPIKES = 11, SPEC_RED = 12 }
 // SPEC_SPIKES.data = lane;  SPEC_RED.data = lane | (durationIndex << 8)   (durationIndex 0/1/2 = 3/5/7 dtk)
 
 type SimEvent =
@@ -155,7 +156,7 @@ class Sim {
   step(entries: LogEntry[]): SimEvent[];   // proses tick (this.tick + 1); entries = entri untuk tick itu
   view(): SimView;                     // state untuk render: player, kendaraan terlihat, rantai, lajur merah, aba-aba
 }
-export function* trafficRows(seed: Hex): Generator<Row>;   // murni dari seed; dipakai juga oleh penonton dan audit
+export function* trafficRows(seed: Hex): Generator<Row>;      // aliran depan; murni dari seed, dipakai juga oleh penonton dan audit
 export function appendHash(h: Hex, e: LogEntry): Hex;
 export function initialHash(runId: Hex, seed: Hex): Hex;
 ```
@@ -167,7 +168,7 @@ export function initialHash(runId: Hex, seed: Hex): Hex;
 `sfc32`, dengan dua stream terpisah supaya pengambilan angka lalu lintas tidak menggeser angka NPC:
 
 ```ts
-const k = keccak256(encodePacked(['bytes32', 'string'], [seed, 'traffic']));   // 'npc' untuk stream NPC
+const k = keccak256(encodePacked(['bytes32', 'string'], [seed, 'traffic']));   // 'traffic-back' untuk aliran belakang, 'npc' untuk stream NPC
 // pecah k menjadi 4 × uint32 (big-endian) → a, b, c, d
 function sfc32(a: number, b: number, c: number, d: number) {
   return () => {
@@ -185,17 +186,19 @@ const lerpInt = (a: number, b: number, x: number, X: number) => a + Math.floor((
 
 ### 3.4 State dan urutan per tick
 
-State pemain: `x` (pusat lateral), `z` (pusat longitudinal; `z = 0` di tick 0), `speed`, `leftHeld`, `rightHeld`, `steer` (−1/0/1), `braking`, `slowTicks`, `nitro`.
-Awal: `x = laneCenter(1)`, `z = 0`, `speed = 93`, `steer = 0`.
+State pemain: `x` (pusat lateral), `z` (pusat longitudinal; `z = 0` di tick 0), `speed`, `leftHeld`, `rightHeld`, `steer` (−1/0/1), `braking`, `accelerating`, `slowTicks`, `nitro`.
+Awal: `x = laneCenter(1)`, `z = 0`, `speed = 37` (40 km/j), `steer = 0`, gas dan rem tidak ditahan.
 
 Sejak `CONFIG_VERSION = 2` setir bersifat **tahan**: mobil bergeser selama tombol ditahan dan berhenti di posisi mana pun saat dilepas, termasuk di atas garis lajur. Run versi 1 (sekali klik = pindah satu lajur) tidak bisa di-replay dengan sim versi 2.
+
+Sejak `CONFIG_VERSION = 3` gas manual: mobil mulai 40 km/j, bertambah selama ↑ ditahan sampai `maxSpeed` (160 km/j untuk Starter, +30 km/j per tier), turun 2 cm/tick per tick selama ↓ ditahan, dan turun pelan ke 40 km/j kalau keduanya dilepas. Karena 40 km/j lebih lambat dari lalu lintas (80 km/j), kendaraan dari aliran belakang bisa menyusul dan menabrak pemain yang tetap di lajurnya. Syarat mepet tetap ≥ 100 km/j saat menyalip.
 
 `step()` untuk tick `T` **wajib** mengikuti urutan ini:
 
 1. **Entri tick T:** gangguan penonton dulu (urut `seq`), lalu input pemain (urut `seq`). Setiap entri juga di-`appendHash`.
    - `LEFT` (tekan): `leftHeld = true`, `steer = −1`. `RIGHT` (tekan): `rightHeld = true`, `steer = 1`. Tombol yang terakhir ditekan menang.
    - `LEFT_OFF` (lepas): `leftHeld = false`; jika `steer == −1` maka `steer = rightHeld ? 1 : 0`. `RIGHT_OFF` sebaliknya. Lepas tanpa tekan tidak berefek; tekan berulang (auto-repeat keyboard) tidak mempercepat.
-   - `BRAKE_ON` / `BRAKE_OFF`: ubah `braking`.
+   - `BRAKE_ON` / `BRAKE_OFF`: ubah `braking`. `ACCEL_ON` / `ACCEL_OFF`: ubah `accelerating`.
    - `SPEC_*`: `trySchedule(kind, params, warnTick = T)` (lihat §3.7).
 2. **NPC:** jika `T == npc.nextWarnTick`, ambil parameter, panggil `trySchedule`, lalu `npc.nextWarnTick += int(240, 360)`.
 3. **Aktivasi dan berakhirnya gangguan** yang `activeTick == T` atau `endTick == T`. Rantai mendapat posisi `z = player.z + 3000` saat aktif.
@@ -203,14 +206,14 @@ Sejak `CONFIG_VERSION = 2` setir bersifat **tahan**: mobil bergeser selama tombo
    ```
    if nitro aktif:        speed = min(floor(maxSpeed*3/2), speed + 6)      // rem diabaikan
    else if speed > maxSpeed: speed = max(maxSpeed, speed − 3)            // turun setelah nitro
-   else if braking:       speed = max(MIN_SPEED, speed − 4)
-   else if slowTicks > 0: (tidak akselerasi)
-   else:                  speed = min(maxSpeed, speed + accel)
+   else if braking:       speed = max(MIN_SPEED, speed − 2)               // rem menang atas gas
+   else if accelerating:  if slowTicks == 0: speed = min(maxSpeed, speed + accel)
+   else if T % 2 == 0:    speed = max(MIN_SPEED, speed − 1)               // gas dilepas: turun pelan
    if slowTicks > 0: slowTicks −= 1
    ```
 5. **Lateral:** `x = clamp(x + steer × lateral, PLAYER_X_MIN, PLAYER_X_MAX)`, dengan batas pusat lajur 0 (175) dan pusat lajur 3 (1225).
 6. **Maju:** `z += speed`.
-7. **Lalu lintas:** munculkan baris dari `trafficRows` selama `row.s + TRAFFIC_SPEED*T < z + spawnAhead`. Hapus kendaraan yang `front < z − 225 − despawnBehind`.
+7. **Lalu lintas:** jendela baris `[lo, hi]` atas indeks `k` (k ≥ 0 aliran depan, k < 0 aliran belakang), dengan `zr = row.s + TRAFFIC_SPEED*T` dan `reach = 500` (setengah truk). Berurutan: `hi += 1` selama `zr(hi+1) < z + spawnAhead`; `lo −= 1` selama `zr(lo−1) + reach ≥ z − 225 − spawnBehind`; `hi −= 1` selama `zr(hi) − reach > z + despawnAhead`; `lo += 1` selama `zr(lo) + reach < z − 225 − despawnBehind`. Kendaraan hidup = semua kendaraan baris `lo..hi`, urut `k` naik. Status mepet disimpan per `vehicleId`, jadi baris yang keluar lalu masuk lagi tetap sama.
 8. **Tabrakan:** jika kotak pemain beririsan dengan kendaraan mana pun → `CRASH`, run selesai.
 9. **Red zone:** jika rentang `[x−90, x+90]` beririsan dengan lajur merah yang aktif → `RED_ZONE_FAIL`, run selesai.
 10. **Rantai:** jika kotak pemain beririsan dengan rantai yang belum pernah kena → `SPIKES_HIT`: `speed = max(MIN_SPEED, floor(speed/2))`, `slowTicks = 45`.
@@ -244,6 +247,8 @@ loop:
 
 Jaminan: dua baris berturutan selalu punya minimal satu lajur bebas yang sama, jadi tidak pernah ada tembok.
 
+**Aliran belakang (CONFIG_VERSION 3):** algoritma yang sama dengan stream PRNG `'traffic-back'`, mulai `s = firstBackRowS` (−6000) dan `s −= gap` (bukan `+=`), `x = max(0, min(s, rampS))` sehingga kepadatannya tetap kepadatan awal, `k = −1, −2, …`, dan `id = backIdBase + j*2 + slot` dengan `j = −1 − k` (tetap muat di `uint32` kontrak). Jarak 90 m antara baris −1 dan baris 0 membuat awal run selalu kosong di sekitar pemain.
+
 ### 3.6 Algoritma mepet
 
 Setiap kendaraan `V` punya status `{ overlapSeen, minGap, resolved }`. Pada langkah 11 di setiap tick, untuk setiap `V` yang belum `resolved`:
@@ -254,7 +259,10 @@ vRear = zv − l/2; vFront = zv + l/2
 if pFront > vRear && pRear < vFront:                       // sedang bersisian
     gap = |x − laneCenter(V.lane)| − (90 + w/2)
     overlapSeen = true; minGap = min(minGap, gap)
-if pRear > vFront:                                          // selesai disalip
+else if vRear >= pFront:                                    // seluruhnya di depan (termasuk baru menyalip pemain)
+    overlapSeen = false; minGap = ∞
+if pRear > vFront:                                          // pemain di depan kendaraan
+    if !overlapSeen: lanjut                                 // datang dari belakang, belum pernah disalip
     resolved = true
     if overlapSeen && minGap <= 180 && speed >= 93:
         index += 1; emit NEAR_MISS { index, vehicleId, vehicleType, coins, inputHash }

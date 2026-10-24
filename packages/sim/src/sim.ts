@@ -4,6 +4,7 @@
 import {
   BRAKE_DECEL,
   CARS,
+  COAST,
   EntryKind,
   LANE_WIDTH,
   LANES,
@@ -32,7 +33,7 @@ import { HALF_PL, playerHits, playerInLane } from './geometry';
 import { appendHash, initialHash } from './hash';
 import { newTrack, updateTrack, type Track } from './nearMiss';
 import { NpcScheduler } from './npc';
-import { trafficRows } from './traffic';
+import { trafficRows, trafficRowsBack } from './traffic';
 import type { Disruption, Hex, LogEntry, Row, SimEvent, SimParams, SimView } from './types';
 
 const isHex32 = (h: string) => /^0x[0-9a-fA-F]{64}$/.test(h);
@@ -61,10 +62,20 @@ export class Sim {
   /** Tombol setir yang terakhir ditekan dan masih ditahan menang. */
   #steer: -1 | 0 | 1 = 0;
   #braking = false;
+  #accelerating = false;
   #slowTicks = 0;
 
-  #rows: Generator<Row, never>;
-  #nextRow: Row;
+  // Baris lalu lintas berindeks k: k ≥ 0 aliran depan, k < 0 aliran belakang. Baris yang sudah dibuat disimpan
+  // supaya baris yang keluar jendela lalu masuk lagi (pemain melambat lalu ngebut) tetap sama.
+  #fwdGen: Generator<Row, never>;
+  #backGen: Generator<Row, never>;
+  #fwd: Row[] = [];
+  #back: Row[] = [];
+  /** Jendela baris yang hidup: [lo, hi], kosong kalau hi < lo. */
+  #lo = 0;
+  #hi = -1;
+  /** Status mepet per id kendaraan, bertahan walau kendaraannya sempat keluar jendela. */
+  #tracks = new Map<number, Track>();
   #vehicles: LiveVehicle[] = [];
 
   #npc: NpcScheduler;
@@ -83,8 +94,8 @@ export class Sim {
     this.carTier = p.carTier;
     this.#car = car;
     this.#hash = initialHash(p.runId, p.seed);
-    this.#rows = trafficRows(p.seed);
-    this.#nextRow = this.#rows.next().value;
+    this.#fwdGen = trafficRows(p.seed);
+    this.#backGen = trafficRowsBack(p.seed);
     this.#npc = new NpcScheduler(p.seed);
   }
 
@@ -129,6 +140,8 @@ export class Sim {
           break;
         case EntryKind.BRAKE_ON: this.#braking = true; break;
         case EntryKind.BRAKE_OFF: this.#braking = false; break;
+        case EntryKind.ACCEL_ON: this.#accelerating = true; break;
+        case EntryKind.ACCEL_OFF: this.#accelerating = false; break;
         case EntryKind.SPEC_NITRO:
         case EntryKind.SPEC_SPIKES:
         case EntryKind.SPEC_RED: {
@@ -159,14 +172,15 @@ export class Sim {
       }
     }
 
-    // 4. Kecepatan.
+    // 4. Kecepatan: gas manual (↑ ditahan) sampai maxSpeed; rem menang atas gas; tanpa keduanya turun pelan ke MIN_SPEED.
     const car = this.#car;
     const nitroActive = this.#live.some((l) => l.phase === 'ACTIVE' && l.d.kind === 'NITRO');
     if (nitroActive) this.#speed = Math.min(Math.floor((car.maxSpeed * NITRO.speedNum) / NITRO.speedDen), this.#speed + NITRO.accel);
     else if (this.#speed > car.maxSpeed) this.#speed = Math.max(car.maxSpeed, this.#speed - NITRO.decay);
     else if (this.#braking) this.#speed = Math.max(MIN_SPEED, this.#speed - BRAKE_DECEL);
-    else if (this.#slowTicks > 0) { /* tidak akselerasi */ }
-    else this.#speed = Math.min(car.maxSpeed, this.#speed + car.accel);
+    else if (this.#accelerating) {
+      if (this.#slowTicks === 0) this.#speed = Math.min(car.maxSpeed, this.#speed + car.accel); // kena rantai: gas tidak berefek
+    } else if (T % COAST.everyTicks === 0) this.#speed = Math.max(MIN_SPEED, this.#speed - COAST.decel);
     if (this.#slowTicks > 0) this.#slowTicks -= 1;
 
     // 5. Lateral: bergeser `lateral` cm per tick selama setir ditahan, berhenti di mana pun saat dilepas.
@@ -175,16 +189,9 @@ export class Sim {
     // 6. Maju.
     this.#z += this.#speed;
 
-    // 7. Lalu lintas: spawn di depan, hapus yang sudah jauh di belakang.
-    while (this.#nextRow.s + TRAFFIC_SPEED * T < this.#z + TRAFFIC.spawnAhead) {
-      for (const v of this.#nextRow.vehicles) {
-        const dim = v.type === VehicleType.TRUCK ? VEHICLE.TRUCK : VEHICLE.CAR;
-        this.#vehicles.push({ id: v.id, lane: v.lane, type: v.type, s: this.#nextRow.s, w: dim.w, l: dim.l, track: newTrack() });
-      }
-      this.#nextRow = this.#rows.next().value;
-    }
-    const behind = this.#z - HALF_PL - TRAFFIC.despawnBehind;
-    this.#vehicles = this.#vehicles.filter((v) => v.s + TRAFFIC_SPEED * T + v.l / 2 >= behind);
+    // 7. Lalu lintas: jendela baris di sekitar pemain. Baris masuk lewat jendela spawn (depan, atau belakang kalau
+    // pemain lebih lambat dari lalu lintas) dan keluar lewat jendela despawn yang lebih lebar.
+    this.#updateTraffic(T);
 
     // 8. Tabrakan.
     for (const v of this.#vehicles) {
@@ -254,6 +261,7 @@ export class Sim {
         targetLane: targetLane(this.#x, this.#steer),
         steer: this.#steer,
         braking: this.#braking,
+        accelerating: this.#accelerating,
         nitroActive: this.#live.some((l) => l.phase === 'ACTIVE' && l.d.kind === 'NITRO'),
         slowTicks: this.#slowTicks,
       },
@@ -288,6 +296,39 @@ export class Sim {
     } else {
       events.push({ type: 'DISRUPTION_DROPPED', tick: T, d: copy(d) });
     }
+  }
+
+  #rowAt(k: number): Row {
+    if (k >= 0) {
+      while (this.#fwd.length <= k) this.#fwd.push(this.#fwdGen.next().value);
+      return this.#fwd[k]!;
+    }
+    const j = -1 - k;
+    while (this.#back.length <= j) this.#back.push(this.#backGen.next().value);
+    return this.#back[j]!;
+  }
+
+  #updateTraffic(T: number) {
+    const reach = VEHICLE.TRUCK.l / 2; // setengah panjang kendaraan terpanjang di baris
+    const pRear = this.#z - HALF_PL;
+    const zOf = (k: number) => this.#rowAt(k).s + TRAFFIC_SPEED * T;
+    let changed = false;
+    while (zOf(this.#hi + 1) < this.#z + TRAFFIC.spawnAhead) { this.#hi += 1; changed = true; }
+    while (zOf(this.#lo - 1) + reach >= pRear - TRAFFIC.spawnBehind) { this.#lo -= 1; changed = true; }
+    while (this.#hi >= this.#lo && zOf(this.#hi) - reach > this.#z + TRAFFIC.despawnAhead) { this.#hi -= 1; changed = true; }
+    while (this.#hi >= this.#lo && zOf(this.#lo) + reach < pRear - TRAFFIC.despawnBehind) { this.#lo += 1; changed = true; }
+    if (!changed) return;
+    const live: LiveVehicle[] = [];
+    for (let k = this.#lo; k <= this.#hi; k++) {
+      const row = this.#rowAt(k);
+      for (const v of row.vehicles) {
+        let track = this.#tracks.get(v.id);
+        if (!track) this.#tracks.set(v.id, (track = newTrack()));
+        const dim = v.type === VehicleType.TRUCK ? VEHICLE.TRUCK : VEHICLE.CAR;
+        live.push({ id: v.id, lane: v.lane, type: v.type, s: row.s, w: dim.w, l: dim.l, track });
+      }
+    }
+    this.#vehicles = live;
   }
 
   #end(reason: EndReasonName) {

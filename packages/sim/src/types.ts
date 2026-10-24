@@ -59,6 +59,8 @@ export type SimView = {
     /** Arah setir yang sedang ditahan: -1 kiri, 0 lurus, 1 kanan. */
     steer: -1 | 0 | 1;
     braking: boolean;
+    /** Gas (↑) sedang ditahan (CONFIG_VERSION 3). */
+    accelerating: boolean;
     nitroActive: boolean;
     slowTicks: number;
   };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CARS, EntryKind, LIMITS, NPC, RED_ZONE_DURATIONS, encodeRedData, type DurationIndex } from '@racing-gang/config';
+import { BRAKE_DECEL, CARS, EntryKind, LIMITS, MIN_SPEED, NPC, RED_ZONE_DURATIONS, encodeRedData, type DurationIndex } from '@racing-gang/config';
 import { buildDisruption, canSchedule } from '../src/disruptions';
 import { playerInLane } from '../src/geometry';
 import { NpcScheduler } from '../src/npc';
@@ -135,14 +135,15 @@ describe('gangguan di sim', () => {
       (r) => r.sim.tick === 260 && !r.sim.ended,
     );
     const sp = (T: number) => r.views[T]!.player.speed;
-    expect(sp(60)).toBe(80);                 // rem bekerja saat aba-aba
-    expect(sp(61)).toBe(86);                 // nitro aktif: +6 walau rem ditekan
+    expect(sp(60)).toBe(MIN_SPEED);          // rem bekerja saat aba-aba (dan menang atas gas)
+    expect(sp(61)).toBe(MIN_SPEED + 6);      // nitro aktif: +6 walau rem ditekan
     expect(r.views[61]!.player.nitroActive).toBe(true);
     expect(sp(100)).toBe(boosted);
     expect(sp(150)).toBe(boosted);
     expect(sp(151)).toBe(boosted - 3);       // nitro selesai di endTick 151
-    expect(sp(178)).toBe(max);
-    expect(sp(260)).toBe(80);                // setelah kembali normal, rem bekerja lagi
+    expect(sp(175)).toBe(max);               // 25 × 3 dari boosted, dibatasi maxSpeed
+    expect(sp(176)).toBe(max - BRAKE_DECEL); // rem yang masih ditahan langsung bekerja lagi
+    expect(sp(260)).toBe(MIN_SPEED);         // setelah kembali normal, rem bekerja lagi
   });
 
   it('rantai memotong kecepatan setengah dan menahan akselerasi 45 tick', () => {
@@ -161,7 +162,7 @@ describe('gangguan di sim', () => {
     const H = r.events.find((e) => e.type === 'SPIKES_HIT')!.tick;
     const pre = r.views[H - 1]!.player.speed;
     const max = CARS[0].maxSpeed;
-    expect(r.views[H]!.player.speed).toBe(Math.max(80, Math.floor(Math.min(max, pre + 1) / 2)));
+    expect(r.views[H]!.player.speed).toBe(Math.max(MIN_SPEED, Math.floor(Math.min(max, pre + 1) / 2)));
     for (let T = H + 1; T <= H + 45; T++) expect(r.views[T]!.player.speed).toBe(r.views[H]!.player.speed);
     expect(r.views[H + 46]!.player.speed).toBe(r.views[H]!.player.speed + 1);
     expect(r.events.some((e) => e.type === 'DISRUPTION_END' && e.d.kind === 'SPIKES')).toBe(true);

@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { CARS, EntryKind, PLAYER_X_MAX, PLAYER_X_MIN, RUN_TICKS, VEHICLE, laneCenter } from '@racing-gang/config';
+import {
+  BRAKE_DECEL,
+  CARS,
+  COAST,
+  EntryKind,
+  MIN_SPEED,
+  NEAR_MISS_MIN_SPEED,
+  PLAYER_START_SPEED,
+  PLAYER_X_MAX,
+  PLAYER_X_MIN,
+  RUN_TICKS,
+  TRAFFIC,
+  VEHICLE,
+  laneCenter,
+  toKmh,
+} from '@racing-gang/config';
 import { playRun } from '../src/dev/index';
 import { appendHash, initialHash } from '../src/hash';
 import { newTrack, updateTrack } from '../src/nearMiss';
@@ -38,6 +53,20 @@ describe('algoritma mepet (§3.6)', () => {
   it('di tengah pindah lajur tetap dihitung kalau gap ≤ 180', () => {
     expect(passBy(laneCenter(2) - 360, 2, VEHICLE.CAR, 167).hits).toBe(1);
     expect(passBy(laneCenter(2) - 361, 2, VEHICLE.CAR, 167).hits).toBe(0);
+  });
+
+  it('kendaraan yang menyalip pemain tidak dihitung; baru dihitung saat pemain menyalipnya balik', () => {
+    const t = newTrack();
+    const px = laneCenter(1);
+    let hits = 0;
+    // Kendaraan muncul di belakang, menyalip rapat (jarak pusat 350), lalu jauh di depan.
+    for (let vz = 7000; vz < 13000; vz += 100) if (updateTrack(t, px, 10000, 167, 2, vz, 180, 450)) hits++;
+    expect(hits).toBe(0);
+    expect(t.resolved).toBe(false);
+    // Lalu pemain menyalipnya balik: dihitung sekali.
+    for (let pz = 8000; pz < 16000; pz += 150) if (updateTrack(t, px, pz, 167, 2, 13000, 180, 450)) hits++;
+    expect(hits).toBe(1);
+    expect(t.resolved).toBe(true);
   });
 
   it('kendaraan yang sudah resolved tidak dihitung lagi', () => {
@@ -162,26 +191,65 @@ describe('Sim', () => {
   });
 
   it('lalu lintas tidak pernah muncul di dekat pemain dan dihapus setelah jauh di belakang', () => {
-    const { views } = drive({ i: 1, carTier: 0 });
-    for (let T = 1; T < views.length; T++) {
-      const v = views[T]!;
-      const prevIds = new Set(views[T - 1]!.vehicles.map((x) => x.id));
-      for (const veh of v.vehicles) {
-        expect(veh.z + veh.l / 2).toBeGreaterThanOrEqual(v.player.z - 225 - 2000);
-        // tick 1 mengisi jalan dari baris pertama (30 m); setelah itu kendaraan baru muncul jauh di depan
-        if (T >= 2 && !prevIds.has(veh.id)) expect(veh.z - veh.l / 2).toBeGreaterThan(v.player.z + 10000);
+    const reach = VEHICLE.TRUCK.l / 2;
+    for (const { views } of [drive({ i: 1, carTier: 0 }), drive({ i: 1, carTier: 0, maxTick: 600, autopilot: { noGas: true } })]) {
+      for (let T = 1; T < views.length; T++) {
+        const v = views[T]!;
+        const pRear = v.player.z - 225;
+        const prevIds = new Set(views[T - 1]!.vehicles.map((x) => x.id));
+        for (const veh of v.vehicles) {
+          expect(veh.z + reach).toBeGreaterThanOrEqual(pRear - TRAFFIC.despawnBehind);
+          expect(veh.z - reach).toBeLessThanOrEqual(v.player.z + TRAFFIC.despawnAhead);
+          // tick 1 mengisi jalan; setelah itu kendaraan baru muncul jauh di depan, atau jauh di belakang (menyusul)
+          if (T >= 2 && !prevIds.has(veh.id)) {
+            const farAhead = veh.z - veh.l / 2 > v.player.z + 10000;
+            const farBehind = veh.z + veh.l / 2 < pRear - 4000;
+            expect(farAhead || farBehind).toBe(true);
+          }
+        }
       }
     }
   });
 
-  it('akselerasi sampai maxSpeed; rem berhenti di MIN_SPEED', () => {
+  it('kecepatan: mulai 40 km/j, gas sampai maxSpeed, rem turun 2/tick sampai MIN_SPEED', () => {
+    expect(toKmh(PLAYER_START_SPEED)).toBe(40);
     const r = findRun(
       (i) => drive({ i, carTier: 0, autopilot: { noBrake: true }, maxTick: 260, inject: (T) => (T === 201 ? [{ kind: EntryKind.BRAKE_ON, data: 0 }] : []) }),
       (r) => r.sim.tick === 260 && !r.sim.ended,
     );
-    expect(r.views[200]!.player.speed).toBe(CARS[0].maxSpeed);
-    expect(r.views[201]!.player.speed).toBe(CARS[0].maxSpeed - 4);
-    expect(r.views[260]!.player.speed).toBe(80);
+    const max = CARS[0].maxSpeed;
+    expect(r.views[0]!.player.speed).toBe(PLAYER_START_SPEED);
+    expect(r.views[1]!.player.speed).toBe(PLAYER_START_SPEED + CARS[0].accel); // gas ditekan sejak tick 1
+    expect(r.views[max - PLAYER_START_SPEED]!.player.speed).toBe(max);
+    expect(r.views[200]!.player.speed).toBe(max);
+    expect(r.views[201]!.player.speed).toBe(max - BRAKE_DECEL); // rem menang atas gas yang masih ditahan
+    expect(r.views[260]!.player.speed).toBe(MIN_SPEED);
+  });
+
+  it('gas dilepas: turun 1 cm/tick tiap 2 tick sampai MIN_SPEED', () => {
+    const sim = new Sim({ runId: hex('r'), seed: hex('s'), carTier: 0 });
+    const step = (...kinds: EntryKind[]) => sim.step(kinds.map((kind, i) => ({ tick: sim.tick + 1, kind, data: 0, seq: sim.tick * 10 + i + 1 })));
+    step(EntryKind.ACCEL_ON);
+    for (let i = 0; i < 39; i++) step();
+    expect(sim.view().player).toMatchObject({ speed: PLAYER_START_SPEED + 40, accelerating: true });
+    step(EntryKind.ACCEL_OFF); // tick 41: ganjil, belum turun
+    expect(sim.view().player.speed).toBe(PLAYER_START_SPEED + 40);
+    step(); // tick 42
+    expect(sim.view().player.speed).toBe(PLAYER_START_SPEED + 40 - COAST.decel);
+    for (let i = 0; i < 100 && !sim.ended; i++) step();
+    if (!sim.ended) expect(sim.view().player.speed).toBe(MIN_SPEED);
+  });
+
+  it('tanpa gas, lalu lintas dari belakang menyusul pemain; mepet hanya saat pemain ≥ 100 km/j (mis. nitro NPC)', () => {
+    let overtaken = 0;
+    for (let i = 0; i < 10; i++) {
+      const { views, events } = drive({ i, carTier: 0, maxTick: 900, autopilot: { noGas: true } });
+      const back = new Set<number>();
+      for (const v of views) for (const veh of v.vehicles) if (veh.id >= TRAFFIC.backIdBase && veh.z - veh.l / 2 > v.player.z + 225) back.add(veh.id);
+      overtaken += back.size;
+      for (const e of events) if (e.type === 'NEAR_MISS') expect(views[e.tick]!.player.speed).toBeGreaterThanOrEqual(NEAR_MISS_MIN_SPEED);
+    }
+    expect(overtaken).toBeGreaterThan(0);
   });
 
   it('TIME_UP tepat di tick 3000', () => {

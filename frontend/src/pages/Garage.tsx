@@ -42,7 +42,7 @@ function VehicleSpecsModal({
      <dl className="specs-grid">
       <div className="spec-item">
        <dt>Top Speed</dt>
-       <dd>{toKmh(car.maxSpeed)} <small>km/h</small></dd>
+       <dd>{CARS[car.tier]?.maxKmh??toKmh(car.maxSpeed)} <small>km/h</small></dd>
       </div>
       <div className="spec-item">
        <dt>Near-Miss Target (1 Run)</dt>

@@ -13,7 +13,7 @@ const hex32 = z.string().regex(/^0x[0-9a-fA-F]{64}$/);
 const playMessage = z.discriminatedUnion('t', [
   z.object({ t: z.literal('ping'), clientMs: z.number() }),
   z.object({ t: z.literal('run.ready'), runId: hex32 }),
-  z.object({ t: z.literal('input'), tick: int, kind: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]), seq: int.positive() }),
+  z.object({ t: z.literal('input'), tick: int, kind: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6), z.literal(7), z.literal(8)]), seq: int.positive() }),
   z.object({ t: z.literal('watermark'), tick: int.min(0) }),
   z.object({ t: z.literal('disruption.ack'), id: z.string().max(64), applied: z.boolean() }),
   z.object({ t: z.literal('snapshot'), tick: int, x: int, z: int, speed: int, targetLane: int, nearMisses: int }),

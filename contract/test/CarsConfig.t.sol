@@ -10,7 +10,7 @@ contract CarsConfigTest is Test {
     function test_LoadCarsJson() public view {
         CarsConfig.Cars memory c = CarsConfig.load();
 
-        assertEq(c.configVersion, 2);
+        assertEq(c.configVersion, 3);
 
         assertEq(c.reqNearMiss[0], 0);
         assertEq(c.reqNearMiss[1], 40);

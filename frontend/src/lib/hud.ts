@@ -9,8 +9,8 @@ export type RearSide = 'left' | 'same' | 'right';
 export type RearThreat = { side: RearSide; lane: number; gap: number };
 /**
  * Kendaraan yang berada dekat di belakang, dihitung dari posisi di SimView (bukan kecepatan mendekat).
- * Pemain selalu lebih cepat dari lalu lintas, jadi "ancaman dari belakang" = kendaraan yang pusatnya
- * masih di belakang pemain tetapi hidungnya dekat dengan ekor pemain, di lajur pemain atau lajur sebelah
+ * Kendaraan yang pusatnya masih di belakang pemain dan hidungnya dekat dengan ekor pemain,
+ * di lajur pemain atau lajur sebelah
  * (bahaya saat pindah lajur). Saat pemain menjauh, gap melewati REAR_WINDOW dan indikator hilang sendiri.
  * Hanya tampilan: tidak mengubah tabrakan, mepet, atau logika lain.
  */

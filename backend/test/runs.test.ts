@@ -191,9 +191,11 @@ describe('/ws/play dan verifikasi', () => {
 
   it('reconnect di tengah run: run.go dikirim ulang dan run tetap VERIFIED', async () => {
     const p = await startPlayer(t);
+    let cut = false;
     await playToEnd(t, p, async (step) => {
-      if (step === 30) {
-        expect(p.client.verified.length).toBeGreaterThan(0);
+      // Putus setelah mepet pertama terverifikasi (mobil mulai 40 km/j, jadi mepet pertama baru datang setelah ngebut).
+      if (!cut && step >= 30 && p.client.verified.length > 0) {
+        cut = true;
         p.ws.terminate();
         await tick();
         await t.chain.flush(); // mepet tercatat on-chain saat pemain offline: notifikasinya hilang
@@ -202,6 +204,7 @@ describe('/ws/play dan verifikasi', () => {
         await waitFor(() => goCount === 1, 'run.go ulang');
       }
     });
+    expect(cut).toBe(true);
     expect(p.client.result?.status).toBe('VERIFIED');
     while (t.chain.relayer.queueSize() > 0) await t.chain.flush(); // maks 60 mepet per batch
     await waitFor(() => p.client.recorded.length === p.client.localNearMisses.length, 'semua nearMiss.recorded');

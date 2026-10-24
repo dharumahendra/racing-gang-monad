@@ -109,7 +109,7 @@ it('end-to-end: a hold entered during the LocalRunner countdown steers from the 
 });
 
 // The frame crossing GO must apply held controls before consuming any game tick.
-it.each([EntryKind.RIGHT,EntryKind.BRAKE_ON])('applies countdown hold %s at tick 1 when a frame crosses GO',kind=>{
+it.each([EntryKind.RIGHT,EntryKind.BRAKE_ON,EntryKind.ACCEL_ON])('applies countdown hold %s at tick 1 when a frame crosses GO',kind=>{
  const runner=new LocalRunner(params);runner.start();
  const held=new HeldDrivingInputs(k=>runner.input(k),()=>runner.phase==='running',()=>runner.phase==='countdown'||runner.phase==='running');
  const stop=runner.onRunning(()=>held.flush());
@@ -117,7 +117,7 @@ it.each([EntryKind.RIGHT,EntryKind.BRAKE_ON])('applies countdown hold %s at tick
  runner.advance(COUNTDOWN_MS-10);runner.advance(100);
  expect(runner.current.tick).toBe(2);
  expect(runner.log.map(e=>[e.tick,e.kind])).toEqual([[1,kind]]);
- expect(kind===EntryKind.RIGHT?runner.current.player.steer:runner.current.player.braking).toBe(kind===EntryKind.RIGHT?1:true);
+ expect(kind===EntryKind.RIGHT?runner.current.player.steer:kind===EntryKind.BRAKE_ON?runner.current.player.braking:runner.current.player.accelerating).toBe(kind===EntryKind.RIGHT?1:true);
  stop();held.releaseAll();
 });
 it('does not resurrect a cancelled countdown hold at the synchronous GO boundary',()=>{
@@ -126,4 +126,16 @@ it('does not resurrect a cancelled countdown hold at the synchronous GO boundary
  const stop=runner.onRunning(()=>held.flush());
  held.press('key:ArrowRight',EntryKind.RIGHT);held.releaseAll();runner.advance(COUNTDOWN_MS+100);
  expect(runner.log).toEqual([]);expect(runner.current.player.steer).toBe(0);stop();
+});
+
+it('tracks both gas aliases during countdown and sends ACCEL_OFF only after the last release',()=>{
+ const runner=new LocalRunner(params);runner.start();
+ const held=new HeldDrivingInputs(k=>runner.input(k),()=>runner.phase==='running',()=>runner.phase==='countdown'||runner.phase==='running');
+ const off=runner.onRunning(()=>held.flush());const win=new EventTarget(),doc=new EventTarget();const stop=bindDrivingKeyboard(win,doc,held);
+ key(win,'keydown','ArrowUp');key(win,'keydown','KeyW');key(win,'keydown','ArrowUp',true);
+ runner.advance(COUNTDOWN_MS+100);expect(runner.current.player.accelerating).toBe(true);
+ key(win,'keyup','ArrowUp');runner.advance(34);expect(runner.current.player.accelerating).toBe(true);
+ key(win,'keyup','KeyW');runner.advance(34);expect(runner.current.player.accelerating).toBe(false);
+ expect(runner.log.map(e=>[e.tick,e.kind])).toEqual([[1,EntryKind.ACCEL_ON],[5,EntryKind.ACCEL_OFF]]);
+ stop();off();
 });

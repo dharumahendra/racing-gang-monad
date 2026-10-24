@@ -52,7 +52,7 @@ Jalankan **satu instance saja**: state run dan room ada di memori. Database SQLi
 |---|---|
 | `pnpm --filter @racing-gang/backend bot -- --url <api> [--parallel 5] [--speedhack] [--disconnect 5] [--room-wait 10]` | Bot pemain lewat jaringan; mencocokkan mepet lokal dengan backend |
 | `pnpm --filter @racing-gang/backend spectators -- --url <api> --room <KODE> --count 50` | Uji beban penonton |
-| `pnpm --filter @racing-gang/backend status -- --url <api>` | Cek kesiapan demo: health, kontrak, saldo attester dan voucher signer, median latensi on-chain |
+| `pnpm --filter @racing-gang/backend status -- --url <api> [--skip-backend]` | Cek kesiapan demo: health, median latensi on-chain, parameter kontrak on-chain = `CARS`, kunci `.env` = attester/voucher signer kontrak, saldo attester > 10 MON |
 | `pnpm --filter @racing-gang/backend check-monad` | Cek asumsi chain tanpa wallet: chainId, waktu blok, `BLOCKHASH` di EVM = hash blok RPC |
 | `pnpm --filter @racing-gang/backend audit -- --url <api> --run <id> [--rpc <url> --registry <alamat>]` | Replay log publik satu run lalu cocokkan dengan catatan backend atau event on-chain |
 | `pnpm --filter @racing-gang/backend stress -- --players 25 --spectators 50` | Uji beban: pemain real-time + penonton terhadap server sungguhan; cek mepet cocok dan jeda event loop |

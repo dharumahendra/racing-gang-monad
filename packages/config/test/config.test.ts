@@ -3,6 +3,8 @@ import {
   CARS,
   EntryKind,
   MIN_SPEED,
+  NEAR_MISS_MIN_SPEED,
+  PLAYER_START_SPEED,
   TRAFFIC_SPEED,
   buildCarsJson,
   decodeRedData,
@@ -11,6 +13,7 @@ import {
   getDeployment,
   laneCenter,
   monToWei,
+  toKmh,
 } from '../src/index';
 
 describe('config', () => {
@@ -38,8 +41,16 @@ describe('config', () => {
     }
   });
 
-  it('invarian: pemain selalu lebih cepat dari lalu lintas', () => {
-    expect(MIN_SPEED).toBeGreaterThan(TRAFFIC_SPEED);
+  it('kecepatan v3: mulai 40 km/j di bawah lalu lintas; maks 160 km/j lalu +30 per tier; mepet butuh menyalip', () => {
+    expect(toKmh(PLAYER_START_SPEED)).toBe(40);
+    expect(MIN_SPEED).toBe(PLAYER_START_SPEED);
+    expect(MIN_SPEED).toBeLessThan(TRAFFIC_SPEED); // lalu lintas dari belakang bisa menyusul
+    expect(NEAR_MISS_MIN_SPEED).toBeGreaterThan(TRAFFIC_SPEED);
+    CARS.forEach((c, i) => {
+      expect(c.maxKmh).toBe(160 + 30 * i);
+      expect(Math.abs(toKmh(c.maxSpeed) - c.maxKmh)).toBeLessThanOrEqual(1);
+      expect(c.maxSpeed).toBeGreaterThan(NEAR_MISS_MIN_SPEED);
+    });
   });
 
   it('laneCenter', () => {
@@ -58,7 +69,7 @@ describe('config', () => {
   });
 
   it('kode EntryKind tidak berubah (ikut di-hash)', () => {
-    expect(EntryKind).toEqual({ LEFT: 1, RIGHT: 2, BRAKE_ON: 3, BRAKE_OFF: 4, LEFT_OFF: 5, RIGHT_OFF: 6, SPEC_NITRO: 10, SPEC_SPIKES: 11, SPEC_RED: 12 });
+    expect(EntryKind).toEqual({ LEFT: 1, RIGHT: 2, BRAKE_ON: 3, BRAKE_OFF: 4, LEFT_OFF: 5, RIGHT_OFF: 6, ACCEL_ON: 7, ACCEL_OFF: 8, SPEC_NITRO: 10, SPEC_SPIKES: 11, SPEC_RED: 12 });
   });
 
   it('deployment Monad testnet terisi; null kalau alamat belum ada', () => {
