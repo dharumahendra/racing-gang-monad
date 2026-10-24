@@ -25,7 +25,7 @@ COPY --from=deps /app/packages/sim ./packages/sim
 COPY --from=deps /app/backend ./backend
 RUN mkdir -p /data && chown node:node /data
 USER node
-VOLUME ["/data"]
+# Tanpa instruksi VOLUME: Railway menolaknya saat build. Volume dipasang dari luar (`-v rg-data:/data` atau Railway Volume).
 EXPOSE 8080
 WORKDIR /app/backend
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
