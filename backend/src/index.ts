@@ -4,6 +4,7 @@ import { buildApp } from './app';
 import { createChain } from './chain';
 import { openDb } from './db/client';
 import { loadEnv } from './env';
+import { releaseExpiredReservations } from './services/vouchers';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 const env = loadEnv();
@@ -26,6 +27,7 @@ if (recovered > 0) app.log.warn({ recovered }, 'run yang terputus karena restart
 const jobs = [
   setInterval(() => ctx.runs.checkTimeouts(), 1000),
   setInterval(() => ctx.rooms.tickEnergy(), 1000),
+  setInterval(() => releaseExpiredReservations(ctx.db, ctx.now()), 30_000),
 ];
 
 await app.listen({ host: env.HOST, port: env.PORT });

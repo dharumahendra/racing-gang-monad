@@ -14,6 +14,7 @@ import { healthRoutes } from './routes/health';
 import { meRoutes } from './routes/me';
 import { roomRoutes } from './routes/rooms';
 import { runRoutes } from './routes/runs';
+import { voucherRoutes } from './routes/vouchers';
 import { registerChainHandlers } from './services/chainEvents';
 import { RoomManager } from './services/rooms';
 import { RunManager } from './services/runs';
@@ -77,6 +78,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyIns
   await meRoutes(app, ctx);
   await runRoutes(app, ctx);
   await roomRoutes(app, ctx);
+  await voucherRoutes(app, ctx);
   await playSocket(app, ctx);
   await watchSocket(app, ctx);
 
