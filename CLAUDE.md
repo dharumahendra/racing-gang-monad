@@ -4,7 +4,7 @@ Panduan untuk Claude Code saat bekerja di repo ini.
 
 ## ⚠️ Aturan wajib: Claude BUKAN contributor repo ini
 
-Sesuai `TASKS.md` §0 poin 7, Claude (atau asisten AI lain) **tidak boleh** muncul sebagai contributor di repo ini. Commit, PR, dan riwayat git hanya atas nama anggota tim.
+Sesuai `.context/TASKS.md` §0 poin 7, Claude (atau asisten AI lain) **tidak boleh** muncul sebagai contributor di repo ini. Commit, PR, dan riwayat git hanya atas nama anggota tim.
 
 - **Jangan** menambahkan trailer `Co-Authored-By: Claude ...` (atau variasi apa pun) di pesan commit.
 - **Jangan** menulis "Generated with Claude Code", "🤖 Generated with ...", atau teks atribusi AI sejenis di pesan commit maupun deskripsi PR.
@@ -16,11 +16,12 @@ Sesuai `TASKS.md` §0 poin 7, Claude (atau asisten AI lain) **tidak boleh** munc
 
 Game balap *traffic racer* berbasis web di Monad testnet. Pemain mengumpulkan **mepet** (near-miss) dalam run maksimal 100 detik; setiap mepet diverifikasi backend lalu dicatat ke Monad. Mobil tier 1–4 adalah NFT soulbound yang dibeli dengan koin game + MON setelah lulus syarat mepet. Penonton bisa mengganggu pemain lewat kode room. Repo ini bukan repo submission lomba.
 
-Dokumen sumber di root (baca sebelum mengerjakan apa pun):
-- `PRD.md` — apa yang dibangun dan kenapa.
-- `TECH_SPEC.md` — arsitektur, algoritma sim, protokol WS/REST, spesifikasi kontrak dan integrasi chain.
-- `TASKS.md` — pembagian kerja, milestone, kriteria selesai, aturan kerja.
-- `BACKEND_PLAN.md` — rencana dan status backend (Dharu), termasuk serah terima ke Bayu.
+Dokumen sumber di `.context/` (baca sebelum mengerjakan apa pun):
+- `.context/PRD.md` — apa yang dibangun dan kenapa.
+- `.context/TECH_SPEC.md` — arsitektur, algoritma sim, protokol WS/REST, spesifikasi kontrak dan integrasi chain.
+- `.context/TASKS.md` — pembagian kerja, milestone, kriteria selesai, aturan kerja.
+- `.context/BACKEND_PLAN.md` — rencana dan status backend (Dharu), termasuk serah terima ke Bayu.
+- `.context/RUNBOOK.md`, `.context/WORST_CASE_TESTS.md`, dan `handoff.md` (root) — runbook deploy, uji skenario terburuk, dan catatan serah terima antar anggota tim.
 
 Kalau ada konflik antara kode dan dokumen, tanyakan ke tim; jangan menebak.
 
