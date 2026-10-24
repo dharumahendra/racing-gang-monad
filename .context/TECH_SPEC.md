@@ -484,6 +484,7 @@ Aturan, diproses berurutan: semua `s`, lalu semua `n`, lalu semua `e`.
 - Constructor: `RunRegistry(address attester, uint16[5] reqNearMiss, uint8[5] minCarTier)`, index = tier (index 0 diabaikan). Nilainya **immutable** (dikemas ke `uint256 immutable`). Tidak ada setter. Revert `InvalidConfig` jika `reqNearMiss[t] == 0` atau `minCarTier[t] ≥ t`.
 - Error: `NotAttester, RunExists, UnknownRun, RunAlreadyEnded, IndexGap, TickOutOfRange, RunTooOld, SeedBlockInvalid, CarNotOwned, CountMismatch, CarNFTAlreadySet, InvalidConfig`. (Bukan `RunEnded`, karena Solidity tidak mengizinkan error dan event bernama sama.)
 - Penulisan storage hanya per-run dan per-pemain. Tidak ada counter global di jalur `submitBatch`.
+- **Hemat gas untuk Monad** (akses slot dingin 8.100 gas): `Run` disimpan internal sebagai `RunData` 2 slot. Slot pertama berisi semua kolom yang dibaca tiap mepet (`startBlock` sebagai `uint32`, `ended`/`endReason` digabung jadi `endState` = reason + 1), slot kedua `seed`. Status lulus pemain hanya dibaca saat `nearMisses` tepat sama dengan syarat suatu tier. `getRun` tetap mengembalikan `Run` di atas, jadi ABI tidak berubah. Setiap mepet tetap dicatat satu per satu dengan event `NearMiss` sendiri. Ukuran gas: `test/RunRegistryGas.t.sol`.
 
 ### 6.2 `CarNFT.sol` (ERC-721 + ERC-5192, soulbound)
 
