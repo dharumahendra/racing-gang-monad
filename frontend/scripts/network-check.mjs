@@ -26,7 +26,7 @@ try{
   await page.goto(`${root}/dev/network`);await page.getByRole('button',{name:'Create test run',exact:true}).click();
   const connect=page.getByRole('button',{name:'Connect run',exact:true});await connect.waitFor();await page.waitForFunction(()=>document.querySelector('.race-overlay button')?.disabled===false);await connect.click();
   await page.waitForSelector('[data-phase="countdown"]');await page.waitForSelector('[data-phase="running"]');assert.equal(posts,1);checks.push('one authenticated POST, clock sync and countdown using +7s server offset');
-  await page.keyboard.press('ArrowRight');await page.waitForSelector('[data-lane="2"]');
+  const steeringX=Number(await page.locator('.race-shell').getAttribute('data-x'));await page.keyboard.down('ArrowRight');await page.waitForFunction(initial=>Number(document.querySelector('.race-shell')?.getAttribute('data-x'))>initial,steeringX);await page.keyboard.up('ArrowRight');await page.waitForSelector('[data-steer="0"]');
   await page.keyboard.down('ArrowDown');await page.waitForSelector('[data-braking="true"]');await page.keyboard.up('ArrowDown');await page.waitForSelector('[data-braking="false"]');
   // Keep a safe speed while screenshots and reconnect assertions run on slower CI machines.
   await page.keyboard.down('ArrowDown');await page.waitForSelector('[data-braking="true"]');

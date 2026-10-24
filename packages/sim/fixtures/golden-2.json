@@ -3,11 +3,16 @@
  "runId": "0x986763b499ce985246ec11ef789695bceae0eac13713b2917bc19ed1ffc392b8",
  "seed": "0x9b45f26bbb6cd1b0d3c89336a2c76abb84e060d0d9a61dff9e46d26555d19c88",
  "carTier": 2,
- "configVersion": 1,
+ "configVersion": 2,
  "entries": [
   {
    "tick": 2,
    "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 12,
+   "kind": 6,
    "data": 0
   },
   {
@@ -16,8 +21,18 @@
    "data": 0
   },
   {
+   "tick": 78,
+   "kind": 5,
+   "data": 0
+  },
+  {
    "tick": 98,
    "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 108,
+   "kind": 6,
    "data": 0
   },
   {
@@ -26,8 +41,18 @@
    "data": 0
   },
   {
+   "tick": 157,
+   "kind": 6,
+   "data": 0
+  },
+  {
    "tick": 174,
    "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 184,
+   "kind": 5,
    "data": 0
   },
   {
@@ -36,8 +61,18 @@
    "data": 0
   },
   {
+   "tick": 206,
+   "kind": 5,
+   "data": 0
+  },
+  {
    "tick": 217,
    "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 227,
+   "kind": 5,
    "data": 0
   },
   {
@@ -46,8 +81,18 @@
    "data": 0
   },
   {
+   "tick": 250,
+   "kind": 6,
+   "data": 0
+  },
+  {
    "tick": 259,
    "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 269,
+   "kind": 6,
    "data": 0
   },
   {
@@ -56,13 +101,28 @@
    "data": 0
   },
   {
+   "tick": 296,
+   "kind": 6,
+   "data": 0
+  },
+  {
    "tick": 356,
    "kind": 1,
    "data": 0
   },
   {
+   "tick": 366,
+   "kind": 5,
+   "data": 0
+  },
+  {
    "tick": 377,
    "kind": 1,
+   "data": 0
+  },
+  {
+   "tick": 387,
+   "kind": 5,
    "data": 0
   },
   {
@@ -75,7 +135,7 @@
   "endTick": 425,
   "endReason": "CRASH",
   "nearMisses": 15,
-  "finalHash": "0x2eae7c1b144e122c5d7cb537f52e9da80095b0a0750ba31f64ed86404978ef22",
+  "finalHash": "0x141a7c21913e8b965fbbb55c5618ada24e18a69f1f4bf0144b6005436b109d41",
   "events": [
    {
     "type": "NEAR_MISS",
@@ -84,7 +144,7 @@
     "vehicleId": 0,
     "vehicleType": 1,
     "coins": 200,
-    "inputHash": "0x7855f608d3cc03fa5dd774c2bb2d37549085c994339d700eea5c84733e32d1ce"
+    "inputHash": "0x44be988299e4fae7eb9fc37a22366dc04fc657190e52546f2e5033e2cfdd7d9c"
    },
    {
     "type": "NEAR_MISS",
@@ -93,7 +153,7 @@
     "vehicleId": 2,
     "vehicleType": 1,
     "coins": 200,
-    "inputHash": "0x4d15824919cd55a63c5656b0e750b3f353c3e0506a577bc4abae8d351177501a"
+    "inputHash": "0x2fc4e5f6755e4575ae5220500a84cf046b954ba2849990a996ff00fdf9f2c159"
    },
    {
     "type": "NEAR_MISS",
@@ -102,7 +162,7 @@
     "vehicleId": 4,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x4d15824919cd55a63c5656b0e750b3f353c3e0506a577bc4abae8d351177501a"
+    "inputHash": "0x65f216b38ea946a906455755716e68e8c9604ac9b33a831d26e72cd575f55998"
    },
    {
     "type": "NEAR_MISS",
@@ -111,7 +171,7 @@
     "vehicleId": 6,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0xb0dc0312bff2af4932b8360caa7221709f3034b7b4d8184d241adf2d30d2110c"
+    "inputHash": "0x3694bceb4aaafdf60059250c403618c263abcb55fca14eaf232d5c43e923634c"
    },
    {
     "type": "NEAR_MISS",
@@ -120,7 +180,7 @@
     "vehicleId": 9,
     "vehicleType": 1,
     "coins": 200,
-    "inputHash": "0xb0dc0312bff2af4932b8360caa7221709f3034b7b4d8184d241adf2d30d2110c"
+    "inputHash": "0x4fdaffdac98765ab9bebe4833bce6746bdaea3ef4a0c161712f21fe646f593be"
    },
    {
     "type": "NEAR_MISS",
@@ -129,7 +189,7 @@
     "vehicleId": 10,
     "vehicleType": 1,
     "coins": 200,
-    "inputHash": "0xb1d820c401c8fb4ee034ccc72d8eea6a3e074d39941f9fb42ffdcc4f39be864c"
+    "inputHash": "0x05f290966a0b28145991179c6cca1673029858f6697abed7f6ca02800ecba88f"
    },
    {
     "type": "NEAR_MISS",
@@ -138,7 +198,7 @@
     "vehicleId": 12,
     "vehicleType": 1,
     "coins": 200,
-    "inputHash": "0x779cdde7908529291af4d9379c089a34c36724bc7b6374fdf2ebf86a99579a34"
+    "inputHash": "0xc7a98e804fa4659fcee36d84760d817ffa1a0ed1ccc5e544341c1631ead94475"
    },
    {
     "type": "NEAR_MISS",
@@ -147,7 +207,7 @@
     "vehicleId": 15,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x004ce150981100e3e7fb1b221886b71980012a09b3579a276b0e30cc1a885f1b"
+    "inputHash": "0xf609c71ac3df24af4e8dc1e23ced73db56ebed0f08a6190ea4a11bbff6fbfdbf"
    },
    {
     "type": "NEAR_MISS",
@@ -156,7 +216,7 @@
     "vehicleId": 16,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x0831b15b16db6001a6c820a22265b9c147628ed2d1c161b4a1de55797006cc02"
+    "inputHash": "0x6ce64e6f9cddedd539338ff28e89ee7ee2f2c7b289af00979274433100aa5a7e"
    },
    {
     "type": "NEAR_MISS",
@@ -165,7 +225,7 @@
     "vehicleId": 18,
     "vehicleType": 1,
     "coins": 200,
-    "inputHash": "0x0831b15b16db6001a6c820a22265b9c147628ed2d1c161b4a1de55797006cc02"
+    "inputHash": "0x4a0f888fdfb0c031853d9fd24ca6f5fc1b358080d4c564edc0059ff404b9ded5"
    },
    {
     "type": "DISRUPTION_WARN",
@@ -190,7 +250,7 @@
     "vehicleId": 21,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x46c36935fdceae2e7d9d034e6ecf96c07eac10e96a94725445cd41b3971d99f9"
+    "inputHash": "0x0e385765761c7d45224e5b52e41eff44e2bf97011178f3e8dbfc645c01c18fb4"
    },
    {
     "type": "NEAR_MISS",
@@ -199,7 +259,7 @@
     "vehicleId": 22,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x46c36935fdceae2e7d9d034e6ecf96c07eac10e96a94725445cd41b3971d99f9"
+    "inputHash": "0x0e385765761c7d45224e5b52e41eff44e2bf97011178f3e8dbfc645c01c18fb4"
    },
    {
     "type": "NEAR_MISS",
@@ -208,7 +268,7 @@
     "vehicleId": 25,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x46c36935fdceae2e7d9d034e6ecf96c07eac10e96a94725445cd41b3971d99f9"
+    "inputHash": "0x0e385765761c7d45224e5b52e41eff44e2bf97011178f3e8dbfc645c01c18fb4"
    },
    {
     "type": "DISRUPTION_ACTIVE",
@@ -233,7 +293,7 @@
     "vehicleId": 26,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x81fccdd4d0f41dd89e78dc326524e26ecd5c6d622c4c18e0dfbbb0f1a97dc786"
+    "inputHash": "0x49e05f0a8bf9b1d4b847a9feea6916e75cc97fe10d0baca38a60f1b1a37a1594"
    },
    {
     "type": "NEAR_MISS",
@@ -242,7 +302,7 @@
     "vehicleId": 28,
     "vehicleType": 1,
     "coins": 200,
-    "inputHash": "0x2eae7c1b144e122c5d7cb537f52e9da80095b0a0750ba31f64ed86404978ef22"
+    "inputHash": "0x141a7c21913e8b965fbbb55c5618ada24e18a69f1f4bf0144b6005436b109d41"
    },
    {
     "type": "CRASH",

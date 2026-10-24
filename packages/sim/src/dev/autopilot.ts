@@ -20,6 +20,8 @@ const HOLD_TICKS = 14;
 
 export class Autopilot {
   #braking = false;
+  /** Lajur tujuan selama setir ditahan. */
+  #goal = 0;
   readonly #opts: AutopilotOptions;
 
   constructor(opts: AutopilotOptions = {}) {
@@ -29,10 +31,20 @@ export class Autopilot {
   /** Input untuk tick berikutnya, berdasarkan state setelah tick sekarang. */
   decide(view: SimView, carTier: number): PlayerInputKind[] {
     const p = view.player;
-    const cur = p.targetLane;
-    const settled = p.x === laneCenter(cur);
+    const lateral = CARS[carTier]!.lateral;
+    // Setir ditahan sampai pusat mobil kurang dari lateral/2 sebelum pusat lajur tujuan (atau sudah lewat), lalu
+    // dilepas. Kalau beberapa tick lewat sekaligus (frontend), mobil bisa kebablasan; itu dikoreksi di bawah.
+    if (p.steer !== 0 && (laneCenter(this.#goal) - p.x) * p.steer * 2 <= lateral) {
+      return [p.steer < 0 ? EntryKind.LEFT_OFF : EntryKind.RIGHT_OFF];
+    }
+    const settled = p.steer === 0;
+    const cur = settled ? p.targetLane : this.#goal;
+    if (settled && Math.abs(p.x - laneCenter(cur)) * 2 > lateral) {
+      this.#goal = cur;
+      return [p.x > laneCenter(cur) ? EntryKind.LEFT : EntryKind.RIGHT];
+    }
     const rel = Math.max(1, p.speed - TRAFFIC_SPEED);
-    const tc = Math.ceil(350 / CARS[carTier]!.lateral);
+    const tc = Math.ceil(350 / lateral);
 
     // Lajur aman selama `ticks` ke depan: tidak ada kendaraan yang akan tersusul dalam waktu itu.
     const clearFor = (lane: number, ticks: number) =>
@@ -70,8 +82,14 @@ export class Autopilot {
     }
 
     const out: PlayerInputKind[] = [];
-    for (let i = cur; i > best; i--) out.push(EntryKind.LEFT);
-    for (let i = cur; i < best; i++) out.push(EntryKind.RIGHT);
+    if (best !== cur) {
+      this.#goal = best;
+      out.push(best < cur ? EntryKind.LEFT : EntryKind.RIGHT);
+    }
+    return this.#withBrake(out, anyOk);
+  }
+
+  #withBrake(out: PlayerInputKind[], anyOk: boolean): PlayerInputKind[] {
     const wantBrake = !this.#opts.noBrake && !anyOk;
     if (wantBrake !== this.#braking) {
       this.#braking = wantBrake;

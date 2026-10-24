@@ -2,7 +2,7 @@
 // Semua angka integer. Jarak dalam cm, kecepatan dalam cm/tick. 1 km/j ≈ 0,926 cm/tick.
 // Kalau angka diubah, naikkan CONFIG_VERSION dan buat ulang golden fixture sim.
 
-export const CONFIG_VERSION = 1;
+export const CONFIG_VERSION = 2;              // 2: setir tahan (posisi lateral bebas), bukan pindah lajur per klik
 
 export const TICK_RATE = 30;                 // tick per detik
 export const RUN_TICKS = 3000;               // 100 detik
@@ -11,6 +11,9 @@ export const COUNTDOWN_MS = 3000;
 export const LANES = 4;
 export const LANE_WIDTH = 350;               // lajur i: x ∈ [350*i, 350*(i+1)), lajur 0 = paling kiri
 export const laneCenter = (i: number) => 175 + 350 * i;
+
+/** Batas posisi lateral pemain: pusat lajur paling kiri sampai pusat lajur paling kanan. */
+export const PLAYER_X_MIN = 175, PLAYER_X_MAX = 175 + 350 * (LANES - 1);
 
 export const PLAYER_W = 180, PLAYER_L = 450;
 export const VEHICLE = {

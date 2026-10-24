@@ -33,5 +33,5 @@ export function RunSummaryPanel({id,apiUrl}:{id:string;apiUrl:string}){
     </>}
   </section>;
 }
-export function Result(){const {id=''}=useParams();return <div className="result-page"><span className="eyebrow">RESULT / RUN</span><h1>Trip proof.</h1><RunSummaryPanel key={id} id={id} apiUrl={settings.mode==='live'?settings.apiUrl:''}/><Link className="button" to="/">Back to garage</Link></div>;}
+export function Result(){const {id=''}=useParams();return <div className="result-page"><span className="eyebrow">RESULT / RUN</span><h1>Trip proof.</h1><RunSummaryPanel key={id} id={id} apiUrl={settings.mode==='live'?settings.apiUrl:''}/><Link className="button secondary" to={"/audit/"+id}>Audit this run</Link><Link className="button" to="/">Back to garage</Link></div>;}
 export function ResultLab(){const [search]=useSearchParams();const id=search.get('id')||`0x${'11'.repeat(32)}`;return <div className="result-page"><p className="fixture-notice">DEVELOPMENT ONLY · Summary from a simulated server. Not a live result, balance, or chain proof.</p><h1>Trip proof.</h1><RunSummaryPanel key={id} id={id} apiUrl="/__result_fixture"/></div>;}

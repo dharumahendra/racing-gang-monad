@@ -59,7 +59,7 @@ Alur utama:
 Semua angka memakai **integer**. Satuan jarak **cm**, satuan kecepatan **cm/tick**. 1 km/j ≈ 0,926 cm/tick.
 
 ```ts
-export const CONFIG_VERSION = 1;
+export const CONFIG_VERSION = 2;
 
 export const TICK_RATE = 30;                 // tick per detik
 export const RUN_TICKS = 3000;               // 100 detik
@@ -136,7 +136,7 @@ Deploy script kontrak membaca `CARS` dari file JSON hasil ekspor paket ini, sehi
 
 ```ts
 type LogEntry = { tick: number; kind: EntryKind; data: number; seq: number };
-enum EntryKind { LEFT = 1, RIGHT = 2, BRAKE_ON = 3, BRAKE_OFF = 4, SPEC_NITRO = 10, SPEC_SPIKES = 11, SPEC_RED = 12 }
+enum EntryKind { LEFT = 1, RIGHT = 2, BRAKE_ON = 3, BRAKE_OFF = 4, LEFT_OFF = 5, RIGHT_OFF = 6, SPEC_NITRO = 10, SPEC_SPIKES = 11, SPEC_RED = 12 }
 // SPEC_SPIKES.data = lane;  SPEC_RED.data = lane | (durationIndex << 8)   (durationIndex 0/1/2 = 3/5/7 dtk)
 
 type SimEvent =
@@ -185,13 +185,16 @@ const lerpInt = (a: number, b: number, x: number, X: number) => a + Math.floor((
 
 ### 3.4 State dan urutan per tick
 
-State pemain: `x` (pusat lateral), `z` (pusat longitudinal; `z = 0` di tick 0), `speed`, `targetLane`, `braking`, `slowTicks`, `nitro`.
-Awal: `x = laneCenter(1)`, `z = 0`, `speed = 93`, `targetLane = 1`.
+State pemain: `x` (pusat lateral), `z` (pusat longitudinal; `z = 0` di tick 0), `speed`, `leftHeld`, `rightHeld`, `steer` (−1/0/1), `braking`, `slowTicks`, `nitro`.
+Awal: `x = laneCenter(1)`, `z = 0`, `speed = 93`, `steer = 0`.
+
+Sejak `CONFIG_VERSION = 2` setir bersifat **tahan**: mobil bergeser selama tombol ditahan dan berhenti di posisi mana pun saat dilepas, termasuk di atas garis lajur. Run versi 1 (sekali klik = pindah satu lajur) tidak bisa di-replay dengan sim versi 2.
 
 `step()` untuk tick `T` **wajib** mengikuti urutan ini:
 
 1. **Entri tick T:** gangguan penonton dulu (urut `seq`), lalu input pemain (urut `seq`). Setiap entri juga di-`appendHash`.
-   - `LEFT`: `targetLane = max(0, targetLane − 1)`. `RIGHT`: `targetLane = min(3, targetLane + 1)`.
+   - `LEFT` (tekan): `leftHeld = true`, `steer = −1`. `RIGHT` (tekan): `rightHeld = true`, `steer = 1`. Tombol yang terakhir ditekan menang.
+   - `LEFT_OFF` (lepas): `leftHeld = false`; jika `steer == −1` maka `steer = rightHeld ? 1 : 0`. `RIGHT_OFF` sebaliknya. Lepas tanpa tekan tidak berefek; tekan berulang (auto-repeat keyboard) tidak mempercepat.
    - `BRAKE_ON` / `BRAKE_OFF`: ubah `braking`.
    - `SPEC_*`: `trySchedule(kind, params, warnTick = T)` (lihat §3.7).
 2. **NPC:** jika `T == npc.nextWarnTick`, ambil parameter, panggil `trySchedule`, lalu `npc.nextWarnTick += int(240, 360)`.
@@ -205,7 +208,7 @@ Awal: `x = laneCenter(1)`, `z = 0`, `speed = 93`, `targetLane = 1`.
    else:                  speed = min(maxSpeed, speed + accel)
    if slowTicks > 0: slowTicks −= 1
    ```
-5. **Lateral:** `x` bergerak menuju `laneCenter(targetLane)` sejauh `lateral` per tick, tanpa melewati target.
+5. **Lateral:** `x = clamp(x + steer × lateral, PLAYER_X_MIN, PLAYER_X_MAX)`, dengan batas pusat lajur 0 (175) dan pusat lajur 3 (1225).
 6. **Maju:** `z += speed`.
 7. **Lalu lintas:** munculkan baris dari `trafficRows` selama `row.s + TRAFFIC_SPEED*T < z + spawnAhead`. Hapus kendaraan yang `front < z − 225 − despawnBehind`.
 8. **Tabrakan:** jika kotak pemain beririsan dengan kendaraan mana pun → `CRASH`, run selesai.
@@ -304,7 +307,7 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 | C→S | `watermark` | `tick` | Setiap 100 ms; janji tidak ada input lagi untuk tick ≤ nilai ini |
 | S→C | `disruption.scheduled` | `id, kind, lanes, durationIndex?, warnTick, by` | Hanya untuk gangguan penonton |
 | C→S | `disruption.ack` | `id, applied` | `applied = true` jika diterima saat tick lokal < `warnTick` |
-| C→S | `snapshot` | `tick, x, z, speed, targetLane, nearMisses` | 10 Hz; hanya untuk tampilan penonton, tidak dipakai verifikasi |
+| C→S | `snapshot` | `tick, x, z, speed, targetLane, nearMisses` | 10 Hz; hanya untuk tampilan penonton, tidak dipakai verifikasi. `targetLane` = lajur berikutnya searah setir, atau lajur tempat pusat mobil kalau tidak menyetir |
 | S→C | `nearMiss.verified` | `index, tick, vehicleType, coins` | Hasil verifikasi backend |
 | S→C | `nearMiss.recorded` | `index, txHash, blockNumber, latencyMs` | Dari indexer; untuk panel feed on-chain |
 | S→C | `run.qualified` | `tier, txHash` | Dari event `Qualified` |

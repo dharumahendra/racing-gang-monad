@@ -52,7 +52,8 @@ const ZERO_HASH = `0x${'00'.repeat(32)}` as Hex;
 
 describe.skipIf(!hasAnvil || !hasArtifacts)('chain live di anvil', { timeout: 60_000 }, () => {
   let anvil: ChildProcess;
-  const publicClient = createPublicClient({ chain, transport: http(RPC), pollingInterval: 50 }) as PublicClient;
+  // Cache sengaja panjang agar pembacaan seed/cursor terbukti memakai blok terbaru.
+  const publicClient = createPublicClient({ chain, transport: http(RPC), pollingInterval: 50, cacheTime: 60_000 }) as PublicClient;
   const testClient = createTestClient({ chain, mode: 'anvil', transport: http(RPC) });
   const deployer = createWalletClient({ chain, transport: http(RPC), account: privateKeyToAccount(KEYS.deployer) });
   const attester = createWalletClient({ chain, transport: http(RPC), account: privateKeyToAccount(KEYS.attester) });
@@ -113,18 +114,24 @@ describe.skipIf(!hasAnvil || !hasArtifacts)('chain live di anvil', { timeout: 60
     relayer = new Relayer({ publicClient, walletClient: attester, registry, bus, log: silentLog });
     cursor = memoryCursorStore();
     // Mulai setelah blok terakhir supaya event dari test sebelumnya tidak ikut terbaca.
-    const startBlock = (await publicClient.getBlockNumber()) + 1n;
+    const startBlock = (await publicClient.getBlockNumber({ cacheTime: 0 })) + 1n;
     indexer = new Indexer({ publicClient, registry, carNFT, bus, cursor, startBlock, log: silentLog });
   });
 
   const newRunId = () => computeRunId(player, ++nonce);
-  const seedBlock = async () => (await publicClient.getBlockNumber()) - 3n;
+  const seedBlock = async () => (await publicClient.getBlockNumber({ cacheTime: 0 })) - 3n;
   const nm = (runId: Hex, index: number): NearMissRec => ({ runId, index, tick: index * 10, vehicleType: index % 5 === 0 ? 1 : 0, vehicleId: index, inputHash: ZERO_HASH });
   const drain = async () => {
     for (let i = 0; i < 20 && relayer.queueSize() > 0; i++) await relayer.flush();
     await indexer.sync();
   };
   const of = <T extends ChainEvent['type']>(type: T) => events.filter((e): e is Extract<ChainEvent, { type: T }> => e.type === type);
+
+  it('seedBlock mengikuti blok yang baru ditambang meskipun cache blok masih hangat', async () => {
+    const before = await publicClient.getBlockNumber({ cacheTime: 0 });
+    await testClient.mine({ blocks: 1 });
+    expect(await seedBlock()).toBe(before + 1n - 3n);
+  });
 
   it('run penuh: seed sesuai rumus, mepet urut walau masuk acak dan dobel, Qualified di mepet ke-40, RunEnded', async () => {
     const runId = newRunId();

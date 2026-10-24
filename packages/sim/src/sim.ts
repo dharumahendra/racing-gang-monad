@@ -5,10 +5,13 @@ import {
   BRAKE_DECEL,
   CARS,
   EntryKind,
+  LANE_WIDTH,
   LANES,
   MIN_SPEED,
   NITRO,
   PLAYER_START_LANE,
+  PLAYER_X_MAX,
+  PLAYER_X_MIN,
   PLAYER_START_SPEED,
   RUN_TICKS,
   SPIKES,
@@ -53,7 +56,10 @@ export class Sim {
   #x = laneCenter(PLAYER_START_LANE);
   #z = 0;
   #speed: number = PLAYER_START_SPEED;
-  #targetLane: number = PLAYER_START_LANE;
+  #leftHeld = false;
+  #rightHeld = false;
+  /** Tombol setir yang terakhir ditekan dan masih ditahan menang. */
+  #steer: -1 | 0 | 1 = 0;
   #braking = false;
   #slowTicks = 0;
 
@@ -111,8 +117,16 @@ export class Sim {
     for (const e of ordered) {
       this.#hash = appendHash(this.#hash, e);
       switch (e.kind) {
-        case EntryKind.LEFT: this.#targetLane = Math.max(0, this.#targetLane - 1); break;
-        case EntryKind.RIGHT: this.#targetLane = Math.min(LANES - 1, this.#targetLane + 1); break;
+        case EntryKind.LEFT: this.#leftHeld = true; this.#steer = -1; break;
+        case EntryKind.RIGHT: this.#rightHeld = true; this.#steer = 1; break;
+        case EntryKind.LEFT_OFF:
+          this.#leftHeld = false;
+          if (this.#steer === -1) this.#steer = this.#rightHeld ? 1 : 0;
+          break;
+        case EntryKind.RIGHT_OFF:
+          this.#rightHeld = false;
+          if (this.#steer === 1) this.#steer = this.#leftHeld ? -1 : 0;
+          break;
         case EntryKind.BRAKE_ON: this.#braking = true; break;
         case EntryKind.BRAKE_OFF: this.#braking = false; break;
         case EntryKind.SPEC_NITRO:
@@ -155,10 +169,8 @@ export class Sim {
     else this.#speed = Math.min(car.maxSpeed, this.#speed + car.accel);
     if (this.#slowTicks > 0) this.#slowTicks -= 1;
 
-    // 5. Lateral: menuju pusat lajur target, tanpa melewatinya.
-    const tx = laneCenter(this.#targetLane);
-    if (this.#x < tx) this.#x = Math.min(tx, this.#x + car.lateral);
-    else if (this.#x > tx) this.#x = Math.max(tx, this.#x - car.lateral);
+    // 5. Lateral: bergeser `lateral` cm per tick selama setir ditahan, berhenti di mana pun saat dilepas.
+    this.#x = Math.min(PLAYER_X_MAX, Math.max(PLAYER_X_MIN, this.#x + this.#steer * car.lateral));
 
     // 6. Maju.
     this.#z += this.#speed;
@@ -239,7 +251,8 @@ export class Sim {
         x: this.#x,
         z: this.#z,
         speed: this.#speed,
-        targetLane: this.#targetLane,
+        targetLane: targetLane(this.#x, this.#steer),
+        steer: this.#steer,
         braking: this.#braking,
         nitroActive: this.#live.some((l) => l.phase === 'ACTIVE' && l.d.kind === 'NITRO'),
         slowTicks: this.#slowTicks,
@@ -281,6 +294,14 @@ export class Sim {
     this.#ended = true;
     this.#endReason = reason;
   }
+}
+
+/** Lajur berikutnya searah setir (pusatnya belum terlewati), atau lajur tempat pusat mobil kalau lurus. */
+function targetLane(x: number, steer: -1 | 0 | 1): number {
+  const at = Math.min(LANES - 1, Math.floor(x / LANE_WIDTH));
+  if (steer > 0) return x < laneCenter(at) ? at : Math.min(LANES - 1, at + 1);
+  if (steer < 0) return x > laneCenter(at) ? at : Math.max(0, at - 1);
+  return at;
 }
 
 /** Parameter gangguan dari entri SPEC_* (TECH_SPEC §3.2). */

@@ -16,7 +16,8 @@
     "audit": "tsx scripts/audit.ts",
     "stress": "tsx scripts/stress.ts",
     "bigdb": "tsx scripts/bigdb.ts",
-    "crash-test": "tsx scripts/crash-test.ts"
+    "crash-test": "tsx scripts/crash-test.ts",
+    "live-e2e": "tsx scripts/live-e2e.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",

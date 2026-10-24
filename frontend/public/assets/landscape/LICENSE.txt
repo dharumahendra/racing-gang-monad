@@ -1,0 +1,4 @@
+Poly Haven assets: CC0 1.0 Universal.
+Official license: https://polyhaven.com/license
+Legal code: https://creativecommons.org/publicdomain/zero/1.0/
+Models and textures modified for browser use; see manifest.json for provenance and checksums.

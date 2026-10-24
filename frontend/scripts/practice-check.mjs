@@ -13,10 +13,10 @@ try{
  await page.waitForSelector('[data-phase="running"]');
  const state=()=>page.locator('.race-shell').evaluate(el=>({...el.dataset}));
  states.push(await state());
- await page.keyboard.press('ArrowRight');await page.waitForSelector('[data-lane="2"][data-phase="running"]');states.push(await state());
+ const steeringX=Number(await page.locator('.race-shell').getAttribute('data-x'));await page.keyboard.down('ArrowRight');await page.waitForFunction(initial=>Number(document.querySelector('.race-shell')?.getAttribute('data-x'))>initial,steeringX);await page.keyboard.up('ArrowRight');await page.waitForSelector('[data-steer="0"]');states.push(await state());
  await page.keyboard.down('ArrowDown');await page.waitForSelector('[data-braking="true"][data-phase="running"]');states.push(await state());
  await page.keyboard.up('ArrowDown');await page.waitForSelector('[data-braking="false"][data-phase="running"]');states.push(await state());
  assert.deepEqual(errors,[]);
- const report={status:'PASS',checks:['start and countdown','native keyboard right changes target lane','native keyboard down brakes','releasing down stops braking'],states,errors,scope:'Desktop Edge; local practice; no game logic changes or hardware FPS claim'};
+ const report={status:'PASS',checks:['start and countdown','holding right moves the car; release clears steer','native keyboard down brakes','releasing down stops braking'],states,errors,scope:'Desktop Edge; local practice; no game logic changes or hardware FPS claim'};
  await writeFile(out+'/practice-report.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}

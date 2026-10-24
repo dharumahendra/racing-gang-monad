@@ -54,7 +54,10 @@ export type SimView = {
     x: number;
     z: number;
     speed: number;
+    /** Lajur yang dituju: lajur berikutnya searah setir, atau lajur tempat pusat mobil kalau tidak menyetir. */
     targetLane: number;
+    /** Arah setir yang sedang ditahan: -1 kiri, 0 lurus, 1 kanan. */
+    steer: -1 | 0 | 1;
     braking: boolean;
     nitroActive: boolean;
     slowTicks: number;

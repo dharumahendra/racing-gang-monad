@@ -13,12 +13,13 @@ function constants(): Record<string, unknown> {
   return out;
 }
 
-export async function configRoutes(app: FastifyInstance, { env }: AppContext) {
+export async function configRoutes(app: FastifyInstance, { env, chain }: AppContext) {
   const deployment = gameConfig.getDeployment();
   const runRegistry = (env.RUN_REGISTRY_ADDRESS ?? deployment?.runRegistry) as Address | undefined;
   const carNFT = (env.CAR_NFT_ADDRESS ?? deployment?.carNFT) as Address | undefined;
   const body: ConfigResponse = {
     configVersion: gameConfig.CONFIG_VERSION,
+    chainMode: chain.mode,
     chainId: env.CHAIN_ID,
     explorerUrl: env.EXPLORER_URL ?? deployment?.explorerUrl ?? null,
     contracts: runRegistry && carNFT ? { runRegistry, carNFT } : null,

@@ -1,6 +1,7 @@
 import { expect, it, vi } from 'vitest';
+import { CONFIG_VERSION } from '@racing-gang/config';
 import { createRunApi } from './run-api';
-const run={runId:`0x${'11'.repeat(32)}`,seed:`0x${'22'.repeat(32)}`,seedBlock:5,configVersion:1};
+const run={runId:`0x${'11'.repeat(32)}`,seed:`0x${'22'.repeat(32)}`,seedBlock:5,configVersion:CONFIG_VERSION};
 it('creates one run with a fresh bearer, tier and optional room, without sending a player identity',async()=>{
   const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify(run)));
   expect(await createRunApi('https://game.test',fetcher).create({carTier:0,roomCode:'AB7K2M'},'fresh')).toEqual(run);
