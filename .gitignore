@@ -1,0 +1,26 @@
+node_modules/
+dist/
+coverage/
+*.log
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# SQLite
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Foundry
+contract/out/
+contract/cache/
+contract/broadcast/*/31337/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
