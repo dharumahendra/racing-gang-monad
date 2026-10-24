@@ -7,8 +7,8 @@ import type { LocalRunner } from '../lib/runner';
 import { bakeVertexGeometry, trafficPoses, type TrafficPose } from '../lib/scene-geometry';
 type Model=TrafficPose['model'];
 const models:Model[]=['NormalCar2','Taxi','Cop','Truck'];
-// Two vehicles per row; the shared generator never uses a gap below gapEnd.
-const capacity=Math.max(64,Math.ceil((TRAFFIC.spawnAhead+TRAFFIC.despawnBehind+1000)/Math.min(TRAFFIC.gapStart,TRAFFIC.gapEnd))*2+8);
+// Two vehicles per row; the shared generator never uses a gap below gapEnd. The live window spans despawnBehind..despawnAhead (CONFIG_VERSION 3).
+const capacity=Math.max(64,Math.ceil((TRAFFIC.despawnAhead+TRAFFIC.despawnBehind+1000)/Math.min(TRAFFIC.gapStart,TRAFFIC.gapEnd))*2+8);
 function truckGeometry(){const root=new Group();const body=new Mesh(new BoxGeometry(2.5,3,7.5),new MeshStandardMaterial({color:'#d5c49f'}));body.position.set(0,1.5,1);root.add(body);const cab=new Mesh(new BoxGeometry(2.5,1.8,2.5),new MeshStandardMaterial({color:'#526a84'}));cab.position.set(0,.9,-3.7);root.add(cab);for(const x of [-1.15,1.15])for(const z of [-3,3]){const tire=new Mesh(new CylinderGeometry(.45,.45,.3,8),new MeshStandardMaterial({color:'#26313e'}));tire.rotation.z=Math.PI/2;tire.position.set(x,.45,z);root.add(tire);}const baked=bakeVertexGeometry(root);root.traverse(node=>{if(node instanceof Mesh){node.geometry.dispose();(node.material as MeshStandardMaterial).dispose();}});return baked;}
 export function TrafficLayer({runner}:{runner:LocalRunner}){
   const cars=useLoader(GLTFLoader,['NormalCar2','Taxi','Cop'].map(name=>`/assets/quaternius/${name}.glb`));

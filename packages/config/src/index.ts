@@ -2,7 +2,7 @@
 // Semua angka integer. Jarak dalam cm, kecepatan dalam cm/tick. 1 km/j ≈ 0,926 cm/tick.
 // Kalau angka diubah, naikkan CONFIG_VERSION dan buat ulang golden fixture sim.
 
-export const CONFIG_VERSION = 2;              // 2: setir tahan (posisi lateral bebas), bukan pindah lajur per klik
+export const CONFIG_VERSION = 3;              // 2: setir tahan (posisi lateral bebas); 3: gas manual mulai 40 km/j + lalu lintas dari belakang
 
 export const TICK_RATE = 30;                 // tick per detik
 export const RUN_TICKS = 3000;               // 100 detik
@@ -22,16 +22,20 @@ export const VEHICLE = {
 } as const;
 
 export const TRAFFIC_SPEED = 74;             // ≈ 80 km/j, seragam
-export const PLAYER_START_SPEED = 93;        // ≈ 100 km/j
+export const PLAYER_START_SPEED = 37;        // ≈ 40 km/j, lebih lambat dari lalu lintas: tanpa gas, mobil dari belakang menyusul
 export const PLAYER_START_LANE = 1;
-export const MIN_SPEED = 80;                 // ≈ 86 km/j, selalu > TRAFFIC_SPEED
-export const BRAKE_DECEL = 4;                // cm/tick per tick
+export const MIN_SPEED = 37;                 // ≈ 40 km/j, batas bawah rem dan saat gas dilepas
+export const BRAKE_DECEL = 2;                // cm/tick per tick selama ↓ ditahan
+export const COAST = { decel: 1, everyTicks: 2 } as const; // gas dilepas: turun 1 cm/tick tiap 2 tick (±16 km/j per detik)
 
 export const NEAR_MISS_MAX_GAP = 180;        // cm, tepi ke tepi
 export const NEAR_MISS_MIN_SPEED = 93;       // ≈ 100 km/j
 
+// Lalu lintas = dua aliran baris dari seed: ke depan mulai `firstRowS`, ke belakang mulai `firstBackRowS`.
+// Baris dimunculkan saat masuk jendela spawn dan dihapus saat keluar jendela despawn (lebih lebar, supaya tidak berkedip).
 export const TRAFFIC = {
-  spawnAhead: 20000, despawnBehind: 2000, firstRowS: 3000,
+  spawnAhead: 20000, despawnAhead: 22000, spawnBehind: 6000, despawnBehind: 7000,
+  firstRowS: 3000, firstBackRowS: -6000, backIdBase: 2_000_000_000,
   gapStart: 2800, gapEnd: 1600, gapJitter: 800, rampS: 300000,
   twoLanePermilleStart: 150, twoLanePermilleEnd: 500,
   truckPermille: 200,
@@ -49,12 +53,14 @@ export const NPC = {
   twoLanePermille: 300,                        // peluang red zone NPC menutup 2 lajur bersebelahan
 } as const;
 
+// maxSpeed dalam cm/tick (dipakai sim); maxKmh = angka nominal untuk tampilan (160 km/j, lalu +30 per tier).
+// 250 km/j tidak punya padanan integer persis (231 cm/tick ≈ 249,5 km/j), jadi tampilan memakai maxKmh.
 export const CARS = [
-  { tier: 0, name: 'Starter', maxSpeed: 167, accel: 1, lateral: 30, reqNearMiss: 0,   minCarTier: 0, coinCost: 0,     priceMon: '0',    supply: 0 },
-  { tier: 1, name: 'Tier 1',  maxSpeed: 185, accel: 1, lateral: 32, reqNearMiss: 40,  minCarTier: 0, coinCost: 3000,  priceMon: '0.05', supply: 1000 },
-  { tier: 2, name: 'Tier 2',  maxSpeed: 204, accel: 1, lateral: 35, reqNearMiss: 75,  minCarTier: 1, coinCost: 10000, priceMon: '0.1',  supply: 300 },
-  { tier: 3, name: 'Tier 3',  maxSpeed: 227, accel: 2, lateral: 39, reqNearMiss: 110, minCarTier: 2, coinCost: 25000, priceMon: '0.25', supply: 100 },
-  { tier: 4, name: 'Tier 4',  maxSpeed: 250, accel: 2, lateral: 44, reqNearMiss: 150, minCarTier: 3, coinCost: 50000, priceMon: '0.5',  supply: 30 },
+  { tier: 0, name: 'Starter', maxSpeed: 148, maxKmh: 160, accel: 1, lateral: 30, reqNearMiss: 0,   minCarTier: 0, coinCost: 0,     priceMon: '0',    supply: 0 },
+  { tier: 1, name: 'Tier 1',  maxSpeed: 176, maxKmh: 190, accel: 1, lateral: 32, reqNearMiss: 40,  minCarTier: 0, coinCost: 3000,  priceMon: '0.05', supply: 1000 },
+  { tier: 2, name: 'Tier 2',  maxSpeed: 204, maxKmh: 220, accel: 1, lateral: 35, reqNearMiss: 75,  minCarTier: 1, coinCost: 10000, priceMon: '0.1',  supply: 300 },
+  { tier: 3, name: 'Tier 3',  maxSpeed: 231, maxKmh: 250, accel: 2, lateral: 39, reqNearMiss: 110, minCarTier: 2, coinCost: 25000, priceMon: '0.25', supply: 100 },
+  { tier: 4, name: 'Tier 4',  maxSpeed: 259, maxKmh: 280, accel: 2, lateral: 44, reqNearMiss: 150, minCarTier: 3, coinCost: 50000, priceMon: '0.5',  supply: 30 },
 ] as const;                                     // tier 0 bukan NFT; supply 0 = tak terbatas
 
 export type Car = (typeof CARS)[number];

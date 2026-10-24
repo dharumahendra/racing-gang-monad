@@ -4,6 +4,7 @@
 /**
  * Jenis entri log input (TECH_SPEC §3.2). Nilai ini ikut di-hash, jangan diubah.
  * Sejak CONFIG_VERSION 2 setir bersifat tahan: LEFT/RIGHT = tombol ditekan, LEFT_OFF/RIGHT_OFF = dilepas.
+ * Sejak CONFIG_VERSION 3 gas manual: ACCEL_ON/ACCEL_OFF = ↑ ditekan/dilepas.
  */
 export const EntryKind = {
   LEFT: 1,
@@ -12,6 +13,8 @@ export const EntryKind = {
   BRAKE_OFF: 4,
   LEFT_OFF: 5,
   RIGHT_OFF: 6,
+  ACCEL_ON: 7,
+  ACCEL_OFF: 8,
   SPEC_NITRO: 10,
   SPEC_SPIKES: 11,
   SPEC_RED: 12,
@@ -23,10 +26,12 @@ export type PlayerInputKind =
   | typeof EntryKind.BRAKE_ON
   | typeof EntryKind.BRAKE_OFF
   | typeof EntryKind.LEFT_OFF
-  | typeof EntryKind.RIGHT_OFF;
+  | typeof EntryKind.RIGHT_OFF
+  | typeof EntryKind.ACCEL_ON
+  | typeof EntryKind.ACCEL_OFF;
 export type SpecEntryKind = typeof EntryKind.SPEC_NITRO | typeof EntryKind.SPEC_SPIKES | typeof EntryKind.SPEC_RED;
 
-export const isPlayerInputKind = (k: number): k is PlayerInputKind => k >= 1 && k <= 6;
+export const isPlayerInputKind = (k: number): k is PlayerInputKind => k >= 1 && k <= 8;
 export const isSpecEntryKind = (k: number): k is SpecEntryKind => k >= 10 && k <= 12;
 
 /** Alasan run berakhir, sama dengan `reason` di `RunRegistry` (TECH_SPEC §6.1). */

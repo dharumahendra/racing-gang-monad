@@ -3,8 +3,13 @@
  "runId": "0x46f1848a9fd2fa1fa103f694ae0cd9426fedcb4182372531b8e0e3963c3ba48c",
  "seed": "0x785274cac0577a463bb961f372c61da7401452b1038a585c98407e01f4f10410",
  "carTier": 1,
- "configVersion": 2,
+ "configVersion": 3,
  "entries": [
+  {
+   "tick": 1,
+   "kind": 7,
+   "data": 0
+  },
   {
    "tick": 2,
    "kind": 2,
@@ -16,98 +21,63 @@
    "data": 0
   },
   {
-   "tick": 68,
-   "kind": 1,
-   "data": 0
-  },
-  {
-   "tick": 79,
-   "kind": 5,
-   "data": 0
-  },
-  {
    "tick": 120,
    "kind": 10,
    "data": 0
   },
   {
-   "tick": 132,
-   "kind": 2,
-   "data": 0
-  },
-  {
-   "tick": 143,
-   "kind": 6,
-   "data": 0
-  },
-  {
-   "tick": 189,
-   "kind": 2,
-   "data": 0
-  },
-  {
-   "tick": 200,
-   "kind": 6,
-   "data": 0
-  },
-  {
-   "tick": 206,
+   "tick": 129,
    "kind": 1,
    "data": 0
   },
   {
-   "tick": 228,
+   "tick": 140,
    "kind": 5,
    "data": 0
   },
   {
-   "tick": 232,
+   "tick": 192,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 203,
+   "kind": 6,
+   "data": 0
+  },
+  {
+   "tick": 225,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 236,
+   "kind": 6,
+   "data": 0
+  },
+  {
+   "tick": 244,
    "kind": 1,
    "data": 0
   },
   {
-   "tick": 243,
+   "tick": 266,
    "kind": 5,
    "data": 0
   },
   {
-   "tick": 306,
-   "kind": 2,
-   "data": 0
-  },
-  {
-   "tick": 317,
-   "kind": 6,
-   "data": 0
-  },
-  {
-   "tick": 357,
-   "kind": 2,
-   "data": 0
-  },
-  {
-   "tick": 368,
-   "kind": 6,
-   "data": 0
-  },
-  {
-   "tick": 369,
+   "tick": 274,
    "kind": 1,
    "data": 0
   },
   {
-   "tick": 380,
+   "tick": 285,
    "kind": 5,
    "data": 0
   },
   {
-   "tick": 381,
+   "tick": 390,
    "kind": 2,
-   "data": 0
-  },
-  {
-   "tick": 392,
-   "kind": 6,
    "data": 0
   },
   {
@@ -116,73 +86,83 @@
    "data": 2
   },
   {
-   "tick": 461,
+   "tick": 401,
+   "kind": 6,
+   "data": 0
+  },
+  {
+   "tick": 445,
    "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 456,
+   "kind": 6,
+   "data": 0
+  },
+  {
+   "tick": 461,
+   "kind": 1,
    "data": 0
   },
   {
    "tick": 472,
-   "kind": 6,
-   "data": 0
-  },
-  {
-   "tick": 495,
-   "kind": 1,
-   "data": 0
-  },
-  {
-   "tick": 506,
    "kind": 5,
    "data": 0
   },
   {
-   "tick": 518,
+   "tick": 487,
    "kind": 1,
    "data": 0
   },
   {
-   "tick": 529,
+   "tick": 498,
    "kind": 5,
    "data": 0
   },
   {
-   "tick": 578,
+   "tick": 514,
    "kind": 2,
    "data": 0
   },
   {
-   "tick": 589,
+   "tick": 525,
    "kind": 6,
    "data": 0
   },
   {
-   "tick": 608,
-   "kind": 1,
-   "data": 0
-  },
-  {
-   "tick": 619,
-   "kind": 5,
-   "data": 0
-  },
-  {
-   "tick": 633,
+   "tick": 603,
    "kind": 2,
    "data": 0
   },
   {
-   "tick": 644,
+   "tick": 614,
    "kind": 6,
    "data": 0
   },
   {
-   "tick": 662,
+   "tick": 635,
    "kind": 1,
    "data": 0
   },
   {
-   "tick": 673,
+   "tick": 646,
    "kind": 5,
+   "data": 0
+  },
+  {
+   "tick": 663,
+   "kind": 2,
+   "data": 0
+  },
+  {
+   "tick": 674,
+   "kind": 6,
+   "data": 0
+  },
+  {
+   "tick": 695,
+   "kind": 1,
    "data": 0
   },
   {
@@ -196,13 +176,13 @@
    "data": 0
   },
   {
-   "tick": 718,
-   "kind": 2,
+   "tick": 706,
+   "kind": 5,
    "data": 0
   },
   {
-   "tick": 729,
-   "kind": 6,
+   "tick": 755,
+   "kind": 2,
    "data": 0
   },
   {
@@ -211,35 +191,27 @@
    "data": 9
   },
   {
-   "tick": 777,
+   "tick": 766,
+   "kind": 6,
+   "data": 0
+  },
+  {
+   "tick": 821,
    "kind": 3,
+   "data": 0
+  },
+  {
+   "tick": 821,
+   "kind": 8,
    "data": 0
   }
  ],
  "expected": {
-  "endTick": 832,
+  "endTick": 839,
   "endReason": "CRASH",
-  "nearMisses": 24,
-  "finalHash": "0x35d3a2b5a5dfb10ef27618fede4ab90e40268d4f598bfe3806a6ee8e7c1e50f1",
+  "nearMisses": 23,
+  "finalHash": "0xde0146f07d02cc55bb96fec7b84d1546ff1c7c906a0eefc58a7e92e4587af330",
   "events": [
-   {
-    "type": "NEAR_MISS",
-    "tick": 66,
-    "index": 1,
-    "vehicleId": 0,
-    "vehicleType": 0,
-    "coins": 100,
-    "inputHash": "0xf0839b19d5f5e467e20f06ef5fb77c34c602c4d6377e6004198c0103869493f1"
-   },
-   {
-    "type": "NEAR_MISS",
-    "tick": 102,
-    "index": 2,
-    "vehicleId": 2,
-    "vehicleType": 0,
-    "coins": 100,
-    "inputHash": "0x36f9935495dac7b38da3f51d82198eecf44038f6ec80067f4b142ae9fed3738e"
-   },
    {
     "type": "DISRUPTION_WARN",
     "tick": 120,
@@ -255,21 +227,21 @@
    },
    {
     "type": "NEAR_MISS",
-    "tick": 133,
-    "index": 3,
-    "vehicleId": 4,
+    "tick": 128,
+    "index": 1,
+    "vehicleId": 0,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0xdef8159c2490e45b461d16c82fffbafa30ac11a10292ceba754d58aad2cae465"
+    "inputHash": "0xca677eeaac4505d14c18e871cd7bb52f0792a368b3e78d8c29fe5c9931c1f32a"
    },
    {
     "type": "NEAR_MISS",
-    "tick": 161,
-    "index": 4,
-    "vehicleId": 6,
-    "vehicleType": 1,
-    "coins": 200,
-    "inputHash": "0x5642aedcd6a0aa63193845df848e1d3d05ce64d668a95501911fe78f4cedb645"
+    "tick": 163,
+    "index": 2,
+    "vehicleId": 2,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x44c540d204498326e800b754a2990ac74ce6d19b97cff46caa5c0a5d358aad57"
    },
    {
     "type": "DISRUPTION_ACTIVE",
@@ -286,30 +258,39 @@
    },
    {
     "type": "NEAR_MISS",
-    "tick": 188,
+    "tick": 193,
+    "index": 3,
+    "vehicleId": 4,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0xbecdd093c6b4ee606ca64a19c1cc1bb4838fabc4dddc83fa5c110542589d6901"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 209,
+    "index": 4,
+    "vehicleId": 6,
+    "vehicleType": 1,
+    "coins": 200,
+    "inputHash": "0xf4b154a6660baf128a8b719d97b0f2fbe64b630c8c954fba7c9edff1da33dbfa"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 226,
     "index": 5,
     "vehicleId": 8,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x5642aedcd6a0aa63193845df848e1d3d05ce64d668a95501911fe78f4cedb645"
+    "inputHash": "0xdf028fdbbcf3253dd391db96dd2323d5e5379dde41f8496faaaef55ea27f205e"
    },
    {
     "type": "NEAR_MISS",
-    "tick": 205,
+    "tick": 243,
     "index": 6,
     "vehicleId": 10,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0xc952958b2f30d64d3b117527dfbbe5c4c2774e476d3f89ef7af26651606b7985"
-   },
-   {
-    "type": "NEAR_MISS",
-    "tick": 250,
-    "index": 7,
-    "vehicleId": 16,
-    "vehicleType": 0,
-    "coins": 100,
-    "inputHash": "0x74a160dc9b4c3d616d9864d0c0544a978e0f86b9ad3a5e320f02703e1b78b09c"
+    "inputHash": "0xb43ab5876bde5004ce22f2a92da6aba71ecaccce75fa28ac694083bfd2f95482"
    },
    {
     "type": "DISRUPTION_END",
@@ -326,12 +307,21 @@
    },
    {
     "type": "NEAR_MISS",
-    "tick": 279,
-    "index": 8,
-    "vehicleId": 20,
+    "tick": 278,
+    "index": 7,
+    "vehicleId": 14,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x74a160dc9b4c3d616d9864d0c0544a978e0f86b9ad3a5e320f02703e1b78b09c"
+    "inputHash": "0x63a7caee6cf1dc96604f2f9eb747c9a491110042bb9cef38b6f5c2e903b68fc8"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 299,
+    "index": 8,
+    "vehicleId": 16,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0xceaa0720641012fc7fb5f17ff8c396b5b069d6c47c555621c0f05622e86e5a48"
    },
    {
     "type": "DISRUPTION_WARN",
@@ -349,30 +339,12 @@
    },
    {
     "type": "NEAR_MISS",
-    "tick": 305,
+    "tick": 355,
     "index": 9,
-    "vehicleId": 23,
+    "vehicleId": 20,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x74a160dc9b4c3d616d9864d0c0544a978e0f86b9ad3a5e320f02703e1b78b09c"
-   },
-   {
-    "type": "NEAR_MISS",
-    "tick": 334,
-    "index": 10,
-    "vehicleId": 24,
-    "vehicleType": 0,
-    "coins": 100,
-    "inputHash": "0x8227f4725307087ea75581ff663d54905feceaf8198e3f55cfc67acab19ade80"
-   },
-   {
-    "type": "NEAR_MISS",
-    "tick": 358,
-    "index": 11,
-    "vehicleId": 26,
-    "vehicleType": 0,
-    "coins": 100,
-    "inputHash": "0x6beb14b63f4bb0885c0a60b0e126ea504732fa34a2fc4c384f152f116633e039"
+    "inputHash": "0xceaa0720641012fc7fb5f17ff8c396b5b069d6c47c555621c0f05622e86e5a48"
    },
    {
     "type": "DISRUPTION_ACTIVE",
@@ -386,16 +358,12 @@
      ],
      "warnTick": 300,
      "activeTick": 360,
-     "z": 74214
+     "z": 65158
     }
    },
    {
-    "type": "SPIKES_HIT",
-    "tick": 374
-   },
-   {
     "type": "DISRUPTION_END",
-    "tick": 381,
+    "tick": 379,
     "d": {
      "id": "n0",
      "source": "NPC",
@@ -405,8 +373,17 @@
      ],
      "warnTick": 300,
      "activeTick": 360,
-     "z": 74214
+     "z": 65158
     }
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 389,
+    "index": 10,
+    "vehicleId": 23,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0xceaa0720641012fc7fb5f17ff8c396b5b069d6c47c555621c0f05622e86e5a48"
    },
    {
     "type": "DISRUPTION_WARN",
@@ -424,12 +401,21 @@
    },
    {
     "type": "NEAR_MISS",
-    "tick": 441,
-    "index": 12,
-    "vehicleId": 28,
+    "tick": 420,
+    "index": 11,
+    "vehicleId": 24,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x249e44574fc0f1044e1f19073ff8d1fcdc2ef47b1357ea2c20bb8a8521b4b2da"
+    "inputHash": "0xd356d17d783200b8f228eb90c782e1e4e110637bf8d5956ed4a767b7cb11c2ff"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 447,
+    "index": 12,
+    "vehicleId": 26,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x266c8844898204ca358ed33e5b86399b8252f6940fbc036207cd6affb6f131d8"
    },
    {
     "type": "DISRUPTION_ACTIVE",
@@ -443,12 +429,12 @@
      ],
      "warnTick": 400,
      "activeTick": 460,
-     "z": 85629
+     "z": 82758
     }
    },
    {
     "type": "DISRUPTION_END",
-    "tick": 483,
+    "tick": 479,
     "d": {
      "id": "s400",
      "source": "SPECTATOR",
@@ -458,26 +444,17 @@
      ],
      "warnTick": 400,
      "activeTick": 460,
-     "z": 85629
+     "z": 82758
     }
    },
    {
     "type": "NEAR_MISS",
-    "tick": 494,
+    "tick": 510,
     "index": 13,
-    "vehicleId": 31,
-    "vehicleType": 1,
-    "coins": 200,
-    "inputHash": "0x240eaf192ca0a9c45e9468616cbdf573ded5541f7626bd3f5d18bf4b8eb4a4e7"
-   },
-   {
-    "type": "NEAR_MISS",
-    "tick": 519,
-    "index": 14,
-    "vehicleId": 32,
+    "vehicleId": 30,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0xca03270d3c966a3be52c13cc4adb4976eb494403fd7d2dac847161e7d961883d"
+    "inputHash": "0x12f8513d146063129ed676f3007ba89870a7ea1bad096302405870d42577edc5"
    },
    {
     "type": "DISRUPTION_WARN",
@@ -495,21 +472,21 @@
    },
    {
     "type": "NEAR_MISS",
-    "tick": 552,
-    "index": 15,
+    "tick": 574,
+    "index": 14,
     "vehicleId": 34,
     "vehicleType": 1,
     "coins": 200,
-    "inputHash": "0x0e6a7cb96bc63b3dd4a93ce694472c65b380ae458dfedbe13d2311d6f619063c"
+    "inputHash": "0x50f915f2f96a9ae60d22d7b2d2259991acfb2ce09c083e082e98a4927b2d6aff"
    },
    {
     "type": "NEAR_MISS",
-    "tick": 579,
-    "index": 16,
+    "tick": 604,
+    "index": 15,
     "vehicleId": 36,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0xdc9355a35ca86bafb8fda2c7faeb047019acf8b241ba6b7c083793c3d20fba5d"
+    "inputHash": "0x30c7aebdbfe379ac1f7ab0fb008c65fe2d508f1f3df211eda014286af536cbb4"
    },
    {
     "type": "DISRUPTION_ACTIVE",
@@ -523,21 +500,12 @@
      ],
      "warnTick": 548,
      "activeTick": 608,
-     "z": 111631
+     "z": 108806
     }
    },
    {
-    "type": "NEAR_MISS",
-    "tick": 609,
-    "index": 17,
-    "vehicleId": 38,
-    "vehicleType": 0,
-    "coins": 100,
-    "inputHash": "0x81d22ccc6b62fb315e9daf79fcfa1cebbde6b3f6794a76b8f874a092411bc4b8"
-   },
-   {
     "type": "DISRUPTION_END",
-    "tick": 626,
+    "tick": 627,
     "d": {
      "id": "n1",
      "source": "NPC",
@@ -547,44 +515,35 @@
      ],
      "warnTick": 548,
      "activeTick": 608,
-     "z": 111631
+     "z": 108806
     }
    },
    {
     "type": "NEAR_MISS",
-    "tick": 632,
-    "index": 18,
+    "tick": 636,
+    "index": 16,
+    "vehicleId": 38,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x2d13f20d7843baff05e5f07054385436b0e61fab8935efc4d7693eea1322e99d"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 662,
+    "index": 17,
     "vehicleId": 40,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0xc914b34ef4de3339d827bebf1ca9acecfaa3afdfed603db1c76260b3c9df3cf1"
+    "inputHash": "0x1dfa4402a7abc9d2a51f57de8ea5ae974f4ff780cc2ec30e9ee8336f4cf20b89"
    },
    {
     "type": "NEAR_MISS",
-    "tick": 661,
-    "index": 19,
+    "tick": 693,
+    "index": 18,
     "vehicleId": 42,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x2d0d3047f84d2838f11fcf4b30888884f6d7bef143dfa4a90045faff645d177d"
-   },
-   {
-    "type": "NEAR_MISS",
-    "tick": 689,
-    "index": 20,
-    "vehicleId": 44,
-    "vehicleType": 0,
-    "coins": 100,
-    "inputHash": "0xc0461c20614ffa61fc31d6bad5940a8e790f1c0b776a76b7dea300ad5b081c9d"
-   },
-   {
-    "type": "NEAR_MISS",
-    "tick": 689,
-    "index": 21,
-    "vehicleId": 45,
-    "vehicleType": 0,
-    "coins": 100,
-    "inputHash": "0xc0461c20614ffa61fc31d6bad5940a8e790f1c0b776a76b7dea300ad5b081c9d"
+    "inputHash": "0x29fd48d0b9d7550cc9ad98bbe3d93ddc0474d97481428ac533a1ce3d1255978b"
    },
    {
     "type": "DISRUPTION_WARN",
@@ -618,21 +577,30 @@
    },
    {
     "type": "NEAR_MISS",
-    "tick": 716,
-    "index": 22,
-    "vehicleId": 46,
+    "tick": 724,
+    "index": 19,
+    "vehicleId": 44,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x0aa40c497a37e04f1a0f5598b93b09f2691e48be77c3f412e602c77b60feb96d"
+    "inputHash": "0x3f87f3ebcdc24a2cab1f1743c003efea9b3813a883bae540a15d9c4c1d3ad37f"
    },
    {
     "type": "NEAR_MISS",
-    "tick": 743,
-    "index": 23,
-    "vehicleId": 48,
+    "tick": 724,
+    "index": 20,
+    "vehicleId": 45,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x47f854d6800e591011e45e63d6643468ae11683e5e9c2c3b110e25bdc686fe3b"
+    "inputHash": "0x3f87f3ebcdc24a2cab1f1743c003efea9b3813a883bae540a15d9c4c1d3ad37f"
+   },
+   {
+    "type": "NEAR_MISS",
+    "tick": 754,
+    "index": 21,
+    "vehicleId": 46,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x3f87f3ebcdc24a2cab1f1743c003efea9b3813a883bae540a15d9c4c1d3ad37f"
    },
    {
     "type": "DISRUPTION_DROPPED",
@@ -668,12 +636,12 @@
    },
    {
     "type": "NEAR_MISS",
-    "tick": 771,
-    "index": 24,
-    "vehicleId": 50,
+    "tick": 782,
+    "index": 22,
+    "vehicleId": 48,
     "vehicleType": 0,
     "coins": 100,
-    "inputHash": "0x09610de007e960a1a54b1dc4722bd77dd158bda6f36d915157a27675f5039447"
+    "inputHash": "0x3a0de379418b2c32cef0a27304f56068e1b78d8f187346266001db5c3fdc2e96"
    },
    {
     "type": "DISRUPTION_DROPPED",
@@ -693,8 +661,17 @@
     }
    },
    {
+    "type": "NEAR_MISS",
+    "tick": 814,
+    "index": 23,
+    "vehicleId": 50,
+    "vehicleType": 0,
+    "coins": 100,
+    "inputHash": "0x3a0de379418b2c32cef0a27304f56068e1b78d8f187346266001db5c3fdc2e96"
+   },
+   {
     "type": "CRASH",
-    "tick": 832,
+    "tick": 839,
     "vehicleId": 53
    }
   ]

@@ -9,6 +9,8 @@ export const newTrack = (): Track => ({ overlapSeen: false, minGap: Number.MAX_S
 /**
  * Perbarui status satu kendaraan. Mengembalikan true tepat pada tick kendaraan itu
  * selesai disalip dan memenuhi syarat mepet. Kendaraan yang sudah `resolved` diabaikan.
+ * Hanya pemain yang menyalip yang dihitung: kendaraan yang menyalip pemain dari belakang
+ * (CONFIG_VERSION 3) di-reset begitu sudah di depan, jadi baru dihitung kalau pemain menyalipnya balik.
  */
 export function updateTrack(
   t: Track,
@@ -27,8 +29,12 @@ export function updateTrack(
     const gap = Math.abs(px - laneCenter(vLane)) - (HALF_PW + w / 2);
     t.overlapSeen = true;
     t.minGap = Math.min(t.minGap, gap);
+  } else if (vRear >= pFront) {
+    t.overlapSeen = false; // seluruhnya di depan: belum disalip, atau baru saja menyalip pemain
+    t.minGap = Number.MAX_SAFE_INTEGER;
   }
   if (pRear > vFront) {
+    if (!t.overlapSeen) return false; // datang dari belakang dan belum pernah beriringan
     t.resolved = true;
     return t.overlapSeen && t.minGap <= NEAR_MISS_MAX_GAP && speed >= NEAR_MISS_MIN_SPEED;
   }
