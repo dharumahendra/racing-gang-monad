@@ -15,7 +15,8 @@
     "test:rooms": "node scripts/rooms-check.mjs",
     "test:results": "node scripts/results-check.mjs",
     "test:performance": "node scripts/performance-check.mjs",
-    "test:service": "node scripts/service-check.mjs"
+    "test:service": "node scripts/service-check.mjs",
+    "test:design": "node scripts/design-check.mjs"
   },
   "dependencies": {
     "@racing-gang/config": "workspace:*",

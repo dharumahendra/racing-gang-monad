@@ -1,4 +1,4 @@
-# Racing Gang frontend — integrasi backend lokal + Privy
+# Racing Gang frontend — Stitch UI + integrasi backend lokal + Privy
 
 React + Vite + TypeScript, React Three Fiber/three.js, Privy Google login dan embedded wallet. Aturan game memakai packages/sim yang sama dengan backend, angka memakai packages/config.
 
@@ -159,3 +159,14 @@ pnpm --filter @racing-gang/backend test -- test/frontend.integration.test.mjs
 ```
 
 Regresi browser: test:browser, test:network, test:hud, test:rooms dan test:results memakai Vite development dengan App ID kosong, data mode mock, API/WS kosong. test:service memakai Vite terpisah dengan App ID kosong, data mode live, API berisi origin fixture (GET /health dicegat oleh Playwright); tidak memakai backend atau login. Seluruh server tes hanya lokal. Detail bukti dan batasan terbaru ada di .context/SYNC_IMPLEMENTATION.md.
+
+
+## Design system Stitch — 22 Oktober 2026
+
+Daylight Grand Prix adalah tema default, Cyber Arcade Drift tersedia lewat tombol tema di header. Preferensi disimpan sebagai racing-gang:theme, sinkron antartab, dan tetap berfungsi saat storage diblokir. ThemeProvider menaungi AuthProvider supaya appearance Privy dan app mengikuti pilihan yang sama tanpa key/remount akun.
+
+Space Grotesk dan Plus Jakarta Sans di-host lokal di public/fonts beserta OFL dan manifest. Source token dan keputusan aksesibilitas ada di .context/STITCH_DESIGN_SYSTEM.md. Primary action terang memakai varian biru0369A1 agar teks putih memenuhi4.5:1, aksen tetap0284C7. Shared tokens dipakai shell, showroom3D, HUD, room, penonton, serta hasil. Putar/reset model hanya mengubah view; sim dan transport tetap sama.
+
+`pnpm --filter @racing-gang/frontend test:design` memakai Vite dengan App ID kosong dan data mode mock, sama seperti regresi browser lainnya. Script mencakup light/dark, font/model nyata, putar/reset, reload/antartab, keyboard toggle, storage diblokir dan layout320/390/600/768/1100/1440. Hasil di frontend/test-results, di-ignore Git. Google/embedded wallet nyata tetap perlu acceptance dua akun; SDK readiness bukan bukti sesi akun.
+
+Bukti terbaru: .context/STITCH_UI_IMPLEMENTATION.md. Tombol gangguan penonton memperbarui state pending pada klik yang sama; server tetap menentukan energi/hasil. Tidak ada fitur tuning/lap record atau pembelian palsu dari reference Stitch.

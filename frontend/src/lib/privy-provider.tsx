@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { PrivyProvider, usePrivy, useWallets, useCreateWallet } from '@privy-io/react-auth';
 import { AuthContext, session } from './auth-runtime';
 import { settings } from './config';
+import { useTheme } from '../components/Theme';
 function Bridge({children}:{children:ReactNode}) {
   const {ready,authenticated,user,login,logout,getAccessToken}=usePrivy();
   const {wallets,ready:walletsReady}=useWallets();const {createWallet}=useCreateWallet();
@@ -23,6 +24,7 @@ function Bridge({children}:{children:ReactNode}) {
   }}>{children}</AuthContext.Provider>;
 }
 export default function Configured({children}:{children:ReactNode}) {
-  return <PrivyProvider appId={settings.privyAppId} clientId={settings.privyClientId||undefined} config={{loginMethods:['google'],defaultChain:settings.chain,supportedChains:[settings.chain],appearance:{theme:'light',accentColor:'#365d85',logo:'/favicon.svg',loginMessage:'Masuk dan mulai balapan.'},embeddedWallets:{ethereum:{createOnLogin:'users-without-wallets'}}}}><Bridge>{children}</Bridge></PrivyProvider>;
+  const {theme}=useTheme();
+  return <PrivyProvider appId={settings.privyAppId} clientId={settings.privyClientId||undefined} config={{loginMethods:['google'],defaultChain:settings.chain,supportedChains:[settings.chain],appearance:{theme,accentColor:theme==='light'?'#0284C7':'#15EAE2',logo:'/favicon.svg',loginMessage:'Masuk dan mulai balapan.'},embeddedWallets:{ethereum:{createOnLogin:'users-without-wallets'}}}}><Bridge>{children}</Bridge></PrivyProvider>;
 }
 

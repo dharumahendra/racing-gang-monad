@@ -52,3 +52,8 @@ Transformasi: pusat X/Z dan pivot tanah disesuaikan, skala seragam mengikuti tab
 Jalan empat lajur, marka, curb, truk placeholder dan SPIKES dibuat dengan primitive three.js. Road tile Modular Streets tidak dipakai: lebar jalan dan empat lajurnya tetap mengikuti config bersama. Hanya lampu dari paket Streets yang diimpor. Kabin tetap opsional dan belum dibuat.
 
 Ilustrasi mobil CSS T02 sudah diganti dengan model Quaternius. Kabin belum dibuat. Font memakai Bahnschrift/Segoe UI/Consolas dari sistem dengan fallback generik; tidak ada file font pihak ketiga yang didistribusikan.
+
+
+## Font design system Stitch
+
+Space Grotesk dan Plus Jakarta Sans disimpan sebagai font variable asli di public/fonts. Keduanya memakai SIL Open Font License1.1; OFL asli dan manifest URL sumber Google Fonts ada di folder yang sama. Berkas font tidak dimodifikasi. Font disajikan lokal tanpa permintaan font CDN saat runtime.

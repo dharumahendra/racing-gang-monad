@@ -31,6 +31,9 @@ try{
     if(kind==='RED'){
       await page.waitForSelector('[data-reduced-motion="true"]');await page.getByRole('button',{name:'Suara aktif',exact:true}).click();await page.waitForSelector('[data-audio-state="muted"]');const muted=await page.evaluate(()=>window.__sound.starts);
       await page.waitForFunction(()=>window.__hudWarnings.some(w=>w.kind==='RED'&&w.seconds==='1'));await page.waitForFunction(()=>window.__hudMaxWarnings>=2);await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>window.__sound.starts),muted);checks.push('overlapping warnings are both visible instead of hiding the second disruption');
+      // Observe the overlapping SPIKES cue while muted as well; otherwise a legitimate
+      // new countdown second may arrive between the unmute click and the IPC assertion.
+      await page.waitForFunction(()=>window.__hudWarnings.some(w=>w.kind==='SPIKES'&&w.seconds==='1'));assert.equal(await page.evaluate(()=>window.__sound.starts),muted);
       await page.getByRole('button',{name:'Suara mati',exact:true}).click();await page.waitForSelector('[data-audio-state="ready"]');await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>window.__sound.starts),muted);checks.push('mute suppresses the next cue; unmute does not replay stale warning; reduced motion respected');
       await page.waitForFunction(()=>window.__hudPops.some(pop=>pop.coins==='200'));assert.equal(await page.evaluate(()=>window.__hudPops.find(pop=>pop.coins==='200').animation),'none');checks.push('actual sim near miss shows +200 local feedback without reduced-motion animation');
       const hash=`0x${'33'.repeat(32)}`;const receipt={t:'nearMiss.recorded',index:4,txHash:hash,blockNumber:123,latencyMs:120};socket.send(JSON.stringify(receipt));socket.send(JSON.stringify(receipt));await page.waitForSelector('[data-feed-index="4"][data-feed-status="recorded"]');

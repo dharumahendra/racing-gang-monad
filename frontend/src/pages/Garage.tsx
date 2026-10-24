@@ -1,21 +1,25 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useStore } from 'zustand';
-import { CarPreview } from '../components/CarPreview';
-import { previewBalance, previewCars } from '../lib/mock';
-import { settings } from '../lib/config';
-import { session } from '../components/Wallet';
-const number = (n: number) => n.toLocaleString('id-ID');
-export function Garage() {
-  const [tier, setTier] = useState(0); const car = previewCars[tier];
-  const account = useStore(session, s => s.account);
-  const balance = settings.mode === 'mock' ? previewBalance : account;
-  return <><div className="page-heading"><div><span className="eyebrow">BENGKEL / PILIH MOBIL</span><h1>Garasimu.<br/><span>Awal setiap run.</span></h1></div><p>Gas otomatis. Cari celah, kumpulkan mepet,<br className="desktop-break"/> dan biarkan penonton menambah tantangan.</p></div>
-    <section className="balances" aria-label="Saldo koin"><div><span>Tersedia untuk belanja</span><strong>{balance ? number(balance.coins - balance.coinsReserved) : '—'} <small>koin</small></strong></div><div><span>Menunggu pencatatan</span><strong>{balance ? `+${number(balance.coinsPending)}` : '—'}</strong></div><div><span>Disisihkan</span><strong>{balance ? number(balance.coinsReserved) : '—'}</strong></div><span className="balance-note">{settings.mode === 'mock' ? 'SALDO CONTOH' : account ? 'DARI BACKEND' : 'MASUK UNTUK MELIHAT SALDO'}</span></section>
-    <div className="garage-grid"><section className="preview-panel"><div className="panel-label"><span>RACING GANG / {tier === 0 ? 'STARTER' : `TIER ${tier}`}</span><span>MODEL / QUATERNIUS</span></div><CarPreview key={tier} tier={tier}/><div className="preview-caption"><span>Mobil pilihan</span><strong>{car.name}</strong><span className="badge">{tier === 0 ? 'Gratis · bukan NFT' : 'Soulbound · tidak dapat ditransfer'}</span></div></section>
-      <section className="car-details"><h2>Pilih kendaraan</h2><div className="tier-picker" aria-label="Pilihan mobil">{previewCars.map(c => <button key={c.tier} aria-pressed={tier === c.tier} onClick={() => setTier(c.tier)}><span>{c.tier === 0 ? 'S' : `T${c.tier}`}</span><small>{c.tier === 0 ? 'Starter' : 'Pratinjau'}</small></button>)}</div><div className="detail-title"><h3>{car.name}</h3><span className="badge">{tier === 0 ? 'Mobil awal' : 'Syarat belum diverifikasi'}</span></div><dl className="car-stats"><div><dt>Kecepatan maks.</dt><dd>{car.speed} <small>km/j</small></dd></div><div><dt>Mepet dalam 1 run</dt><dd>{car.nearMisses || '—'}</dd></div><div><dt>Harga koin</dt><dd>{number(car.coins)}</dd></div><div><dt>MON testnet</dt><dd>{car.mon}</dd></div></dl><p className="muted">{tier === 0 ? 'Starter tersedia sebagai mobil awal. NFT baru terbuka setelah syarat mepet terpenuhi.' : `Syarat memakai ${tier === 1 ? 'Starter atau lebih tinggi' : `Tier ${tier - 1} atau lebih tinggi`}. Stok dan kelulusan resmi menunggu integrasi kontrak.`}</p><button className="button wide" disabled>{tier === 0 ? 'Starter · pilihan awal' : 'Pembelian tersedia setelah integrasi'}</button><p className="fine-print">Kepemilikan dan stok akan ditampilkan saat fitur online siap.</p></section></div>
-    <section className="start-strip"><div><span className="eyebrow">SATU RUN. MAKSIMAL 100 DETIK.</span><h2>Siap cari celah?</h2></div><div className="start-actions"><Link className="button" to="/play">Coba latihan <span aria-hidden="true">↗</span></Link><Link className="button secondary" to="/room">Buat room</Link><Link className="quiet-link" to="/watch">Jadi penonton →</Link></div></section>
-  </>;
+import {useState} from 'react';
+import {Link} from 'react-router-dom';
+import {useStore} from 'zustand';
+import {CARS,toKmh} from '@racing-gang/config';
+import {CarPreview} from '../components/CarPreview';
+import {Icon} from '../components/Icon';
+import {previewBalance} from '../lib/mock';
+import {settings} from '../lib/config';
+import {session} from '../components/Wallet';
+const number=(n:number)=>n.toLocaleString('id-ID');
+const classes=['THE ORIGINAL','STREET CLASS','SPORT CLASS','PRO CLASS','ULTIMATE CLASS'];
+export function Garage(){
+ const [tier,setTier]=useState(0),car=CARS[tier];
+ const account=useStore(session,s=>s.account),balance=settings.mode==='mock'?previewBalance:account;
+ const owned=tier===0||!!account?.ownedTiers.includes(tier),qualified=!!account?.qualifiedTiers.includes(tier);
+ const speed=toKmh(car.maxSpeed),target=tier===0?CARS[1]:car;
+ return <div className="garage-page"><div className="page-heading"><div><span className="eyebrow">GARAGE / PILIH KENDARAAN</span><h1>Garasimu<span className="heading-dot">.</span></h1></div><div className="garage-heading-actions"><p>Mobilnya kamu pilih.<br/>Celahnya kamu cari.</p><Link className="button" to="/play">Mulai latihan<Icon name="arrow"/></Link></div></div>
+  <section className="garage-console" aria-label="Garasi kendaraan"><div className="console-header"><span><Icon name="garage"/>GARAGE PIT <span className="console-slash">/</span> 01</span><span className="console-caption">LOW POLY. HIGH ADRENALINE.</span></div>
+  <section className="balances" aria-label="Saldo koin"><div><span><Icon name="coin"/>Tersedia untuk belanja</span><strong>{balance?number(balance.coins-balance.coinsReserved):'—'} <small>koin</small></strong></div><div><span>Menunggu pencatatan</span><strong>{balance?`+${number(balance.coinsPending)}`:'—'}</strong></div><div><span>Disisihkan</span><strong>{balance?number(balance.coinsReserved):'—'}</strong></div><span className="balance-note">{settings.mode==='mock'?'SALDO CONTOH':account?'DARI BACKEND':'MASUK UNTUK MELIHAT SALDO'}</span></section>
+  <div className="showroom-grid"><section className="vehicle-roster"><div className="section-label"><h2>Pilih kendaraan</h2><span>01—05</span></div><div className="tier-picker" aria-label="Pilihan mobil">{CARS.map(c=>{const available=c.tier===0||account?.ownedTiers.includes(c.tier);return <button key={c.tier} type="button" aria-label={c.tier===0?'S Starter':`T${c.tier} Pratinjau`} aria-pressed={tier===c.tier} data-tier={c.tier} onClick={()=>setTier(c.tier)}><span className="vehicle-class">{classes[c.tier]}<Icon name={available?'check':'lock'}/></span><span className="vehicle-name">{c.name}</span><span className="vehicle-caption">{c.tier===0?'Your first ride.':available?'Dimiliki':'Pratinjau kendaraan'}</span><span className="vehicle-spec"><span>{toKmh(c.maxSpeed)} <small>KM/J</small></span><span>{c.tier===0?'GRATIS':`${c.reqNearMiss} MEPET`}</span></span></button>;})}</div><div className="roster-note"><Icon name="race"/><span>Semua punya awal.<strong>Mulai dari Starter.</strong></span></div></section>
+  <section className="preview-panel"><div className="panel-label"><span><span className="status-dot"/>SHOWROOM / 360°</span><span>0{tier+1} / 05</span></div><CarPreview key={tier} tier={tier}/><div className="preview-caption"><div><span>{classes[tier]}</span><strong>{car.name}</strong></div><span className="badge">{tier===0?'Gratis · bukan NFT':'Soulbound'}</span></div></section>
+  <section className="car-details"><div className="section-label"><h2>Performance</h2><Icon name="speed"/></div><div className="detail-title"><span className="eyebrow">{classes[tier]}</span><h3>{car.name}</h3><span className={`badge ${owned||qualified?'good':''}`}>{owned?'Dimiliki':qualified?'Syarat terpenuhi':'Syarat belum diverifikasi'}</span></div><div className="speed-readout"><span>Kecepatan maks.</span><strong>{speed}<small>KM/J</small></strong><div className="segmented-track" aria-hidden="true">{Array.from({length:10},(_,i)=><i key={i} data-filled={i<Math.round(car.maxSpeed/CARS[4].maxSpeed*10)}/>)}</div></div><dl className="car-stats"><div><dt>Mepet dalam 1 run</dt><dd>{car.reqNearMiss||'—'}</dd></div><div><dt>Mobil minimum</dt><dd>{tier<2?'Starter':`Tier ${car.minCarTier}`}</dd></div><div><dt>Harga koin</dt><dd>{number(car.coinCost)}</dd></div><div><dt>MON testnet</dt><dd>{car.priceMon}</dd></div></dl><button className="button secondary wide purchase-gate" disabled>{tier===0?'Starter · pilihan awal':'Pembelian tersedia setelah integrasi'}</button><p className="fine-print">{tier===0?'Bisa langsung dipakai untuk latihan.':`Stok dan pembelian mengikuti kontrak. Target ${target.reqNearMiss} mepet memakai ${target.minCarTier===0?'Starter':`Tier ${target.minCarTier}`} atau lebih tinggi.`}</p></section></div>
+  <section className="start-strip"><div><Icon name="race"/><span><strong>Jalanan menunggu.</strong><small>4 lajur. Gas otomatis. Maksimal 100 detik.</small></span></div><div className="start-actions"><Link className="quiet-link" to="/watch">Jadi penonton →</Link><Link className="button secondary" to="/room"><Icon name="room"/>Buat room</Link><Link className="button" to="/play">Coba latihan<Icon name="arrow"/></Link></div></section></section>
+  <div className="garage-footnote"><span><Icon name="bolt"/>Gas otomatis. Rem tetap di tanganmu.</span><span>← → / A D <span className="console-slash">PINDAH LAJUR</span> ↓ / S <span className="console-slash">REM</span></span></div></div>;
 }
-
-
