@@ -40,6 +40,28 @@ Owner = deployer `0xa046…6F80`, attester `0xf124…c2c0`, voucher signer `0xf9
 Deployment lama (2026-10-23, RunRegistry `0x5DF0…BD93`, CarNFT `0x6Ac0…654b`) tidak dipakai lagi: wallet-nya
 diganti karena key lama pernah tertulis di chat.
 
+## Koleksi tambahan (`Collectibles`, RGX)
+
+Kontrak terpisah dari CarNFT: kosmetik tanpa efek gameplay. `buy(uint8 design)` dibayar MON (`msg.value == price(design)`),
+1 per desain per wallet, soulbound (ERC-5192). Harga dan suplai dari `COLLECTIBLES` di `packages/config`
+(`contract/config/collectibles.json`), immutable setelah deploy. Tidak ada mint admin.
+
+| Desain | Nama | Harga | Suplai |
+|---|---|---|---|
+| 1 | Mine Cart | 0,05 MON | 100 |
+| 2 | Burger Car | 0,05 MON | 100 |
+| 3 | Boat Car | 0,05 MON | 100 |
+
+Alamat `0x364A20CAFb328028E125d846431cfc7b0391F42d` ([MonadVision](https://testnet.monadvision.com/address/0x364a20cafb328028e125d846431cfc7b0391f42d)),
+blok `73777102`, terverifikasi. Owner = deployer `0xa046…6F80`. `tokenURI` = `baseURI + design + ".json"` dengan
+baseURI `https://racing-gang-monad.vercel.app/collectibles/metadata/`. Alamat dan ABI: `packages/config/deployments/collectibles-monad-testnet.json`
+(`getCollectiblesDeployment()`).
+
+```bash
+forge script script/DeployCollectibles.s.sol --rpc-url monad_testnet --broadcast   # COLLECTIBLES_BASE_URI dari .env
+node script/export-collectibles.mjs 10143 https://testnet.monadvision.com
+```
+
 ## Deploy ke Monad testnet
 
 Butuh: wallet deployer berisi MON, alamat attester dan voucher signer (harus berbeda).
