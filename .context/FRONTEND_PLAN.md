@@ -425,3 +425,11 @@ Detail di `SYSTEM_IMPLEMENTATION.md` dan `RUNBOOK.md`. Sejarah di atas tetap ber
 - FE live lokal: `VITE_DATA_MODE=live`, API/WS `127.0.0.1:8080`, backend `CHAIN_MODE=mock`. SDK Privy dan modal Google tampil; login Google nyata BLOCKED sampai dashboard mengaktifkan Google, embedded wallet, dan allowed origins, serta App Secret dirotasi.
 - Recovery: `Online.tsx` menampilkan **Periksa run aktif** setelah POST ambigu/409 (`GET /runs/active`), mengadopsi run `CREATED` tanpa pengendali. `PlayClient` mengirim kunci halaman `client`; tab kedua menerima `NOT_CONTROLLER` dan berhenti. Reload tetap membuka summary; tidak ada resume penuh.
 - Chain live dan pembelian `buy()` BLOCKED pada kontrak/ABI Bayu. Perangkat fisik dan Docker belum diuji.
+
+## 24. Integrasi manifest final, metadata, QR, audit — 23 Oktober 2026
+
+Main e015678 sudah masuk raka/foundation. ABI pembelian final Bayu diterima tes FE. QR room dan halaman audit publik tersedia; metadata Tier1–4 beserta PNG disiapkan. Domain dan URL backend masih menunggu pengguna; tidak ada transaksi/hosting/setBaseURI. Typecheck dan 25 tes terarah PASS, tanpa verifikasi visual. Detail serta batas integrasi ada di FE_LIVE_COMPLETION.md.
+
+## 25. Setir tahan CONFIG_VERSION 2 — 24 Oktober 2026
+
+Branch dharu/smooth-steer 2957341 diintegrasikan fast-forward ke raka/foundation sambil mempertahankan perubahan lokal metadata/QR/audit. Shared sim/config versi2 berasal dari Dharu. FE memakai satu pengelola held input untuk keyboard, alias, dan pointer; LEFT_OFF/RIGHT_OFF/BRAKE_OFF dilepas saat keyup, pointer up/cancel/leave/lost capture, blur, visibilitychange, serta cleanup. Touch memakai pointer capture dan touch-action:none pada latihan/online. Posisi renderer sudah memakai interpolasi previous/current player.x, tidak memakai pusat targetLane. Run versi1 tetap summary read-only, tidak di-replay memakai versi2. Backend dan FE perlu restart/rebuild bersama. Rincian di SMOOTH_STEER_FE.md.

@@ -102,3 +102,15 @@ Checklist manual pengguna (FE/demo):
 - [ ] Logout/ganti akun saat proses → akun B tidak melihat status/tx akun A.
 - [ ] Run online 40 mepet → "Qualified on-chain: Tier 1" dan Garage "Requirements met" tanpa reload manual.
 - [ ] Coba transfer NFT di explorer/wallet → revert (soulbound, ditegakkan kontrak).
+
+## Pembaruan FE — 23 Oktober 2026
+
+- Sinkronisasi main e015678 (PR #6/#7) ke raka/foundation: manifest chain10143, deploy block73297824, ABI dan kontrak final tersedia. Catatan sebelumnya tentang ABI kosong dan relayer/indexer/signer belum dibangun sudah tidak berlaku.
+- QR room lokal, /audit/:id, tautan audit dari hasil, 4 metadata JSON + PNG kendaraan, tooling URL metadata dan konfigurator backend FE ditambahkan. Rincian di FE_LIVE_COMPLETION.md.
+- Audit menggunakan auditRun Bayu, getRun dan tiga event kontrak; bukti kosong/terminal belum lengkap tidak diberi status cocok.
+- 25 tes terarah PASS (18 pembelian, 3 validasi/audit, 4 integrasi adapter audit). RPC terkontrol, replay asli; bukan transaksi atau pembuktian layanan live. Typecheck FE PASS. Status build akhir dicatat di FE_LIVE_COMPLETION.md.
+- PNG diekspor dari model nyata sebagai aset, tanpa verifikasi visual. Tidak ada OAuth, transaksi, setBaseURI, deployment hosting atau perubahan key. Domain metadata dan endpoint backend belum diberikan; pengguna meminta disiapkan dahulu.
+
+## Setir tahan FE — 24 Oktober 2026
+
+Fast-forward dharu/smooth-steer2957341, CONFIG_VERSION2; keyboard/sentuh memakai pengelola held input bersama dengan OFF saat blur/visibility/pointer release/cancel/leave/lost capture/cleanup. Renderer tetap interpolasi player.x. 53 tes terarah serta build FE termasuk typecheck PASS. Browser scripts disesuaikan semantik tahan dan lolos pemeriksaan sintaks tanpa dijalankan. Tidak ada commit/push/transaksi/visual QA. Detail SMOOTH_STEER_FE.md. Perubahan lokal metadata/QR/audit tetap dijaga.
