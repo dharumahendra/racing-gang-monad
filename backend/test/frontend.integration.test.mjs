@@ -132,3 +132,37 @@ it('roundtrips a real signed mock voucher, isolates buyer and releases expired r
   const next = await api.create(1, A, async () => bearer); expect(next.voucher.nonce).not.toBe(first.voucher.nonce);
   const me = await createAuthApi(base).me(bearer); expect(me.coins).toBe(5000); expect(me.coinsReserved).toBe(3000); expect(me.ownedTiers).not.toContain(1);
 });
+
+it('reconciles a lost POST /runs through the FE lookup, adopts it once, and blocks a second tab', async () => {
+  const bearer = await token(); const other = await token('did:privy:integration-b');
+  const lossy = async (url, init) => { await fetch(url, init); throw Error('response lost'); };
+  await expect(createRunApi(base, lossy).create({ carTier: 0 }, bearer)).rejects.toMatchObject({ code: 'UNKNOWN_OUTCOME' });
+  expect(t.db.select().from(runs).all()).toHaveLength(1);
+  await expect(createRunApi(base).create({ carTier: 0 }, bearer)).rejects.toMatchObject({ code: 'ACTIVE_RUN_EXISTS' });
+  expect(t.db.select().from(runs).all()).toHaveLength(1);
+  expect(await createRunApi(base).active(other)).toEqual({ run: null, creating: false });
+  const { run } = await createRunApi(base).active(bearer);
+  expect(run).toMatchObject({ lifecycle: 'CREATED', controlled: false });
+  const ws = base.replace('http:', 'ws:') + '/ws/play';
+  const tabA = new PlayClient({ runId: run.runId, seed: run.seed, carTier: run.carTier }, ws, t.clock.now, socketAt); clients.push(tabA);
+  await tabA.connect(async () => bearer);
+  await waitFor(() => tabA.status === 'countdown', 'adopted run countdown');
+  expect((await createRunApi(base).active(bearer)).run.controlled).toBe(true);
+  const tabB = new PlayClient({ runId: run.runId, seed: run.seed, carTier: run.carTier }, ws, t.clock.now, socketAt); clients.push(tabB);
+  await tabB.connect(async () => bearer);
+  await waitFor(() => tabB.status === 'error', 'second tab rejected');
+  expect(tabB.error).toContain('another tab or device');
+  const session = t.ctx.runs.get(run.runId);
+  t.clock.set(session.startAt); tabA.pump();
+  const ap = new Autopilot();
+  for (let step = 0; tabA.runner.phase !== 'ended'; step++) {
+    if (step > 3200) throw Error('run did not end');
+    for (const kind of ap.decide(tabA.runner.current, 0)) tabA.input(kind);
+    t.clock.set(session.startAt + Math.ceil((step + 1) * 1000 / 30)); tabA.pump(); await pause();
+    expect(tabA.status).not.toBe('error');
+  }
+  await waitFor(() => tabA.result !== null, 'result');
+  const summary = await createSummaryApi(base).read(run.runId);
+  expect(tabA.result.status).toBe('VERIFIED'); expect(summary.finalHash).toBe(tabA.runner.sim.inputHash);
+  expect(t.db.select().from(runs).all()).toHaveLength(1);
+}, 60000);

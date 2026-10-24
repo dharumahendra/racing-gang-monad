@@ -2,6 +2,8 @@
 import { existsSync } from 'node:fs';
 import { buildApp } from './app';
 import { createChain } from './chain';
+import { MockChain } from './chain/mock';
+import { applyDevGrants, parseDevGrants } from './devGrants';
 import { openDb } from './db/client';
 import { loadEnv } from './env';
 import { startJobs } from './jobs';
@@ -22,6 +24,10 @@ const { app, ctx } = await buildApp({
 });
 
 await chain.start();
+if (env.DEV_GRANT_TIERS && chain instanceof MockChain) {
+  const granted = applyDevGrants(db, chain, parseDevGrants(env.DEV_GRANT_TIERS));
+  app.log.warn({ granted }, 'DEV_GRANT_TIERS aktif: kepemilikan mobil khusus pengembangan (mock), bukan pembelian');
+}
 const recovered = ctx.runs.recoverStaleRuns();
 if (recovered > 0) app.log.warn({ recovered }, 'run yang terputus karena restart ditutup sebagai PARTIAL');
 const stopJobs = startJobs(ctx, app.log);

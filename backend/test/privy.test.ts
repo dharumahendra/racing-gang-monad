@@ -164,3 +164,67 @@ describe('env login', () => {
     expect(loadEnv({ ...base, PRIVY_APP_ID: 'x', PRIVY_VERIFICATION_KEY: 'k', PRIVY_APP_SECRET: 's' }).ALLOW_SIWE_LOGIN).toBe(false);
   });
 });
+
+describe('verifikasi lewat JWKS (PRIVY_JWKS_URL)', () => {
+  const JWKS = 'https://auth.privy.test/api/v1/apps/test-privy-app/jwks.json';
+  let jwks: object[]; let jwksCalls: number; let jwksFail: boolean;
+  let j: Awaited<ReturnType<typeof makeTestApp>>;
+  const jwkFetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    if (String(input) === JWKS) { jwksCalls++; if (jwksFail) throw new Error('ECONNRESET'); return Response.json({ keys: jwks }); }
+    return fakeFetch(input, init);
+  }) as typeof fetch;
+  const signed = async (key: CryptoKey, kid: string, sub = DID) => {
+    const now = Math.floor(j.clock.now() / 1000);
+    return new SignJWT({}).setProtectedHeader({ alg: 'ES256', kid }).setIssuer('privy.io').setAudience(APP_ID).setSubject(sub)
+      .setIssuedAt(now).setExpirationTime(now + 3600).sign(key);
+  };
+  const meJ = (tok: string) => j.app.inject({ method: 'GET', url: '/me', headers: { authorization: `Bearer ${tok}` } });
+  let k1: Awaited<ReturnType<typeof generateKeyPair>>; let k2: Awaited<ReturnType<typeof generateKeyPair>>;
+
+  beforeEach(async () => {
+    const { exportJWK } = await import('jose');
+    k1 = await generateKeyPair('ES256', { extractable: true }); k2 = await generateKeyPair('ES256', { extractable: true });
+    jwks = [{ ...(await exportJWK(k1.publicKey)), kid: 'k1', alg: 'ES256', use: 'sig' }];
+    jwksCalls = 0; jwksFail = false;
+    // Tanpa PEM: hanya JWKS.
+    j = await makeTestApp({ ALLOW_SIWE_LOGIN: 'false', PRIVY_APP_ID: APP_ID, PRIVY_JWKS_URL: JWKS, PRIVY_APP_SECRET: 'rahasia' }, { fetch: jwkFetch });
+  });
+  afterEach(async () => { await j.close(); });
+
+  it('token dari kunci di JWKS diterima; JWKS di-cache', async () => {
+    expect((await meJ(await signed(k1.privateKey, 'k1'))).statusCode).toBe(200);
+    expect((await meJ(await signed(k1.privateKey, 'k1'))).statusCode).toBe(200);
+    expect(jwksCalls).toBe(1);
+  });
+
+  it('rotasi: kid baru memicu satu kali ambil ulang lalu diterima', async () => {
+    expect((await meJ(await signed(k1.privateKey, 'k1'))).statusCode).toBe(200);
+    const { exportJWK } = await import('jose');
+    jwks = [...jwks, { ...(await exportJWK(k2.publicKey)), kid: 'k2', alg: 'ES256', use: 'sig' }];
+    j.clock.advance(31_000);
+    expect((await meJ(await signed(k2.privateKey, 'k2'))).statusCode).toBe(200);
+    expect(jwksCalls).toBe(2);
+  });
+
+  it('kunci asing ditolak 401; banjir kid asing tidak memicu ambil ulang terus', async () => {
+    const stranger = await generateKeyPair('ES256');
+    for (let i = 0; i < 5; i++) expect((await meJ(await signed(stranger.privateKey, 'x' + i))).statusCode).toBe(401);
+    expect(jwksCalls).toBe(1);
+    // kid sama tapi tanda tangan dari kunci lain
+    expect((await meJ(await signed(stranger.privateKey, 'k1'))).statusCode).toBe(401);
+  });
+
+  it('JWKS tidak bisa dihubungi ? 503 tanpa membuat akun', async () => {
+    jwksFail = true;
+    const res = await meJ(await signed(k1.privateKey, 'k1'));
+    expect(res.statusCode).toBe(503);
+    expect(res.json().error.code).toBe('AUTH_PROVIDER_UNAVAILABLE');
+    expect(calls.filter((c) => c.url.includes('/v1/users/'))).toHaveLength(0);
+  });
+
+  it('env: JWKS_URL menggantikan VERIFICATION_KEY; tanpa keduanya tetap ditolak', () => {
+    const base = { ...TEST_ENV, ALLOW_SIWE_LOGIN: 'false', PRIVY_APP_ID: 'x', PRIVY_APP_SECRET: 's' };
+    expect(loadEnv({ ...base, PRIVY_JWKS_URL: JWKS }).PRIVY_JWKS_URL).toBe(JWKS);
+    expect(() => loadEnv(base)).toThrow(/PRIVY_VERIFICATION_KEY/);
+  });
+});

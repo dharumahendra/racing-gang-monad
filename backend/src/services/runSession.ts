@@ -119,8 +119,21 @@ export class RunSession {
 
   // ─── Pesan dari pemain ────────────────────────────────────────────────────
 
-  ready() {
+  /**
+   * Kunci halaman (param `client` di /ws/play) yang mengendalikan run ini, diikat pada `run.ready` pertama.
+   * Null = belum ada pengendali, atau client lama/bot yang tidak mengirim kunci.
+   */
+  controller: string | null = null;
+
+  /** Boleh mengirim pesan kendali? Setelah terikat, hanya kunci yang sama. */
+  mayControl(client: string | null) {
+    return this.controller === null || this.controller === client;
+  }
+
+  ready(client: string | null = null) {
     if (this.ended) return;
+    if (!this.mayControl(client)) return;
+    if (this.controller === null && client !== null) this.controller = client;
     if (this.lifecycle !== 'CREATED') return this.#sendGo();
     if (!this.seedConfirmed) {
       this.#readyRequested = true; // SEED_SOURCE=event: run.go menunggu event RunStarted

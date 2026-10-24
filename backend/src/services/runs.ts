@@ -44,6 +44,11 @@ export class RunManager {
     return this.#byAddress.get(address);
   }
 
+  /** `POST /runs` pemain ini sedang diproses (belum tersimpan). */
+  isCreating(address: Address) {
+    return this.#creating.has(address);
+  }
+
   /** Run aktif pemain, atau run terakhirnya yang baru selesai (≤ 2 menit), untuk dikirim ulang saat reconnect. */
   latestFor(address: Address): RunSession | undefined {
     const active = this.#byAddress.get(address);

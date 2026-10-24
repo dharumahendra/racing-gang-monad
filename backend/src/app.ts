@@ -79,9 +79,12 @@ export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyIns
   await app.register(jwt, { secret: env.JWT_SECRET });
   await app.register(websocket, { options: { maxPayload: 4096 } });
 
-  const privy = env.PRIVY_APP_ID && env.PRIVY_VERIFICATION_KEY && env.PRIVY_APP_SECRET
+  const privy = env.PRIVY_APP_ID && (env.PRIVY_VERIFICATION_KEY || env.PRIVY_JWKS_URL) && env.PRIVY_APP_SECRET
     ? new PrivyAuth(
-        { appId: env.PRIVY_APP_ID, verificationKey: env.PRIVY_VERIFICATION_KEY, appSecret: env.PRIVY_APP_SECRET, apiUrl: env.PRIVY_API_URL },
+        {
+          appId: env.PRIVY_APP_ID, verificationKey: env.PRIVY_VERIFICATION_KEY, jwksUrl: env.PRIVY_JWKS_URL,
+          appSecret: env.PRIVY_APP_SECRET, apiUrl: env.PRIVY_API_URL,
+        },
         db,
         { fetch: opts.fetch, now },
       )

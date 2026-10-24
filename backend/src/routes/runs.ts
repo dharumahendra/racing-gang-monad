@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import type { Address, CreateRunResponse, Hex, RunLogResponse, RunSummaryResponse } from '@racing-gang/config/protocol';
+import type { ActiveRunResponse, Address, CreateRunResponse, Hex, RunLogResponse, RunSummaryResponse } from '@racing-gang/config/protocol';
 import type { EndReasonName, VehicleType } from '@racing-gang/config';
 import { nearMisses, runEntries, runs } from '../db/schema';
 import { AppError, notFound } from '../errors';
@@ -18,6 +18,25 @@ export async function runRoutes(app: FastifyInstance, ctx: AppContext) {
     const address = await ctx.auth.fromRequest(req);
     const { carTier, roomCode } = createBody.parse(req.body);
     return ctx.runs.create(address, carTier, roomCode?.toUpperCase());
+  });
+
+  /**
+   * Run aktif milik pemain yang login (rekonsiliasi setelah POST /runs ambigu). Identitas hanya dari token;
+   * tidak ada parameter alamat, jadi pemain lain tidak bisa melihat run aktif orang lain lewat sini.
+   */
+  app.get('/runs/active', async (req): Promise<ActiveRunResponse> => {
+    const address = await ctx.auth.fromRequest(req);
+    const s = ctx.runs.active(address);
+    if (!s || s.ended) return { run: null, creating: ctx.runs.isCreating(address) };
+    const r = ctx.db.select({ seedBlock: runs.seedBlock, configVersion: runs.configVersion }).from(runs).where(eq(runs.id, s.runId)).get();
+    if (!r) return { run: null, creating: false };
+    return {
+      creating: false,
+      run: {
+        runId: s.runId, seed: s.seed, seedBlock: r.seedBlock, configVersion: r.configVersion, carTier: s.carTier,
+        roomCode: s.roomCode, lifecycle: s.lifecycle, startAt: s.startAt, createdAt: s.createdAt, controlled: s.controller !== null,
+      },
+    };
   });
 
   app.get('/runs/:id', async (req): Promise<RunSummaryResponse> => {
