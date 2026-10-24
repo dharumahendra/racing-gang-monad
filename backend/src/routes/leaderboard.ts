@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { asc, desc, inArray } from 'drizzle-orm';
+import { asc, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Address, Hex, LeaderboardResponse } from '@racing-gang/config/protocol';
 import { runs } from '../db/schema';
@@ -14,7 +14,8 @@ export async function leaderboardRoutes(app: FastifyInstance, { db }: AppContext
     const rows = db
       .select({ runId: runs.id, player: runs.address, carTier: runs.carTier, nearMisses: runs.nearMisses, endedAt: runs.endedAt, createdAt: runs.createdAt })
       .from(runs)
-      .where(inArray(runs.result, ['VERIFIED', 'PARTIAL']))
+      // Literal (bukan parameter) supaya SQLite bisa memakai partial index runs_leaderboard_v2.
+      .where(sql`${runs.result} IN ('VERIFIED', 'PARTIAL')`)
       .orderBy(desc(runs.nearMisses), asc(runs.endedAt))
       .limit(limit)
       .all();

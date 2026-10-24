@@ -2,7 +2,7 @@
 
 Game balap jalan raya berbasis web. Pemain mengumpulkan **mepet** (near-miss); setiap mepet diverifikasi backend lalu dicatat ke Monad testnet. Mobil yang lebih cepat adalah NFT soulbound yang hanya bisa dibeli setelah lulus syarat mepet. Penonton bisa mengganggu pemain secara live lewat kode room.
 
-Dokumen: `PRD.md` (produk), `TECH_SPEC.md` (teknis), `TASKS.md` (pembagian kerja), `BACKEND_PLAN.md` (rencana dan status backend).
+Dokumen: `PRD.md` (produk), `TECH_SPEC.md` (teknis), `TASKS.md` (pembagian kerja), `BACKEND_PLAN.md` (rencana dan status backend), `WORST_CASE_TESTS.md` (uji skenario terburuk dan hasilnya).
 
 ## Struktur
 
@@ -55,6 +55,9 @@ Jalankan **satu instance saja**: state run dan room ada di memori. Database SQLi
 | `pnpm --filter @racing-gang/backend status -- --url <api>` | Cek kesiapan demo: health, kontrak, saldo attester dan voucher signer, median latensi on-chain |
 | `pnpm --filter @racing-gang/backend check-monad` | Cek asumsi chain tanpa wallet: chainId, waktu blok, `BLOCKHASH` di EVM = hash blok RPC |
 | `pnpm --filter @racing-gang/backend audit -- --url <api> --run <id> [--rpc <url> --registry <alamat>]` | Replay log publik satu run lalu cocokkan dengan catatan backend atau event on-chain |
+| `pnpm --filter @racing-gang/backend stress -- --players 25 --spectators 50` | Uji beban: pemain real-time + penonton terhadap server sungguhan; cek mepet cocok dan jeda event loop |
+| `pnpm --filter @racing-gang/backend crash-test -- --players 5 --kill-after 15` | Bunuh server paksa di tengah run, start ulang, cek DB, pemulihan, audit, dan koin |
+| `pnpm --filter @racing-gang/backend bigdb -- --runs 50000` | Ukur endpoint baca dan rencana query di DB besar |
 | `pnpm --filter @racing-gang/sim stats -- --seeds 200` | Statistik balance mepet per mobil (autopilot) |
 | `pnpm --filter @racing-gang/sim fixtures` | Buat ulang golden fixture setelah logika sim atau `CONFIG_VERSION` berubah |
 | `pnpm config:export` | Tulis `contract/config/cars.json` dari `packages/config` |

@@ -29,6 +29,7 @@ export class PlayerClient {
   #inputs = new Map<number, LogEntry[]>();
   #spec = new Map<number, LogEntry[]>();
   #endSent = false;
+  #acks = new Map<string, boolean>();
 
   constructor(p: { runId: Hex; seed: Hex; carTier: number; send: (m: PlayC2S) => void; autopilot?: AutopilotOptions }) {
     this.runId = p.runId;
@@ -51,6 +52,9 @@ export class PlayerClient {
         this.startAt = m.startAt;
         return;
       case 'disruption.scheduled': {
+        // Dikirim ulang saat reconnect kalau ack sebelumnya tidak sampai: jawab dengan keputusan yang sama.
+        const prev = this.#acks.get(m.id);
+        if (prev !== undefined) return this.#send({ t: 'disruption.ack', id: m.id, applied: prev });
         this.scheduled.push(m);
         // Diterima sebelum warnTick → masuk log di warnTick; kalau terlambat → applied=false.
         const applied = this.sim.tick < m.warnTick && !this.sim.ended;
@@ -61,6 +65,7 @@ export class PlayerClient {
           list.push({ tick: m.warnTick, kind: kind as Kind, data, seq: list.length });
           this.#spec.set(m.warnTick, list);
         }
+        this.#acks.set(m.id, applied);
         this.#send({ t: 'disruption.ack', id: m.id, applied });
         return;
       }

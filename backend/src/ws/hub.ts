@@ -39,6 +39,11 @@ export class Hub {
     if (set?.size === 0) this.#rooms.delete(code);
   }
 
+  /** Jumlah koneksi pemain dan room yang terdaftar (cek kebocoran memori, /health). */
+  stats() {
+    return { players: this.#players.size, rooms: this.#rooms.size };
+  }
+
   roomSize(code: string) {
     return this.#rooms.get(code)?.size ?? 0;
   }
