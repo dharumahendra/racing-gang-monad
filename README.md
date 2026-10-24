@@ -2,7 +2,26 @@
 
 Game balap jalan raya berbasis web. Pemain mengumpulkan **mepet** (near-miss); setiap mepet diverifikasi backend lalu dicatat ke Monad testnet. Mobil yang lebih cepat adalah NFT soulbound yang hanya bisa dibeli setelah lulus syarat mepet. Penonton bisa mengganggu pemain secara live lewat kode room.
 
-Dokumen: [PRD](.context/PRD.md) (produk), [TECH_SPEC](.context/TECH_SPEC.md) (teknis), [TASKS](.context/TASKS.md) (pembagian kerja), [BACKEND_PLAN](.context/BACKEND_PLAN.md) (rencana dan status backend), [WORST_CASE_TESTS](.context/WORST_CASE_TESTS.md) (uji skenario terburuk dan hasilnya).
+## Link penting
+
+| Apa | Link |
+|---|---|
+| Game (frontend, Vercel) | https://racing-gang-monad.vercel.app |
+| Backend API (Railway) | https://racing-gangbackend-production.up.railway.app — cek [`/health`](https://racing-gangbackend-production.up.railway.app/health), [`/config`](https://racing-gangbackend-production.up.railway.app/config), [`/leaderboard`](https://racing-gangbackend-production.up.railway.app/leaderboard) |
+| WebSocket backend | `wss://racing-gangbackend-production.up.railway.app` (`/ws/play`, `/ws/watch`) |
+| Kontrak RunRegistry | [`0xE3c8EDd37798d5e03553E4F6Df191bC8586AdaCA`](https://testnet.monadvision.com/address/0xE3c8EDd37798d5e03553E4F6Df191bC8586AdaCA) |
+| Kontrak CarNFT (soulbound) | [`0xD8A134916c85ACE413289eaF674aEDCd984BA736`](https://testnet.monadvision.com/address/0xD8A134916c85ACE413289eaF674aEDCd984BA736) |
+| Wallet attester (pencatat mepet, saldo harus > 10 MON) | [`0xf124693f37EB535d2A8312b88226296eF8fdC2c0`](https://testnet.monadvision.com/address/0xf124693f37EB535d2A8312b88226296eF8fdC2c0) |
+| Wallet voucher signer | [`0xf93d1CEC06bc40cCE4B1BE8c328E0915C7328e1F`](https://testnet.monadvision.com/address/0xf93d1CEC06bc40cCE4B1BE8c328E0915C7328e1F) |
+| Monad testnet | Chain ID 10143 · RPC `https://testnet-rpc.monad.xyz` · explorer https://testnet.monadvision.com · faucet https://faucet.monad.xyz |
+| Repo dan CI | https://github.com/dharumahendra/racing-gang-monad · [Actions](https://github.com/dharumahendra/racing-gang-monad/actions) |
+| Dashboard | [Vercel](https://vercel.com/dashboard) · [Railway](https://railway.com/dashboard) · [Privy](https://dashboard.privy.io) (App ID `cmvlv4s3x00vm0gkzxljnxi8l`) |
+
+Alamat kontrak dan blok deploy juga ada di [`packages/config/deployments/monad-testnet.json`](packages/config/deployments/monad-testnet.json). Hasil run dan audit publik bisa dibuka dari halaman hasil run di game (tanpa login), atau lewat `run audit` di bawah.
+
+## Dokumen
+
+[PRD](.context/PRD.md) (produk), [TECH_SPEC](.context/TECH_SPEC.md) (teknis), [TASKS](.context/TASKS.md) (pembagian kerja), [BACKEND_PLAN](.context/BACKEND_PLAN.md) (rencana dan status backend), [WORST_CASE_TESTS](.context/WORST_CASE_TESTS.md) (uji skenario terburuk dan hasilnya), [RUNBOOK](.context/RUNBOOK.md) (deploy, Railway, pemulihan, checklist demo).
 
 ## Struktur
 
@@ -31,7 +50,7 @@ cp backend/.env.example backend/.env   # isi JWT_SECRET (≥ 32 karakter) dan ko
 pnpm --filter @racing-gang/backend dev # http://localhost:8080
 ```
 
-Login utama: **Google lewat Privy**. Frontend mengirim access token Privy; backend memverifikasinya dan memakai embedded wallet pengguna sebagai akun game. Isi `PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY`, dan `PRIVY_APP_SECRET` dari dashboard Privy (secret hanya di backend). `ALLOW_SIWE_LOGIN=true` membuka login SIWE langsung dengan wallet, dipakai bot dan pengembangan.
+Login utama: **Google lewat Privy**. Frontend mengirim access token Privy; backend memverifikasinya dan memakai embedded wallet pengguna sebagai akun game. Isi `PRIVY_APP_ID`, `PRIVY_JWKS_URL` (atau `PRIVY_VERIFICATION_KEY`), dan `PRIVY_APP_SECRET` dari dashboard Privy (secret hanya di backend). `ALLOW_SIWE_LOGIN=true` membuka login SIWE langsung dengan wallet, dipakai bot dan pengembangan.
 
 `CHAIN_MODE=mock` (default) memakai chain palsu yang meniru aturan `RunRegistry`, jadi seluruh alur bisa dicoba tanpa testnet. Tx hash dan nomor blok di mode ini palsu; jangan dipakai saat demo. `CHAIN_MODE=live` butuh RPC Monad, kunci attester dan voucher signer, serta alamat kontrak (lihat `backend/.env.example`). Wallet attester harus bersaldo > 10 MON; di bawah itu Monad membatasi 1 transaksi per 3 blok. `GET /config` dan `/health` mengembalikan `chainMode`; frontend memblokir pembelian kalau nilainya bukan `live`.
 
