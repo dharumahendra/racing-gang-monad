@@ -1,0 +1,10 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { AuthProvider } from './lib/auth-runtime';
+import { App } from './App';
+import './styles.css';
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AuthProvider><App/></AuthProvider></React.StrictMode>);
+import './race.css';
+import './hud.css';
+import './rooms.css';
+import './result.css';
