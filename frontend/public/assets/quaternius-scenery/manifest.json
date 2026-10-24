@@ -1,0 +1,45 @@
+{
+  "creator": "Quaternius",
+  "license": "CC0-1.0",
+  "assets": [
+    {
+      "name": "PineTree_1",
+      "file": "PineTree_1.glb",
+      "pack": "ultimatenature",
+      "source": "https://quaternius.com/packs/ultimatenature.html",
+      "originalObj": "https://drive.google.com/file/d/1SqKX1q_xhefo4zhONjye2g-nP-1nUC4o/view?usp=drivesdk",
+      "originalMtl": "https://drive.google.com/file/d/1iUQRhA5q-6uMUQKogn-fB6OyNr0NKGpV/view?usp=drivesdk",
+      "objSha256": "21ff41e3dd50abee4ffb1d1f884aad68f251a81bf4d05fed15d5d7db15201561",
+      "mtlSha256": "164014a56a61e2eb107bceef1a187865146a1f2ca3255f7c514ddeb42675b26f",
+      "glbSha256": "dec28400b61399ceaf627ac60a862d3aafc2b27d316c47b9dd9ba7ef2c85d882",
+      "bytes": 151528,
+      "height": 6.5
+    },
+    {
+      "name": "Rock_1",
+      "file": "Rock_1.glb",
+      "pack": "ultimatenature",
+      "source": "https://quaternius.com/packs/ultimatenature.html",
+      "originalObj": "https://drive.google.com/file/d/1ZJuH8zh-jiUmQ9nHd1vK-EGhZFsV-W-d/view?usp=drivesdk",
+      "originalMtl": "https://drive.google.com/file/d/1bDXZTJg4iO93xomjJW80SngTGeLdsC9A/view?usp=drivesdk",
+      "objSha256": "34d20ae0234a88b5cf1ceb1e5140b46ece28e6e7d72beb7e2e3a7e1fe8a8708e",
+      "mtlSha256": "d56549cff3285edf892d4e734c41cd383fd18dfde9701209087b2c9f5484325a",
+      "glbSha256": "3c9a257cc15d7a9d4fa232904ee451da1b280af7405d36ca1d166e18c9e88fd5",
+      "bytes": 6272,
+      "height": 0.8
+    },
+    {
+      "name": "Streetlight_Single",
+      "file": "Streetlight_Single.glb",
+      "pack": "modularstreets",
+      "source": "https://quaternius.com/packs/modularstreets.html",
+      "originalObj": "https://drive.google.com/file/d/1T-lxIMpC24ZSNJbPGeOE-rNnAIC4znzY/view?usp=drivesdk",
+      "originalMtl": "https://drive.google.com/file/d/1gJhlmtqNN96X51Qn7K1uItMovt_VykbY/view?usp=drivesdk",
+      "objSha256": "b4069cbc1f2b68aacb5847fb04308720ffec2e87d9623d6eea670fe4ad01c5e1",
+      "mtlSha256": "fe742d11f79d43502a4ea32ffbd31869eb92d8f6047121d2201147f7ce1fe70b",
+      "glbSha256": "2c84f2b94c33a34648793acdb0de928b22e25210dfde36732c71f986aa651cbe",
+      "bytes": 82288,
+      "height": 6.5
+    }
+  ]
+}

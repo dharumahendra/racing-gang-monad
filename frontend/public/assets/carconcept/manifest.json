@@ -1,0 +1,24 @@
+{
+  "source": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CarConcept/glTF-Binary/CarConcept.glb",
+  "sourceRepo": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept",
+  "license": "CC-BY-4.0 (Eric Chadwick, Darmstadt Graphics Group GmbH, 2024); Khronos/3D Commerce logos removed",
+  "sourceSha256": "c272098089d78c5cd9fd9f24ff50ee8acf8d932c55f2d55fc10adb6c8998966b",
+  "sourceBytes": 11778688,
+  "outputSha256": "f2297cd0f16394a0375747c929275731d664d472828ec954a73f5f817b0b1e87",
+  "outputBytes": 1738912,
+  "triangles": 87932,
+  "rotatedY180": true,
+  "scale": 1.03273,
+  "boundsMeters": {
+    "min": [
+      -1.313,
+      0,
+      -2.25
+    ],
+    "max": [
+      1.313,
+      1.186,
+      2.25
+    ]
+  }
+}

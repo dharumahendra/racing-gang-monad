@@ -372,7 +372,8 @@ Error: token tidak valid → 401 `UNAUTHORIZED`; wallet belum dibuat → 409 `WA
 - Setiap `NEAR_MISS` disimpan ke DB, dikirim sebagai `nearMiss.verified`, lalu dimasukkan ke antrean relayer.
 - **Anti-speedhack:** tolak run (status `INVALID`) jika `watermark > max(0, floor((nowServer − startAt) × 30 / 1000)) + 30`. Estimasi tick tidak boleh negatif: selama hitung mundur watermark 0–30 tetap sah.
 - **Run tidak pernah siap:** run `CREATED` tanpa `run.ready` selama 60 dtk ditutup `PARTIAL` (`TIMEOUT`, flag `NO_READY`) supaya pemain bisa membuat run baru.
-- **Server restart:** run yang belum selesai ditutup `PARTIAL` pada `verified_tick` dengan hash akhir hasil replay `run_entries`; mepet yang belum tercatat dan `EndRec` dikirim ulang ke relayer.
+- **Server restart:** run yang belum selesai ditutup `PARTIAL` pada `verified_tick` dengan hash akhir hasil replay `run_entries`. Lalu untuk semua run `chain_status = PENDING` dalam 10 menit terakhir (termasuk yang sudah selesai sebelum server mati), `StartRec`, mepet yang belum tercatat, dan `EndRec` dikirim ulang ke relayer. Relayer dan kontrak harus menganggap `RunStart` dan mepet yang sudah ada sebagai sukses (idempoten).
+- **Flag anti-cheat tambahan (hanya dicatat):** `SLOW_CLIENT` jika watermark tertinggal > 90 tick dari estimasi jam selama ≥ 5 dtk sambil tetap terkirim (slow-motion); `DISRUPTION_DODGE` jika `ack applied=false` datang saat watermark masih > 10 tick sebelum `warnTick`.
 - **Selesai:** event `CRASH`, `RED_ZONE_FAIL`, atau `TIME_UP` dari sim backend → `RunEnd` ke relayer dan `run.result` ke client.
 - **Timeout:** jika pada `startAt + 100 dtk + 30 dtk` sim belum selesai, akhiri pada tick terakhir yang sudah terverifikasi dengan `reason = TIMEOUT` dan `status = PARTIAL`.
 - Jika klaim `run.end` dari client berbeda dengan hasil backend, catat sebagai flag anti-cheat. Hasil backend yang berlaku.

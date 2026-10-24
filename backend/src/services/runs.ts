@@ -1,7 +1,8 @@
 // Pengelola run aktif (TECH_SPEC §5.2–5.3, BACKEND_PLAN G1, K).
 import { randomBytes } from 'node:crypto';
 import { and, asc, eq, gte, isNull, ne } from 'drizzle-orm';
-import { ANTI, CARS, CHAIN, CONFIG_VERSION, EndReason, NET, RUN_TICKS, TICK_RATE } from '@racing-gang/config';
+import { getAddress } from 'viem';
+import { ANTI, CARS, CHAIN, CONFIG_VERSION, EndReason, NET, RUN_TICKS, TICK_RATE, type EndReasonName } from '@racing-gang/config';
 import type { Address, CreateRunResponse, Hex } from '@racing-gang/config/protocol';
 import { replay } from '@racing-gang/sim';
 import { computeRunId, computeSeed } from '../chain/seed';
@@ -14,6 +15,8 @@ export const READY_TIMEOUT_MS = 60_000;
 /** startAt + 100 dtk + 30 dtk (TECH_SPEC §5.3). */
 export const RUN_TIMEOUT_MS = (RUN_TICKS * 1000) / TICK_RATE + NET.offlineGraceMs;
 const RECENT_KEEP_MS = 120_000;
+/** Kontrak menolak catatan run yang dimulai > 750 blok lalu (±4–5 menit); di luar ini tidak dikirim ulang. */
+export const RECOVER_WINDOW_MS = 10 * 60_000;
 
 export class RunManager {
   readonly #deps: SessionDeps;
@@ -21,6 +24,8 @@ export class RunManager {
   #byAddress = new Map<Address, RunSession>();
   /** Run yang baru selesai, untuk mencocokkan klaim run.end yang datang terlambat. */
   #recent = new Map<Hex, { s: RunSession; at: number }>();
+  /** Pemain yang `POST /runs`-nya sedang diproses. */
+  #creating = new Set<Address>();
 
   constructor(deps: SessionDeps) {
     this.#deps = deps;
@@ -30,8 +35,18 @@ export class RunManager {
     return this.#sessions.size;
   }
 
+  /** Run selesai yang masih disimpan untuk klaim terlambat dan reconnect. */
+  get recentSize() {
+    return this.#recent.size;
+  }
+
   active(address: Address): RunSession | undefined {
     return this.#byAddress.get(address);
+  }
+
+  /** `POST /runs` pemain ini sedang diproses (belum tersimpan). */
+  isCreating(address: Address) {
+    return this.#creating.has(address);
   }
 
   /** Run aktif pemain, atau run terakhirnya yang baru selesai (≤ 2 menit), untuk dikirim ulang saat reconnect. */
@@ -58,9 +73,20 @@ export class RunManager {
   }
 
   async create(address: Address, carTier: number, roomCode?: string): Promise<CreateRunResponse> {
+    if (!Number.isInteger(carTier) || !CARS[carTier]) throw badRequest('carTier tidak valid');
+    // Double-click: request kedua datang saat yang pertama masih menunggu RPC, sebelum run tersimpan.
+    if (this.#creating.has(address)) throw new AppError(409, 'ACTIVE_RUN_EXISTS', 'Masih ada run aktif');
+    this.#creating.add(address);
+    try {
+      return await this.#create(address, carTier, roomCode);
+    } finally {
+      this.#creating.delete(address);
+    }
+  }
+
+  async #create(address: Address, carTier: number, roomCode?: string): Promise<CreateRunResponse> {
     const { db, chain, now } = this.#deps;
     const t = now();
-    if (!Number.isInteger(carTier) || !CARS[carTier]) throw badRequest('carTier tidak valid');
     if (this.#byAddress.has(address) || this.#hasOpenRunInDb(address)) {
       throw new AppError(409, 'ACTIVE_RUN_EXISTS', 'Masih ada run aktif');
     }
@@ -105,26 +131,44 @@ export class RunManager {
   }
 
   /**
-   * Saat server start: run yang belum selesai di DB (state memori hilang) ditutup sebagai PARTIAL
-   * pada tick terakhir yang terverifikasi. Hash akhir dihitung ulang dengan replay log.
+   * Saat server start:
+   * 1. Run yang belum selesai di DB (state memori hilang) ditutup PARTIAL pada tick terakhir yang terverifikasi;
+   *    hash akhir dihitung ulang dengan replay log.
+   * 2. Antrean relayer di memori ikut hilang, jadi semua run yang belum tercatat lengkap on-chain (`chainStatus`
+   *    PENDING) dikirim ulang: RunStart, mepet yang belum tercatat, lalu RunEnd. Termasuk run yang sudah selesai
+   *    sebelum mati. Relayer/kontrak harus melewati RunStart dan mepet yang sudah ada (idempoten).
+   * Run yang lebih tua dari jendela kontrak (`maxRunBlockSpan`) tidak dikirim ulang karena pasti ditolak.
    */
   recoverStaleRuns(): number {
-    const { db, chain } = this.#deps;
+    const { db, chain, now } = this.#deps;
     const stale = db.select().from(runs).where(ne(runs.lifecycle, 'ENDED')).all();
     for (const r of stale) {
       const entries = db.select().from(runEntries).where(eq(runEntries.runId, r.id)).orderBy(asc(runEntries.ord)).all();
       const rep = replay({ runId: r.id as Hex, seed: r.seed as Hex, carTier: r.carTier, entries, endTick: r.verifiedTick });
       db.update(runs).set({
         lifecycle: 'ENDED', result: 'PARTIAL', endReason: 'TIMEOUT', endTick: rep.endTick, nearMisses: rep.nearMisses, finalHash: rep.finalHash,
-        endedAt: this.#deps.now(),
+        endedAt: now(),
         flags: JSON.stringify([...JSON.parse(r.flags) as string[], 'SERVER_RESTART']),
       }).where(eq(runs.id, r.id)).run();
-      // Antrean relayer di memori ikut hilang: kirim ulang mepet yang belum tercatat (duplikat dilewati kontrak).
+    }
+
+    const pendingRuns = db.select().from(runs)
+      .where(and(eq(runs.chainStatus, 'PENDING'), gte(runs.createdAt, now() - RECOVER_WINDOW_MS)))
+      .orderBy(asc(runs.createdAt))
+      .all();
+    for (const r of pendingRuns) {
+      const runId = r.id as Hex;
+      chain.relayer.enqueueStart({
+        runId, player: getAddress(r.address), carTier: r.carTier, seedBlock: BigInt(r.seedBlock), configVersion: r.configVersion,
+      });
       const unrecorded = db.select().from(nearMisses).where(and(eq(nearMisses.runId, r.id), isNull(nearMisses.recordedAt))).orderBy(asc(nearMisses.idx)).all();
       for (const n of unrecorded) {
-        chain.relayer.enqueueNearMiss({ runId: r.id as Hex, index: n.idx, tick: n.tick, vehicleType: n.vehicleType, vehicleId: n.vehicleId, inputHash: n.inputHash as Hex });
+        chain.relayer.enqueueNearMiss({ runId, index: n.idx, tick: n.tick, vehicleType: n.vehicleType, vehicleId: n.vehicleId, inputHash: n.inputHash as Hex });
       }
-      chain.relayer.enqueueEnd({ runId: r.id as Hex, reason: EndReason.TIMEOUT, endTick: rep.endTick, totalNearMisses: rep.nearMisses, finalInputHash: rep.finalHash });
+      chain.relayer.enqueueEnd({
+        runId, reason: EndReason[(r.endReason ?? 'TIMEOUT') as EndReasonName], endTick: r.endTick ?? 0, totalNearMisses: r.nearMisses,
+        finalInputHash: r.finalHash as Hex,
+      });
     }
     return stale.length;
   }
@@ -151,4 +195,3 @@ export class RunManager {
 function chainDown(err: unknown): never {
   throw new AppError(503, 'CHAIN_UNAVAILABLE', `Gagal membaca chain: ${(err as Error).message}`);
 }
-

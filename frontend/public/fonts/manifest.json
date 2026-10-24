@@ -1,0 +1,14 @@
+[
+  {
+    "family": "Plus Jakarta Sans",
+    "file": "plus-jakarta-sans.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/plusjakartasans/PlusJakartaSans%5Bwght%5D.ttf",
+    "licenseSource": "https://raw.githubusercontent.com/google/fonts/main/ofl/plusjakartasans/OFL.txt",
+    "bytes": 176288
+  },
+  {
+    "family": "Akira",
+    "file": "Akira.otf",
+    "bytes": 26320
+  }
+]

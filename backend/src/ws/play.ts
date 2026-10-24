@@ -23,6 +23,7 @@ const playMessage = z.discriminatedUnion('t', [
 /** Batas pesan per detik per koneksi; input + watermark + snapshot normalnya < 30/dtk. */
 const MAX_MSG_PER_SEC = 120;
 const SNAPSHOT_MIN_GAP_MS = 80;
+const CLIENT_KEY = /^[A-Za-z0-9_-]{16,64}$/;
 
 export async function playSocket(app: FastifyInstance, ctx: AppContext) {
   // Rate limit HTTP tidak dipakai di sini; batas pesan per koneksi ada di bawah.
@@ -38,6 +39,9 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
     let windowStart = ctx.now();
     let count = 0;
     let lastSnapshotAt = 0;
+    // Kunci halaman acak dari client; dipakai untuk mengikat satu pengendali per run (dua tab).
+    const rawClient = (req.query as { client?: unknown }).client;
+    const client = typeof rawClient === 'string' && CLIENT_KEY.test(rawClient) ? rawClient : null;
 
     socket.on('message', (raw) => {
       if (!address) {
@@ -55,9 +59,15 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
       .authenticate((req.query as { token?: string }).token)
       .then((a) => {
         if (closed) return;
+        // Run yang sudah dikendalikan halaman lain tidak boleh diambil alih (dan koneksinya tidak ditutup).
+        const latest = ctx.runs.latestFor(a);
+        if (latest && !latest.ended && !latest.mayControl(client)) {
+          err('NOT_CONTROLLER', 'Run ini sedang dikendalikan dari tab atau perangkat lain');
+          setImmediate(() => socket.close(4409, 'not controller'));
+          return;
+        }
         address = a;
         ctx.hub.attachPlayer(a, socket);
-        const latest = ctx.runs.latestFor(a);
         lastRunId = latest?.runId;
         latest?.resendOnReconnect();
         for (const raw of early.splice(0)) handle(raw);
@@ -68,7 +78,17 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
         setImmediate(() => socket.close(4401, 'unauthorized'));
       });
 
+    // Error tak terduga (mis. DB gagal menulis) di listener WS menjadi uncaught exception yang mematikan
+    // seluruh server; cukup catat lalu lanjut. Pesan berikutnya dari client diproses seperti biasa.
     function handle(raw: RawData) {
+      try {
+        processMessage(raw);
+      } catch (e) {
+        req.log.error({ err: e, address }, 'gagal memproses pesan /ws/play');
+      }
+    }
+
+    function processMessage(raw: RawData) {
       if (!address) return;
       const t = ctx.now();
       if (t - windowStart >= 1000) { windowStart = t; count = 0; }
@@ -89,9 +109,12 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
 
       const s = ctx.runs.active(address);
       if (s) lastRunId = s.runId;
+      if (s && !s.mayControl(client)) return err('NOT_CONTROLLER', 'Run ini sedang dikendalikan dari tab atau perangkat lain');
 
       if (msg.t === 'run.end') {
-        if (lastRunId) ctx.runs.recordClaim(lastRunId, { tick: msg.tick, reason: msg.reason, nearMisses: msg.nearMisses, inputHash: msg.inputHash as Hex });
+        if (lastRunId && ctx.runs.get(lastRunId)?.mayControl(client) !== false) {
+          ctx.runs.recordClaim(lastRunId, { tick: msg.tick, reason: msg.reason, nearMisses: msg.nearMisses, inputHash: msg.inputHash as Hex });
+        }
         return;
       }
       if (!s) return err('NO_ACTIVE_RUN', 'Tidak ada run aktif');
@@ -99,7 +122,7 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
       switch (msg.t) {
         case 'run.ready':
           if (msg.runId.toLowerCase() !== s.runId.toLowerCase()) return err('NO_ACTIVE_RUN', 'runId bukan run aktif');
-          return s.ready();
+          return s.ready(client);
         case 'input':
           return s.onInput(msg);
         case 'watermark':

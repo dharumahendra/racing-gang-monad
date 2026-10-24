@@ -68,7 +68,9 @@ export type WsErrorCode =
   | 'SEED_MISMATCH'
   | 'ROOM_NOT_FOUND'
   | 'ROOM_EXPIRED'
-  | 'ROOM_FULL';
+  | 'ROOM_FULL'
+  /** Run aktif sudah dikendalikan halaman/tab lain (kunci `client` di URL WS berbeda). */
+  | 'NOT_CONTROLLER';
 
 // ─── /ws/play?token=<JWT> (§4.1) ────────────────────────────────────────────
 
@@ -192,6 +194,28 @@ export type RoomResponse = { code: string; expiresAt: number; spectators: number
 /** POST /runs */
 export type CreateRunRequest = { carTier: number; roomCode?: string };
 export type CreateRunResponse = { runId: Hex; seed: Hex; seedBlock: number; configVersion: number };
+
+/**
+ * GET /runs/active (butuh token): run aktif milik pemain yang login, untuk rekonsiliasi setelah
+ * `POST /runs` dengan hasil tidak diketahui atau 409 ACTIVE_RUN_EXISTS. `controlled` = sudah ada
+ * halaman yang mengirim `run.ready`; halaman lain tidak bisa mengambil alih (WS error NOT_CONTROLLER).
+ */
+export type ActiveRunResponse = {
+  run: {
+    runId: Hex;
+    seed: Hex;
+    seedBlock: number;
+    configVersion: number;
+    carTier: number;
+    roomCode: string | null;
+    lifecycle: RunLifecycle;
+    startAt: number | null;
+    createdAt: number;
+    controlled: boolean;
+  } | null;
+  /** `POST /runs` untuk akun ini masih diproses server; periksa lagi sebentar lagi, jangan membuat ulang. */
+  creating: boolean;
+};
 
 export type NearMissInfo = {
   index: number;

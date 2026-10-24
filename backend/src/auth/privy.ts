@@ -3,7 +3,10 @@
 // 2. Embedded Ethereum wallet pengguna dibaca dari server Privy (bukan dari client) lalu diikat permanen ke DID di tabel users.
 // Referensi: docs.privy.io/authentication/user-authentication/access-tokens, docs.privy.io/api-reference/users/get
 import { eq } from 'drizzle-orm';
-import { importSPKI, jwtVerify, type CryptoKey } from 'jose';
+import {
+  createLocalJWKSet, errors as joseErrors, importSPKI, jwtVerify,
+  type CryptoKey, type JSONWebKeySet, type JWTPayload, type JWTVerifyGetKey, type JWTVerifyOptions,
+} from 'jose';
 import { getAddress, isAddress } from 'viem';
 import type { Address } from '@racing-gang/config/protocol';
 import type { Db } from '../db/client';
@@ -12,10 +15,16 @@ import { AppError, unauthorized } from '../errors';
 
 export type PrivyConfig = {
   appId: string;
-  verificationKey: string;
+  /** PEM statis. Boleh kosong bila `jwksUrl` diisi. */
+  verificationKey?: string;
+  /** URL JWKS publik Privy (mis. https://auth.privy.io/api/v1/apps/<id>/jwks.json); mendukung rotasi kunci. */
+  jwksUrl?: string;
   appSecret: string;
   apiUrl: string;
 };
+
+/** Jeda minimum antar pengambilan ulang JWKS saat menemukan `kid` asing (cegah banjir request). */
+const JWKS_REFRESH_MIN_MS = 30_000;
 
 type LinkedAccount = {
   type?: string;
@@ -32,6 +41,8 @@ export class PrivyAuth {
   readonly #fetch: typeof fetch;
   readonly #now: () => number;
   #key: Promise<CryptoKey> | null = null;
+  #jwks: { set: JWTVerifyGetKey; at: number } | null = null;
+  #jwksLoading: Promise<JWTVerifyGetKey> | null = null;
 
   constructor(cfg: PrivyConfig, db: Db, opts: { fetch?: typeof fetch; now?: () => number } = {}) {
     this.#cfg = cfg;
@@ -48,19 +59,52 @@ export class PrivyAuth {
 
   /** Kembalikan DID (`sub`) dari access token yang valid. */
   async verifyToken(token: string): Promise<string> {
-    this.#key ??= importSPKI(this.#cfg.verificationKey.replace(/\\n/g, '\n'), 'ES256');
+    const options = { issuer: 'privy.io', audience: this.#cfg.appId, algorithms: ['ES256'], currentDate: new Date(this.#now()) };
+    let payload: JWTPayload;
     try {
-      const { payload } = await jwtVerify(token, await this.#key, {
-        issuer: 'privy.io',
-        audience: this.#cfg.appId,
-        algorithms: ['ES256'],
-        currentDate: new Date(this.#now()),
-      });
-      if (typeof payload.sub !== 'string' || !payload.sub.startsWith('did:privy:')) throw new Error('sub bukan DID Privy');
-      return payload.sub;
-    } catch {
+      if (this.#cfg.jwksUrl) {
+        payload = await this.#verifyWithJwks(token, options);
+      } else {
+        this.#key ??= importSPKI(this.#cfg.verificationKey!.replace(/\\n/g, '\n'), 'ES256');
+        ({ payload } = await jwtVerify(token, await this.#key, options));
+      }
+    } catch (err) {
+      if (err instanceof AppError) throw err;
       throw unauthorized('Sesi Privy tidak valid atau kedaluwarsa');
     }
+    if (typeof payload.sub !== 'string' || !payload.sub.startsWith('did:privy:')) throw unauthorized('Sesi Privy tidak valid atau kedaluwarsa');
+    return payload.sub;
+  }
+
+  /** Verifikasi dengan JWKS cache; `kid` asing memicu satu kali ambil ulang (dibatasi JWKS_REFRESH_MIN_MS). */
+  async #verifyWithJwks(token: string, options: JWTVerifyOptions): Promise<JWTPayload> {
+    const set = await this.#jwksSet(false);
+    try {
+      return (await jwtVerify(token, set, options)).payload;
+    } catch (err) {
+      if (!(err instanceof joseErrors.JWKSNoMatchingKey)) throw err;
+      if (this.#jwks && this.#now() - this.#jwks.at < JWKS_REFRESH_MIN_MS) throw err;
+      return (await jwtVerify(token, await this.#jwksSet(true), options)).payload;
+    }
+  }
+
+  async #jwksSet(force: boolean): Promise<JWTVerifyGetKey> {
+    if (this.#jwks && !force) return this.#jwks.set;
+    this.#jwksLoading ??= (async () => {
+      let res: Response;
+      try {
+        res = await this.#fetch(this.#cfg.jwksUrl!, { signal: AbortSignal.timeout(8000) });
+      } catch (err) {
+        throw new AppError(503, 'AUTH_PROVIDER_UNAVAILABLE', `JWKS Privy tidak bisa dihubungi: ${(err as Error).message}`);
+      }
+      if (!res.ok) throw new AppError(503, 'AUTH_PROVIDER_UNAVAILABLE', `JWKS Privy membalas ${res.status}`);
+      const body = (await res.json().catch(() => null)) as JSONWebKeySet | null;
+      if (!body || !Array.isArray(body.keys)) throw new AppError(503, 'AUTH_PROVIDER_UNAVAILABLE', 'JWKS Privy tidak valid');
+      const set = createLocalJWKSet(body);
+      this.#jwks = { set, at: this.#now() };
+      return set;
+    })().finally(() => { this.#jwksLoading = null; });
+    return this.#jwksLoading;
   }
 
   /**

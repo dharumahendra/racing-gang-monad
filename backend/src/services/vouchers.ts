@@ -85,4 +85,3 @@ export function releaseExpiredReservations(db: Db, t: number): number {
     .where(and(eq(reservations.status, 'ACTIVE'), lt(reservations.expiresAt, t - RELEASE_MARGIN_MS)))
     .run().changes;
 }
-

@@ -1,0 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
+import { HostRoomPanel } from './Rooms';
+import { WatchPanel } from './Watch';
+export function RoomsLab(){const [search,setSearch]=useSearchParams();const watch=search.get('role')==='watch';const code=search.get('code');return <><p className="fixture-notice">DEVELOPMENT ONLY · Simulated room/spectator server for FE testing, not a live room or Privy proof.</p>{watch?<WatchPanel key={code} code={code||'AB7K2M'} nick={search.get('nick')||'Fixture'} wsUrl={`${location.protocol==='https:'?'wss':'ws'}://${location.host}/__room_fixture`} available/>:<div className="narrow"><h1>Host room test.</h1><HostRoomPanel key={code} apiUrl="/__room_fixture" code={code} getToken={async()=> 'public-room-fixture'} onCode={code=>setSearch({code},{replace:true})}/></div>}</>;}

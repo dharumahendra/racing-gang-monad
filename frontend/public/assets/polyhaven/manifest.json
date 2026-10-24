@@ -1,0 +1,47 @@
+{
+    "provider":  "Poly Haven",
+    "licenseUrl":  "https://polyhaven.com/license",
+    "downloaded":  "2026-10-22",
+    "assets":  [
+                   {
+                       "file":  "derelict_highway_midday_1k.hdr",
+                       "source":  "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/derelict_highway_midday_1k.hdr",
+                       "page":  "https://polyhaven.com/a/derelict_highway_midday",
+                       "license":  "CC0-1.0",
+                       "bytes":  1377321,
+                       "sha256":  "e500d7b8b6d5a196b6964882fea668e033e577ed1336c87c164f39d08f330ba0"
+                   },
+                   {
+                       "file":  "asphalt_02_diff_1k.jpg",
+                       "source":  "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_diff_1k.jpg",
+                       "page":  "https://polyhaven.com/a/asphalt_02",
+                       "license":  "CC0-1.0",
+                       "bytes":  731707,
+                       "sha256":  "1aa5ce99f58a625c71d48cfc3e68b65ca85ccb00f39e045c0a928608a0ea25ed"
+                   },
+                   {
+                       "file":  "asphalt_02_nor_gl_1k.jpg",
+                       "source":  "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_nor_gl_1k.jpg",
+                       "page":  "https://polyhaven.com/a/asphalt_02",
+                       "license":  "CC0-1.0",
+                       "bytes":  1240122,
+                       "sha256":  "42a1c381b53204e83a982db2864479a30bc127bbdeebb1006f8ee51bff099df3"
+                   },
+                   {
+                       "file":  "asphalt_02_rough_1k.jpg",
+                       "source":  "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/asphalt_02/asphalt_02_rough_1k.jpg",
+                       "page":  "https://polyhaven.com/a/asphalt_02",
+                       "license":  "CC0-1.0",
+                       "bytes":  544032,
+                       "sha256":  "70ba3edc65525eb4dc366cf010ca7ae0bd34e0251ff0225c2dad627a873d0712"
+                   },
+                   {
+                       "file":  "garage_1k.hdr",
+                       "source":  "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/garage_1k.hdr",
+                       "page":  "https://polyhaven.com/a/garage",
+                       "license":  "CC0-1.0",
+                       "bytes":  1612302,
+                       "sha256":  "56e27c86b33a23bf5eab06d0d7b2601e70a15c9cb3f26d0fba274b00aa842837"
+                   }
+               ]
+}
