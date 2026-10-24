@@ -1,0 +1,1 @@
+ALTER TABLE `runs` ADD `verified_tick` integer DEFAULT 0 NOT NULL;
