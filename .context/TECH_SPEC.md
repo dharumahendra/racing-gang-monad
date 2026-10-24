@@ -452,6 +452,8 @@ function submitBatch(StartRec[] calldata s, NearMissRec[] calldata n, EndRec[] c
 function isQualified(address player, uint8 tier) external view returns (bool);
 function qualifyingRun(address player, uint8 tier) external view returns (bytes32);
 function getRun(bytes32 runId) external view returns (Run memory);
+function reqNearMiss(uint8 tier) external view returns (uint16);
+function minCarTier(uint8 tier) external view returns (uint8);
 function setAttester(address a) external onlyOwner;
 function setCarNFT(address c) external onlyOwner;          // hanya bisa sekali
 
@@ -469,14 +471,15 @@ Aturan, diproses berurutan: semua `s`, lalu semua `n`, lalu semua `e`.
   - `carTier == 0 || carNFT.ownsTier(player, carTier)`.
   - Simpan `seed = keccak256(abi.encode(blockhash(seedBlock), runId, player))` dan `startBlock = block.number`.
 - **NearMissRec:**
-  - Run ada, belum `ended`, dan `block.number − startBlock ≤ maxRunBlockSpan (750)`.
-  - Jika `index ≤ run.nearMisses` → **lewati tanpa revert** (idempoten untuk retry relayer).
+  - Run ada.
+  - Jika `index ≤ run.nearMisses` → **lewati tanpa revert** (idempoten untuk retry relayer, termasuk setelah run selesai).
+  - Run belum `ended`, dan `block.number − startBlock ≤ maxRunBlockSpan (750)`.
   - Jika `index != run.nearMisses + 1` → revert `IndexGap`.
   - `tick ≤ 3000` dan `tick ≥ lastTick`.
   - Setelah `nearMisses += 1`: untuk setiap tier 1..4, jika `nearMisses == reqNearMiss[tier]`, `carTier ≥ minCarTier[tier]`, dan pemain belum lulus tier itu → set `qualified` dan `qualifyingRun`, lalu emit `Qualified`.
-- **EndRec:** run ada dan belum `ended`, `totalNearMisses == run.nearMisses`, `endTick ≤ 3000`. Setelah itu set `ended`.
-- `reqNearMiss` dan `minCarTier` di-set di constructor dan **immutable**. Tidak ada setter.
-- Error: `NotAttester, RunExists, UnknownRun, RunEnded, IndexGap, TickOutOfRange, RunTooOld, SeedBlockInvalid, CarNotOwned, CountMismatch, CarNFTAlreadySet`.
+- **EndRec:** run ada dan belum `ended`, `totalNearMisses == run.nearMisses`, `lastTick ≤ endTick ≤ 3000`. Setelah itu set `ended`.
+- Constructor: `RunRegistry(address attester, uint16[5] reqNearMiss, uint8[5] minCarTier)`, index = tier (index 0 diabaikan). Nilainya **immutable** (dikemas ke `uint256 immutable`). Tidak ada setter. Revert `InvalidConfig` jika `reqNearMiss[t] == 0` atau `minCarTier[t] ≥ t`.
+- Error: `NotAttester, RunExists, UnknownRun, RunAlreadyEnded, IndexGap, TickOutOfRange, RunTooOld, SeedBlockInvalid, CarNotOwned, CountMismatch, CarNFTAlreadySet, InvalidConfig`. (Bukan `RunEnded`, karena Solidity tidak mengizinkan error dan event bernama sama.)
 - Penulisan storage hanya per-run dan per-pemain. Tidak ada counter global di jalur `submitBatch`.
 
 ### 6.2 `CarNFT.sol` (ERC-721 + ERC-5192, soulbound)
@@ -491,12 +494,18 @@ function ownsTier(address owner, uint8 tier) external view returns (bool);
 function tokenTier(uint256 tokenId) external view returns (uint8);
 function tokenRun(uint256 tokenId) external view returns (bytes32);
 function minted(uint8 tier) external view returns (uint256);
-function locked(uint256 tokenId) external view returns (bool);     // selalu true
+function locked(uint256 tokenId) external view returns (bool);     // selalu true (revert jika token tidak ada)
+function price(uint8 tier) external view returns (uint256);        // wei
+function supply(uint8 tier) external view returns (uint256);
+function voucherUsed(uint256 nonce) external view returns (bool);
+function voucherDigest(Voucher calldata v) external view returns (bytes32);   // digest EIP-712, untuk cek signer backend
 function setVoucherSigner(address s) external onlyOwner;
+function setBaseURI(string calldata baseURI) external onlyOwner;   // lokasi metadata; emit BatchMetadataUpdate
 function withdraw(address payable to) external onlyOwner;          // MON ke treasury
 
 event Purchased(address indexed buyer, uint8 indexed tier, uint256 tokenId, uint256 voucherNonce, uint32 coinCost, bytes32 runId);
 event Locked(uint256 tokenId);
+event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);  // ERC-4906, dari setBaseURI
 ```
 
 Aturan `buy`:
@@ -506,11 +515,14 @@ Aturan `buy`:
 - Mint ke `msg.sender`, simpan `tokenTier` dan `tokenRun = registry.qualifyingRun(...)`, lalu emit `Locked` dan `Purchased`.
 
 Lain-lain:
-- Soulbound: override `_update` dan revert `Soulbound()` jika `from != address(0)`. `approve` dan `setApprovalForAll` juga revert.
-- `supportsInterface` mengembalikan true untuk `type(IERC5192).interfaceId`.
-- `price[]` dan `supply[]` di-set di constructor dan **immutable**. **Tidak ada fungsi mint admin.**
+- Soulbound: override `_update` dan revert `Soulbound()` jika `from != address(0)` (transfer dan burn). `approve` dan `setApprovalForAll` juga revert.
+- Mint memakai `_mint` (bukan `_safeMint`), jadi tidak ada callback ke pembeli.
+- `supportsInterface` mengembalikan true untuk `type(IERC5192).interfaceId` (`0xb45a3c0e`) dan ERC-4906 (`0x49064906`). `IERC5192` ditulis sendiri karena tidak ada di OpenZeppelin v5.7.0.
+- Constructor: `CarNFT(address registry, address voucherSigner, uint256[5] price, uint256[5] supply, string baseURI)`, index = tier (index 0 diabaikan). Harga dalam wei. Nilainya **immutable**. Revert `InvalidConfig` jika `registry == 0` atau `supply[t] == 0`. **Tidak ada fungsi mint admin.**
+- `ownsTier(owner, 0)` mengembalikan false (Starter bukan NFT).
 - `tokenURI` = `baseURI + tier + ".json"`, berisi metadata nama, gambar, dan statistik.
-- Error: `NotQualified, WrongPrice, SoldOut, AlreadyOwned, VoucherExpired, VoucherUsed, BadSignature, WrongBuyer, Soulbound, BadTier`.
+- `baseURI` **bukan** immutable: owner bisa menggantinya lewat `setBaseURI` (hanya tampilan, berlaku juga untuk token yang sudah terjual). Kontrak boleh di-deploy dengan `baseURI` kosong lalu diisi setelah metadata siap. Syarat, harga, dan suplai tetap immutable.
+- Error: `NotQualified, WrongPrice, SoldOut, AlreadyOwned, VoucherExpired, VoucherUsed, BadSignature, WrongBuyer, Soulbound, BadTier, InvalidConfig`.
 
 ### 6.3 EIP-712 voucher
 
@@ -520,13 +532,15 @@ Lain-lain:
 
 ### 6.4 Deploy (Monad testnet)
 
-1. Deploy `RunRegistry(attester, reqNearMiss[], minCarTier[])`.
-2. Deploy `CarNFT(registry, voucherSigner, price[], supply[], baseURI)`.
+1. Deploy `RunRegistry(attester, reqNearMiss[5], minCarTier[5])`.
+2. Deploy `CarNFT(registry, voucherSigner, price[5], supply[5], baseURI)`.
 3. Panggil `registry.setCarNFT(carNFT)`.
 4. Verifikasi kedua kontrak di explorer.
 5. Tulis alamat dan ABI ke `packages/config/deployments/monad-testnet.json`.
 
-Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
+Langkah 1–3 dikerjakan `contract/script/Deploy.s.sol` (angka dari `contract/config/cars.json`), langkah 5 oleh `node contract/script/export-deployment.mjs 10143`. Perintah lengkapnya ada di `contract/README.md`.
+
+Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi, dan jaga saldonya **di atas 10 MON**: di bawah itu reserve balance Monad membatasi akun ke 1 transaksi per 3 blok (±1,2 dtk), sehingga relayer tidak bisa mengirim 1 transaksi per blok.
 
 ## 7. Integrasi chain (`backend/src/chain`)
 
@@ -540,9 +554,17 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 - **Jika revert:** decode error-nya. `UnknownRun`/`IndexGap` karena urutan → kembalikan ke antrean. Selain itu, bagi batch menjadi dua untuk mengisolasi record yang bermasalah dan catat ke log.
 - Jika `RunStart` gagal permanen (misalnya `SeedBlockInvalid` karena RPC lama mati), tandai run `RECORD_FAILED` dan beri tahu pemain.
 
+Implementasi (`backend/src/chain/relayer.ts`):
+- Kirim memakai `eth_sendRawTransactionSync` (receipt langsung di respons). Kalau RPC tidak mendukung, otomatis pindah ke kirim + polling receipt 100 ms. Nonce diambil viem per transaksi; aman karena hanya satu transaksi dalam perjalanan.
+- Mepet hanya dipilih kalau berurutan dari `nearMisses` yang sudah tercatat, jadi `IndexGap` jarang terjadi. Duplikat dibuang sebelum dikirim.
+- Run yang tidak dikenal relayer (mis. setelah backend restart, `RunStart` tidak ada di antrean) disinkron dari `getRun()`.
+- Pengelompokan revert per record: `RunExists` (start) dan `RunAlreadyEnded` (end) dianggap sudah tercatat. `UnknownRun`/`IndexGap`/`CountMismatch` → sinkron ulang lalu tunggu (`CountMismatch` maks 10 kali). Selain itu → gagal permanen. `NotAttester` menghentikan putaran tanpa menggagalkan run (salah konfigurasi).
+- Gagal permanen dikirim sebagai event `RecordFailed` ke `ChainBus`; record berikutnya untuk run itu diabaikan. Run yang punya record di antrean tapi tidak maju selama 120 dtk juga dianggap gagal.
+
 ### 7.2 Indexer
 
 - Berlangganan log `RunRegistry` dan `CarNFT` lewat WSS. Saat start, lakukan backfill dengan `getLogs` dari `chain_cursor`.
+- Implementasi (`backend/src/chain/indexer.ts`): satu jalur untuk backfill dan live. Setiap putaran membaca `getLogs` dari `chain_cursor + 1` sampai blok terbaru, memancarkan event berurutan, lalu memajukan cursor. Putaran dipicu oleh blok baru dari WSS (`eth_subscribe newHeads`, terbit di state Proposed) ditambah timer cadangan 1 dtk (300 ms tanpa WSS). Dengan begitu tidak ada celah antara backfill dan langganan. Cursor kosong → mulai dari `deployBlock` di `packages/config/deployments`. Rentang `getLogs` mulai 1.000 blok dan dibelah dua otomatis kalau RPC menolak.
 - Tangani event:
   - `RunStarted`: cocokkan `seed` dengan DB; jika beda → run `INVALID`.
   - `NearMiss`: isi `tx_hash`, `block_number`, `recorded_at`, kredit koin, kirim `nearMiss.recorded` (dengan `latencyMs = recorded_at − verified_at`).
@@ -552,6 +574,8 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 ### 7.3 Voucher signer
 
 `signVoucher(v)` memakai viem `signTypedData`. Fungsi ini dipanggil dari `POST /vouchers`.
+
+Implementasi: `createVoucherSigner()` di `backend/src/chain/voucher.ts`, dengan domain dan type dari `voucherTypes.ts` (sama dengan mock). Domain EIP-712 dikunci oleh test Forge `test_VoucherDigestMatchesEIP712Spec`, dan voucher dari signer ini sudah diuji diterima `CarNFT.buy()` di anvil (`backend/test/live-anvil.test.ts`).
 
 ## 8. Frontend (`frontend`)
 

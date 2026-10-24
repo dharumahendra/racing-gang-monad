@@ -61,8 +61,11 @@ describe('config', () => {
     expect(EntryKind).toEqual({ LEFT: 1, RIGHT: 2, BRAKE_ON: 3, BRAKE_OFF: 4, SPEC_NITRO: 10, SPEC_SPIKES: 11, SPEC_RED: 12 });
   });
 
-  it('deployment null sebelum kontrak di-deploy', () => {
-    expect(getDeployment()).toBeNull();
+  it('deployment Monad testnet terisi; null kalau alamat belum ada', () => {
+    const live = getDeployment();
+    expect(live?.chainId).toBe(10143);
+    expect(live?.abi.CarNFT.length).toBeGreaterThan(0);
+    expect(getDeployment({ chainId: null, explorerUrl: null, deployBlock: null, runRegistry: null, carNFT: null, abi: { RunRegistry: [], CarNFT: [] } })).toBeNull();
     const addr = '0x' + '11'.repeat(20);
     const d = getDeployment({ chainId: 1, explorerUrl: null, deployBlock: 5, runRegistry: addr, carNFT: addr, abi: { RunRegistry: [], CarNFT: [] } });
     expect(d?.runRegistry).toBe(addr);

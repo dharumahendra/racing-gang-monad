@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CONFIG_VERSION } from '@racing-gang/config';
+import { CONFIG_VERSION, getDeployment } from '@racing-gang/config';
 import { loadEnv } from '../src/env';
 import { nearMisses, ownedCars, qualifications, reservations, runs } from '../src/db/schema';
 import { addLedgerEntry, balance } from '../src/services/ledger';
@@ -29,11 +29,12 @@ describe('endpoint dasar', () => {
     expect(body.memoryMb).toBeGreaterThan(0);
   });
 
-  it('/config berisi konstanta game, CARS dengan priceWei, dan kontrak null sebelum deploy', async () => {
+  it('/config berisi konstanta game, CARS dengan priceWei, dan alamat kontrak dari deployments', async () => {
     const body = (await t.app.inject({ method: 'GET', url: '/config' })).json();
     expect(body.configVersion).toBe(CONFIG_VERSION);
     expect(body.chainId).toBe(10143);
-    expect(body.contracts).toBeNull();
+    const d = getDeployment();
+    expect(body.contracts).toEqual(d ? { runRegistry: d.runRegistry, carNFT: d.carNFT } : null);
     expect(body.constants.RUN_TICKS).toBe(3000);
     expect(body.constants.CARS[1].priceWei).toBe('50000000000000000');
     expect(body.constants.laneCenter).toBeUndefined();

@@ -1,20 +1,18 @@
-// Chain Monad testnet (CHAIN_MODE=live).
-// Pembacaan kontrak sudah ada di sini. Relayer, indexer, dan voucher signer live adalah tugas Bayu
-// (TASKS CH-1, CH-2, CH-3); sampai itu ada, start() menolak jalan supaya tidak diam-diam memakai mock.
-import { createPublicClient, defineChain, http, type PublicClient } from 'viem';
+// Chain Monad testnet (CHAIN_MODE=live): pembacaan kontrak, relayer (CH-1), indexer (CH-2), dan
+// voucher signer (CH-3). Juga bisa diarahkan ke anvil lokal untuk uji end-to-end.
+import { getDeployment } from '@racing-gang/config';
 import type { Address, Hex } from '@racing-gang/config/protocol';
+import { createPublicClient, createWalletClient, defineChain, http, webSocket, type PublicClient } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import type { Db } from '../db/client';
 import type { Env } from '../env';
+import { carNftAbi, runRegistryAbi } from './abi';
 import { ChainBus } from './bus';
-import type { Chain, ChainReads, RelayerPort, VoucherSigner } from './ports';
-
-const runRegistryAbi = [
-  { type: 'function', name: 'isQualified', stateMutability: 'view', inputs: [{ name: 'player', type: 'address' }, { name: 'tier', type: 'uint8' }], outputs: [{ type: 'bool' }] },
-] as const;
-
-const carNftAbi = [
-  { type: 'function', name: 'ownsTier', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }, { name: 'tier', type: 'uint8' }], outputs: [{ type: 'bool' }] },
-  { type: 'function', name: 'minted', stateMutability: 'view', inputs: [{ name: 'tier', type: 'uint8' }], outputs: [{ type: 'uint256' }] },
-] as const;
+import { dbCursorStore, Indexer, memoryCursorStore } from './indexer';
+import { consoleLog, type ChainLog } from './log';
+import type { Chain, ChainReads } from './ports';
+import { Relayer } from './relayer';
+import { createVoucherSigner } from './voucher';
 
 export function createLiveReads(client: PublicClient, runRegistry: Address, carNFT: Address): ChainReads {
   return {
@@ -26,33 +24,56 @@ export function createLiveReads(client: PublicClient, runRegistry: Address, carN
   };
 }
 
-const notYet = (what: string) => () => {
-  throw new Error(`${what} live belum diimplementasi (lihat TASKS CH-1/CH-2/CH-3)`);
-};
-
-export function createLiveChain(env: Env): Chain {
+export function createLiveChain(env: Env, opts: { db?: Db; log?: ChainLog } = {}): Chain {
+  const log = opts.log ?? consoleLog;
+  const runRegistry = env.RUN_REGISTRY_ADDRESS as Address;
+  const carNFT = env.CAR_NFT_ADDRESS as Address;
   const chain = defineChain({
     id: env.CHAIN_ID,
     name: 'Monad Testnet',
     nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-    rpcUrls: { default: { http: [env.MONAD_RPC_URL!] } },
+    rpcUrls: { default: { http: [env.MONAD_RPC_URL!], webSocket: env.MONAD_WS_URL ? [env.MONAD_WS_URL] : undefined } },
   });
-  const client = createPublicClient({ chain, transport: http(env.MONAD_RPC_URL) }) as PublicClient;
-  const relayer: RelayerPort = {
-    enqueueStart: notYet('Relayer'),
-    enqueueNearMiss: notYet('Relayer'),
-    enqueueEnd: notYet('Relayer'),
-    queueSize: () => 0,
-  };
-  const voucher: VoucherSigner = { address: '0x0000000000000000000000000000000000000000', sign: notYet('Voucher signer') };
+  const transport = http(env.MONAD_RPC_URL);
+  const publicClient = createPublicClient({ chain, transport, pollingInterval: 200 }) as PublicClient;
+  const wsClient = env.MONAD_WS_URL
+    ? (createPublicClient({ chain, transport: webSocket(env.MONAD_WS_URL) }) as PublicClient)
+    : undefined;
+  const walletClient = createWalletClient({ chain, transport, account: privateKeyToAccount(env.ATTESTER_PRIVATE_KEY as Hex) });
+
+  const bus = new ChainBus();
+  const relayer = new Relayer({ publicClient, walletClient, registry: runRegistry, bus, log });
+  // Backfill mulai dari blok deploy kalau file deployments cocok dengan kontrak yang dipakai.
+  const deployment = getDeployment();
+  const startBlock =
+    deployment && deployment.chainId === env.CHAIN_ID && deployment.runRegistry.toLowerCase() === runRegistry.toLowerCase()
+      ? BigInt(deployment.deployBlock)
+      : undefined;
+  const indexer = new Indexer({
+    publicClient,
+    wsClient,
+    registry: runRegistry,
+    carNFT,
+    bus,
+    cursor: opts.db ? dbCursorStore(opts.db) : memoryCursorStore(),
+    startBlock,
+    log,
+  });
+
   return {
     mode: 'live',
     chainId: env.CHAIN_ID,
-    reads: createLiveReads(client, env.RUN_REGISTRY_ADDRESS as Address, env.CAR_NFT_ADDRESS as Address),
+    reads: createLiveReads(publicClient, runRegistry, carNFT),
     relayer,
-    voucher,
-    bus: new ChainBus(),
-    start: async () => notYet('Relayer dan indexer')(),
-    stop: async () => {},
+    voucher: createVoucherSigner(env.VOUCHER_SIGNER_PRIVATE_KEY as Hex, env.CHAIN_ID, carNFT),
+    bus,
+    start: async () => {
+      await indexer.start();
+      relayer.start();
+    },
+    stop: async () => {
+      relayer.stop();
+      await indexer.stop();
+    },
   };
 }
