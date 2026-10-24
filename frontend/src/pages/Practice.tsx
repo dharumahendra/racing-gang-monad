@@ -9,13 +9,16 @@ import { AudioControl, RunHud, RunWarnings, RearWarnings, CoinPops, FinalCountdo
 import { useWarningAudio } from '../lib/use-warning-audio';
 import { useRaceFocus } from '../lib/use-race-focus';
 import { useSelectedCar } from '../lib/selected-car';
+import { randomSeed } from '../lib/practice-seed';
 import { CARS } from '@racing-gang/config';
 const runId=`0x${'11'.repeat(32)}` as const;
-const seed='0x8cfd1f92705b1e83840e3e257e0120b7fc40a9569070f053c50a1d6ad428d684';
 export function Practice() {
   // Mobil yang dipilih di Garasi (hanya yang dimiliki akun; tanpa login = Starter). Statistik dari shared config.
   const {tier}=useSelectedCar();
-  const [attempt,setAttempt]=useState(0);const runner=useMemo(()=>new LocalRunner({runId,seed,carTier:tier}),[attempt,tier]);
+  // Seed baru tiap percobaan (termasuk Retry). Stabil selama percobaan karena di-memo pada `attempt`,
+  // tidak berubah oleh render ulang. Hanya latihan lokal; online tetap pakai seed otoritatif backend/chain.
+  const [attempt,setAttempt]=useState(0);const seed=useMemo(()=>randomSeed(),[attempt]);
+  const runner=useMemo(()=>new LocalRunner({runId,seed,carTier:tier}),[seed,tier]);
   const [revision,setRevision]=useState(0);
   const [assetsReady,setAssetsReady]=useState(false);const onAssetsReady=useCallback(()=>setAssetsReady(true),[]);
   useEffect(()=>{const t=setInterval(()=>setRevision(n=>n+1),100);return()=>clearInterval(t);},[]);
