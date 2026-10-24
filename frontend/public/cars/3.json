@@ -1,0 +1,19 @@
+{
+  "name": "Racing Gang — Tier 3",
+  "description": "Tier 3 soulbound car on Monad testnet. Artwork rendered from Unity Fan in-game concept car (CC0 author dedication); see asset license documentation.",
+  "image": "3.png",
+  "attributes": [
+    {
+      "trait_type": "Tier",
+      "value": 3
+    },
+    {
+      "trait_type": "Soulbound",
+      "value": "Yes"
+    },
+    {
+      "trait_type": "Network",
+      "value": "Monad Testnet"
+    }
+  ]
+}

@@ -52,7 +52,8 @@ const ZERO_HASH = `0x${'00'.repeat(32)}` as Hex;
 
 describe.skipIf(!hasAnvil || !hasArtifacts)('chain live di anvil', { timeout: 60_000 }, () => {
   let anvil: ChildProcess;
-  const publicClient = createPublicClient({ chain, transport: http(RPC), pollingInterval: 50 }) as PublicClient;
+  // Cache sengaja panjang agar pembacaan seed/cursor terbukti memakai blok terbaru.
+  const publicClient = createPublicClient({ chain, transport: http(RPC), pollingInterval: 50, cacheTime: 60_000 }) as PublicClient;
   const testClient = createTestClient({ chain, mode: 'anvil', transport: http(RPC) });
   const deployer = createWalletClient({ chain, transport: http(RPC), account: privateKeyToAccount(KEYS.deployer) });
   const attester = createWalletClient({ chain, transport: http(RPC), account: privateKeyToAccount(KEYS.attester) });
@@ -127,6 +128,12 @@ describe.skipIf(!hasAnvil || !hasArtifacts)('chain live di anvil', { timeout: 60
     await indexer.sync();
   };
   const of = <T extends ChainEvent['type']>(type: T) => events.filter((e): e is Extract<ChainEvent, { type: T }> => e.type === type);
+
+  it('seedBlock mengikuti blok yang baru ditambang meskipun cache blok masih hangat', async () => {
+    const before = await publicClient.getBlockNumber({ cacheTime: 0 });
+    await testClient.mine({ blocks: 1 });
+    expect(await seedBlock()).toBe(before + 1n - 3n);
+  });
 
   it('run penuh: seed sesuai rumus, mepet urut walau masuk acak dan dobel, Qualified di mepet ke-40, RunEnded', async () => {
     const runId = newRunId();

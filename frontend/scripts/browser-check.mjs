@@ -50,11 +50,11 @@ try {
   await page.screenshot({path:`${out}/practice-ready.png`,fullPage:true});
   await start.click();await page.waitForSelector('[data-phase="countdown"]');
   await page.waitForSelector('[data-phase="running"]');
-  await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>document.querySelector('.race-shell')?.getAttribute('data-lane')==='2');
+  const steeringX=Number(await page.locator('.race-shell').getAttribute('data-x'));await page.keyboard.down('ArrowRight');await page.waitForFunction(initial=>Number(document.querySelector('.race-shell')?.getAttribute('data-x'))>initial,steeringX);await page.keyboard.up('ArrowRight');await page.waitForSelector('[data-steer="0"]');
   await page.keyboard.down('ArrowDown');await page.waitForSelector('[data-braking="true"]');await page.keyboard.up('ArrowDown');await page.waitForSelector('[data-braking="false"]');
   await page.screenshot({path:`${out}/practice-running.png`,fullPage:true});
   frameRate=await page.evaluate(()=>new Promise(resolve=>{const start=performance.now();let count=0;const frame=()=>{count++;if(performance.now()-start>=1500)resolve(Math.round(count*1000/(performance.now()-start)));else requestAnimationFrame(frame);};requestAnimationFrame(frame);}));
-  await fits('practice countdown, keyboard lane change and brake in real WebGL browser');
+  await fits('practice countdown, held keyboard steering and brake in real WebGL browser');
   assert(loadedModels.size>=7,`Expected seven actual models, loaded ${loadedModels.size}`);
   assert.deepEqual(errors, [], 'browser console errors'); assert.deepEqual(warnings, [], 'browser console warnings');
   await writeFile(`${out}/browser-report.json`, JSON.stringify({ checks, errors, warnings,loadedModels:[...loadedModels],headlessFrameRate:frameRate }, null, 2));

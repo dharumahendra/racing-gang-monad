@@ -372,6 +372,34 @@ contract RunRegistryTest is Test {
         assertEq(r.endReason, 1);
     }
 
+    /// endReason disimpan sebagai reason + 1; TIME_UP (0) tetap harus terbaca selesai dengan reason 0.
+    function test_EndRunTimeUpKeepsReasonZero() public {
+        _start(RUN, 0);
+        assertFalse(reg.getRun(RUN).ended);
+
+        RunRegistry.EndRec[] memory e = new RunRegistry.EndRec[](1);
+        e[0] = RunRegistry.EndRec(RUN, 0, 3000, 0, bytes32(uint256(1)));
+        _submit(_noStart(), _noNear(), e);
+
+        RunRegistry.Run memory r = reg.getRun(RUN);
+        assertTrue(r.ended);
+        assertEq(r.endReason, 0);
+        assertEq(r.player, player);
+        assertEq(r.configVersion, 1);
+        assertEq(r.seed, keccak256(abi.encode(SEED_HASH, RUN, player)));
+
+        vm.expectRevert(RunRegistry.RunAlreadyEnded.selector);
+        _submit(_noStart(), _noNear(), e);
+    }
+
+    function test_GetRunUnknownIsEmpty() public view {
+        RunRegistry.Run memory r = reg.getRun(RUN);
+        assertEq(r.player, address(0));
+        assertFalse(r.ended);
+        assertEq(r.endReason, 0);
+        assertEq(r.startBlock, 0);
+    }
+
     function test_RevertWhen_EndCountMismatch() public {
         _start(RUN, 0);
         _near(RUN, 1, 3);

@@ -1,13 +1,17 @@
-import { useEffect } from 'react';
-/**
- * Mode fokus balapan: selama run berjalan (hitung mundur + balapan), header dan navigasi bawah disembunyikan
- * lewat kelas di <body>. Kembali otomatis saat run selesai, halaman ditinggalkan, atau komponen dilepas.
- */
+import { useLayoutEffect } from 'react';
 export const RACE_FOCUS_CLASS = 'race-focus';
+/** Kunci viewport hanya selama countdown/run; posisi scroll kembali sesudah selesai atau unmount. */
 export function useRaceFocus(active: boolean) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active) return;
+    const scroller = document.querySelector<HTMLElement>('.app-content');
+    const scrollTop = scroller?.scrollTop ?? 0;
     document.body.classList.add(RACE_FOCUS_CLASS);
-    return () => document.body.classList.remove(RACE_FOCUS_CLASS);
+    document.documentElement.classList.add(RACE_FOCUS_CLASS);
+    return () => {
+      document.body.classList.remove(RACE_FOCUS_CLASS);
+      document.documentElement.classList.remove(RACE_FOCUS_CLASS);
+      if (scroller) scroller.scrollTop = scrollTop;
+    };
   }, [active]);
 }

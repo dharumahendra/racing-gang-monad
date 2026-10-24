@@ -8,6 +8,7 @@ import {WatchJoin,WatchRoom} from './pages/Watch';
 import {Wallet} from './components/Wallet';
 import {NavCoinBalance} from './components/NavCoinBalance';
 import {Icon,type IconName} from './components/Icon';
+const Audit=lazy(()=>import('./pages/Audit').then(m=>({default:m.Audit})));
 const Practice=lazy(()=>import('./pages/Practice').then(m=>({default:m.Practice})));
 const Online=lazy(()=>import('./pages/Online').then(m=>({default:m.Online})));
 const NetworkLab=import.meta.env.DEV?lazy(()=>import('./pages/NetworkLab').then(m=>({default:m.NetworkLab}))):null;
@@ -49,7 +50,7 @@ function Shell(){
         <Route path="/room" element={<Room/>}/>
         <Route path="/watch" element={<WatchJoin/>}/>
         <Route path="/watch/:code" element={<WatchRoom/>}/>
-        <Route path="/run/:id" element={<Result/>}/>
+        <Route path="/run/:id" element={<Result/>}/><Route path="/audit/:id" element={<Suspense fallback={<p>Loading audit…</p>}><Audit/></Suspense>}/>
         <Route path="*" element={<NotFound/>}/>
       </Routes>
     </main>

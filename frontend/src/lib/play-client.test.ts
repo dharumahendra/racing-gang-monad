@@ -123,3 +123,12 @@ it('keeps run.qualified events (even after the result) for the Garage hint',asyn
   f.socket.receive({t:'run.qualified',tier:1,txHash:`0x${'aa'.repeat(32)}`});
   expect([...f.client.qualified.keys()]).toEqual([1]);expect(f.client.status).toBe('result');f.client.dispose();
 });
+
+it('buffers steering release during disconnect and sends it once on reconnect',async()=>{
+ const f=await setup();f.go();f.setTime(4000);f.client.pump();f.client.input(EntryKind.RIGHT);
+ f.socket.close();f.setTime(4100);f.client.input(EntryKind.RIGHT_OFF);f.setTime(4200);f.client.pump();
+ await f.client.connect(async()=>'fresh');const socket=f.sockets[1];socket.open();f.client.pump();
+ expect(socket.sent.filter(m=>m.t==='input').map(m=>m.kind)).toEqual([EntryKind.RIGHT_OFF]);
+ expect(f.client.runner.current.player.steer).toBe(0);
+ expect(f.client.runner.log.filter(e=>e.kind===EntryKind.RIGHT_OFF)).toHaveLength(1);f.client.dispose();
+});

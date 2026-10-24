@@ -93,3 +93,16 @@ Pembuat: Unity Fan (Sketchfab `unityfan777`, https://sketchfab.com/unityfan777).
 | Tier 3 | FREE Concept Car 037 | https://sketchfab.com/3d-models/646a3a31b0224379b6e767abc34d58dd | `UF037.glb` |
 
 Perubahan (ulangi dengan `node scripts/convert-unityfan.mjs <folder GLB + .license.json>`): depan ke -Z, pusat X/Z, roda di Y=0, skala seragam ke panjang 4,5 m, flatten + join per material, simplify meshopt ke ±90 rb segitiga, tekstur =1024 px WebP, EXT_meshopt_compression. `manifest.json` memuat SHA256 sumber/output, ukuran, segitiga, dan bounding box. Lencana teks "Unity FAN" milik penulis di bodi model 037 dibiarkan.
+
+## Landscape realistis — Poly Haven (24 Oktober 2026)
+
+Semua aset berikut CC0 1.0 Universal, diambil melalui API/CDN resmi Poly Haven. Lisensi: https://polyhaven.com/license dan https://creativecommons.org/publicdomain/zero/1.0/. Salinan keterangan ada di public/assets/landscape/LICENSE.txt. manifest.json menyimpan URL sumber, checksum sumber/output, ukuran, dan jumlah segitiga.
+
+- Rocky Terrain 02: https://polyhaven.com/a/rocky_terrain_02 — diffuse, normal OpenGL dan roughness 1K dikonversi WebP untuk tanah/bukit.
+- Rock Moss Set 02: https://polyhaven.com/a/rock_moss_set_02 — model glTF dinormalisasi pivot/skala, disederhanakan menjadi 5.998 segitiga, tekstur maksimal768px WebP dan kompresi meshopt. GLB286.112 byte.
+- Tree Small 02: https://polyhaven.com/a/tree_small_02 — model glTF dinormalisasi ke tinggi7m, disederhanakan menjadi12.250 segitiga, tekstur maksimal768px WebP dan kompresi meshopt. GLB894.464 byte.
+- Kloofendal 48d Partly Cloudy (Pure Sky): https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky — HDR1K asli, untuk background dan pantulan lingkungan balap. Showroom tetap memakai HDRI Garage.
+
+Reproduksi dari frontend: node scripts/import-landscape.mjs <folder-sumber-sementara>. Script mengambil indeks resmi, memeriksa ukuran/MD5 dari API, lalu menulis hasil dan SHA256. Tidak menyimpan key/credential. Raw glTF/dependensi disimpan di folder sementara yang dipilih, bukan paket aplikasi.
+
+Model Quaternius lama masih ada sebagai aset historis; Roadside balapan sekarang memakai model Poly Haven dengan material PBR asli. Landscape mesh dan pola bukit dibuat dalam kode, tidak mengubah sim, hitbox, atau ekonomi.

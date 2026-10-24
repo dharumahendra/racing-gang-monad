@@ -1,3 +1,4 @@
+import { DrivingControls } from '../components/DrivingControls';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useStore } from 'zustand';
@@ -22,23 +23,23 @@ import { RunSummaryPanel } from './RunResult';
 export function OnlineRunPanel({client,getToken,summaryApiUrl=settings.mode==='live'?settings.apiUrl:''}:{client:PlayClient;getToken:()=>Promise<string|null>;summaryApiUrl?:string}){
   const [revision,setRevision]=useState(0);const [assets,setAssets]=useState(false);const [started,setStarted]=useState(false);
   const loaded=useCallback(()=>setAssets(true),[]);const input=useCallback((kind:PlayerInputKind)=>client.input(kind),[client]);
-  useDrivingControls(client.runner,input);
+  const held=useDrivingControls(client.runner,input);
   // Official result or Qualified event changes balance/qualification: refresh /me so the Garage and coin pill follow the server.
   const qualifiedCount=client.qualified.size,resultStatus=client.result?.status;
   useEffect(()=>{if(resultStatus||qualifiedCount)void session.refresh();},[resultStatus,qualifiedCount]);
   useEffect(()=>{const timer=setInterval(()=>{client.pump();setRevision(n=>n+1);},100);return()=>clearInterval(timer);},[client]);
   const runner=client.runner;const view=runner.current;const enabled=!['result','error','expired','closed'].includes(client.status);const audio=useWarningAudio(runner,revision,enabled);useRaceFocus(enabled&&(runner.phase==='countdown'||runner.phase==='running'));
   const labels:Record<string,string>={idle:'Ready to connect',connecting:'Connecting',syncing:'Syncing time',ready:'Waiting for server',countdown:'Get ready',running:'Run in progress',disconnected:'Connection lost',waiting_result:'Awaiting server verification',result:'Result received',error:'Needs review',expired:'Connection expired',closed:'Connection closed'};
-  return <><div className="race-toolbar"><p role="status" data-network-status={client.status}>{labels[client.status]}</p><AudioControl audio={audio}/></div><section className="race-shell" data-phase={runner.phase} data-tick={view.tick} data-lane={view.player.targetLane} data-braking={view.player.braking}>
-    <RunHud view={view} tier={client.params.carTier} online/>
+  return <><div className="race-toolbar"><p role="status" data-network-status={client.status}>{labels[client.status]}</p><AudioControl audio={audio}/></div><section className="race-shell" data-phase={runner.phase} data-tick={view.tick} data-lane={view.player.targetLane} data-braking={view.player.braking} data-x={view.player.x} data-steer={view.player.steer}>
+    <DrivingControls held={held} enabled={runner.phase==="running"}/><RunHud view={view} tier={client.params.carTier} online/>
     <RaceScene runner={runner} revision={revision} onReady={loaded}/>
     {!started&&<div className="race-overlay"><h2>Ready to hit the road?</h2><p>The run starts once the start time is received from the server.</p><button className="button" disabled={!assets} onClick={e=>{audio.unlock();e.currentTarget.blur();setStarted(true);void client.connect(getToken);}}>{assets?'Connect run':'Loading car…'}</button></div>}
     {runner.phase==='countdown'&&<div className="countdown" role="status">{Math.ceil(runner.countdownMs/1000)}</div>}
     <RunWarnings view={view} enabled={enabled&&runner.phase==='running'}/><FinalCountdown view={view} enabled={enabled&&runner.phase==='running'}/>{enabled&&runner.phase==='running'&&<CoinPops runner={runner}/>}
     {started&&client.status==='waiting_result'&&<div className="race-overlay"><h2>Awaiting the official result.</h2><p>Local result: {view.nearMisses} near misses. Balance and pass status await server verification and recording.</p></div>}
     {client.result&&<div className="race-overlay" data-official-result={client.result.status}><span className="badge">SERVER RESULT · {client.result.status}</span><h2>{client.result.nearMisses} near misses</h2><p>{client.result.coins} coins per the server result. Chain recording status is checked separately.</p><Link className="button" to={`/run/${client.params.runId}`}>View run status</Link></div>}
-  </section><div className="practice-controls"><span>← / A left · → / D right · ↓ / S brake</span><span>{client.verified.size} near misses verified · {client.recorded.size} recorded</span>{client.qualified.size>0&&<span role="status">Qualified on-chain: {[...client.qualified.keys()].map(t=>`Tier ${t}`).join(", ")}. You can buy it in the Garage.</span>}</div>
-  {client.status==='disconnected'&&<div className="info-panel"><p>Connection lost. Input is saved temporarily; the official result is not yet confirmed.</p><button className="button" onClick={()=>void client.connect(getToken)}>Reconnect</button></div>}
+  {client.status==='disconnected'&&<div className="race-connection-notice"><p>Connection lost. Input is saved temporarily; the official result is not yet confirmed.</p><button className="button" onClick={()=>void client.connect(getToken)}>Reconnect</button></div>}</section><div className="practice-controls"><span>Hold ← / A to steer left · hold → / D to steer right · release to stop steering · hold ↓ / S to brake</span><span>{client.verified.size} near misses verified · {client.recorded.size} recorded</span>{client.qualified.size>0&&<span role="status">Qualified on-chain: {[...client.qualified.keys()].map(t=>`Tier ${t}`).join(", ")}. You can buy it in the Garage.</span>}</div>
+
   {client.error&&<p role="alert" className="inline-error">{client.error}</p>}
   {started&&<Link className="quiet-link result-route-link" to={`/run/${client.params.runId}`}>Check this run's status →</Link>}
   {started&&summaryApiUrl&&(runner.phase==='ended'||['error','expired','result'].includes(client.status))&&<RunSummaryPanel id={client.params.runId} apiUrl={summaryApiUrl}/>}
@@ -87,4 +88,3 @@ export function Online(){
     {recovery&&<p className="recovery-links"><Link className="quiet-link" to={`/run/${recovery}`}>View the previous run status without logging in →</Link></p>}
     {settings.mode!=='live'||!settings.apiUrl||!settings.wsUrl||!auth.configured?<section className="info-panel"><h2>Online racing is being set up.</h2><p>Local practice is already available. Login and the game services are being connected.</p><Link className="button" to="/play">Play practice</Link></section>:!auth.authenticated||!auth.address?<section className="info-panel"><h2>Sign in to start a run.</h2><p>Use the Google button above. Your racing account will be set up after login.</p></section>:<OnlineAccount key={`${auth.subject}:${auth.address}:${room}`} roomCode={room||undefined} recoveryRunId={recovery||undefined}/>}</>;
 }
-

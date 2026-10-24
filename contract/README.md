@@ -97,6 +97,15 @@ Test integrasi `backend/test/live-anvil.test.ts` menjalankan anvil sendiri (butu
 - Gas ditagih berdasarkan **gas limit**, jadi relayer memakai `estimasi × 1,1`.
 - Wallet attester harus bersaldo **> 10 MON** (reserve balance). Di bawah itu akun hanya boleh mengirim
   1 transaksi per 3 blok dan latensi mepet on-chain akan molor.
-- Gas `submitBatch` terukur di anvil (aturan gas EVM standar, dari 2 bot paralel): 1 record ≈ 44,5 rb,
-  2 ≈ 64 rb, 3 ≈ 80 rb, 5 ≈ 97 rb. Akses storage dingin di Monad lebih mahal, jadi angka nyata di testnet
-  akan lebih tinggi; ukur ulang setelah deploy (SC-6).
+- Gas `submitBatch` (`forge test --isolate --match-contract RunRegistryGas -vv`, tiap panggilan = transaksi
+  terpisah dengan slot dingin). Kolom Monad = gas EVM + 6.000 per slot unik (selisih akses dingin Monad):
+
+  | Isi transaksi | Gas EVM | Perkiraan Monad | Sebelum optimasi (Monad) |
+  |---|---|---|---|
+  | start run | 76,4 rb | ±94 rb | ±123 rb |
+  | 1 mepet | 39,2 rb | ±51 rb | ±69 rb |
+  | 5 mepet | 76,4 rb | ±88 rb | ±112 rb |
+  | 1 mepet + lulus tier | 88,4 rb | ±112 rb | ±120 rb |
+  | end run | 35,3 rb | ±47 rb | ±48 rb |
+
+  Angka nyata di testnet diukur ulang setelah deploy (SC-6).

@@ -22,6 +22,20 @@ contract RunRegistry is Ownable, IRunRegistry {
         bytes32 seed;
     }
 
+    /// @dev Bentuk penyimpanan `Run`: semua kolom yang dibaca tiap mepet muat di satu slot (32 byte),
+    ///      `seed` di slot kedua. Akses slot dingin di Monad mahal (8.100 gas), jadi tiap transaksi relayer
+    ///      cukup membaca satu slot per run. `getRun` tetap mengembalikan `Run` (ABI tidak berubah).
+    struct RunData {
+        address player; // 20 byte
+        uint32 startBlock; // 4 byte, cukup sampai blok ±4,29 miliar
+        uint8 carTier;
+        uint16 configVersion;
+        uint8 endState; // 0 = berjalan, selain itu endReason + 1
+        uint16 nearMisses;
+        uint16 lastTick;
+        bytes32 seed;
+    }
+
     struct StartRec {
         bytes32 runId;
         address player;
@@ -59,7 +73,7 @@ contract RunRegistry is Ownable, IRunRegistry {
     address public attester;
     ICarNFT public carNFT;
 
-    mapping(bytes32 runId => Run) private _runs;
+    mapping(bytes32 runId => RunData) private _runs;
     mapping(address player => uint8) private _qualifiedMask; // bit t = lulus tier t
     mapping(address player => mapping(uint8 tier => bytes32)) private _qualifyingRun;
 
@@ -132,7 +146,7 @@ contract RunRegistry is Ownable, IRunRegistry {
     }
 
     function _start(StartRec calldata r) private {
-        Run storage run = _runs[r.runId];
+        RunData storage run = _runs[r.runId];
         if (run.player != address(0)) revert RunExists();
         if (r.seedBlock >= block.number || block.number - r.seedBlock > SEED_BLOCK_WINDOW) revert SeedBlockInvalid();
         bytes32 bh = blockhash(r.seedBlock);
@@ -143,21 +157,22 @@ contract RunRegistry is Ownable, IRunRegistry {
 
         bytes32 seed = keccak256(abi.encode(bh, r.runId, r.player));
         run.player = r.player;
+        // forge-lint: disable-next-line(unsafe-typecast) nomor blok Monad baru ±73 juta, jauh di bawah batas uint32
+        run.startBlock = uint32(block.number);
         run.carTier = r.carTier;
         run.configVersion = r.configVersion;
-        run.startBlock = uint64(block.number);
         run.seed = seed;
 
         emit RunStarted(r.runId, r.player, r.carTier, seed, r.seedBlock, r.configVersion);
     }
 
     function _nearMiss(NearMissRec calldata r) private {
-        Run storage run = _runs[r.runId];
+        RunData storage run = _runs[r.runId];
         if (run.player == address(0)) revert UnknownRun();
         uint16 count = run.nearMisses;
         // Idempoten untuk retry relayer: record yang sudah tercatat dilewati, termasuk setelah run selesai.
         if (r.index <= count) return;
-        if (run.ended) revert RunAlreadyEnded();
+        if (run.endState != 0) revert RunAlreadyEnded();
         if (block.number - run.startBlock > MAX_RUN_BLOCK_SPAN) revert RunTooOld();
         if (r.index != count + 1) revert IndexGap();
         if (r.tick > MAX_TICK || r.tick < run.lastTick) revert TickOutOfRange();
@@ -170,28 +185,34 @@ contract RunRegistry is Ownable, IRunRegistry {
     }
 
     function _checkQualified(address player, uint8 carTier, bytes32 runId, uint16 count, uint16 tick) private {
-        uint8 mask = _qualifiedMask[player];
-        uint8 newMask = mask;
+        // Cek syarat dulu dari immutable (murah). Status lulus pemain (slot dingin) hanya dibaca saat jumlah
+        // mepet tepat mencapai syarat suatu tier, bukan di setiap mepet.
+        uint8 hits;
         for (uint8 t = 1; t <= MAX_TIER; t++) {
-            uint8 bit = _bit(t);
-            if (count == _req(t) && carTier >= _minTier(t) && newMask & bit == 0) {
-                newMask |= bit;
+            if (count == _req(t) && carTier >= _minTier(t)) hits |= _bit(t);
+        }
+        if (hits == 0) return;
+
+        uint8 mask = _qualifiedMask[player];
+        uint8 fresh = hits & ~mask;
+        if (fresh == 0) return;
+        for (uint8 t = 1; t <= MAX_TIER; t++) {
+            if (fresh & _bit(t) != 0) {
                 _qualifyingRun[player][t] = runId;
                 emit Qualified(player, t, runId, tick);
             }
         }
-        if (newMask != mask) _qualifiedMask[player] = newMask;
+        _qualifiedMask[player] = mask | fresh;
     }
 
     function _end(EndRec calldata r) private {
-        Run storage run = _runs[r.runId];
+        RunData storage run = _runs[r.runId];
         if (run.player == address(0)) revert UnknownRun();
-        if (run.ended) revert RunAlreadyEnded();
+        if (run.endState != 0) revert RunAlreadyEnded();
         if (r.totalNearMisses != run.nearMisses) revert CountMismatch();
         if (r.endTick > MAX_TICK || r.endTick < run.lastTick) revert TickOutOfRange();
 
-        run.ended = true;
-        run.endReason = r.reason;
+        run.endState = r.reason + 1; // reason 255 → overflow revert; reason resmi hanya 0–3
         emit RunEnded(r.runId, r.reason, r.endTick, r.totalNearMisses, r.finalInputHash);
     }
 
@@ -207,7 +228,18 @@ contract RunRegistry is Ownable, IRunRegistry {
     }
 
     function getRun(bytes32 runId) external view returns (Run memory) {
-        return _runs[runId];
+        RunData storage d = _runs[runId];
+        return Run({
+            player: d.player,
+            carTier: d.carTier,
+            configVersion: d.configVersion,
+            ended: d.endState != 0,
+            endReason: d.endState == 0 ? 0 : d.endState - 1,
+            nearMisses: d.nearMisses,
+            lastTick: d.lastTick,
+            startBlock: d.startBlock,
+            seed: d.seed
+        });
     }
 
     function reqNearMiss(uint8 tier) external view returns (uint16) {
