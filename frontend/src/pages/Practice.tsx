@@ -10,12 +10,12 @@ import { useWarningAudio } from '../lib/use-warning-audio';
 import { useRaceFocus } from '../lib/use-race-focus';
 import { useSelectedCar } from '../lib/selected-car';
 import { CARS } from '@racing-gang/config';
-const runId=`0x${'11'.repeat(32)}` as const;
-const seed='0x8cfd1f92705b1e83840e3e257e0120b7fc40a9569070f053c50a1d6ad428d684';
+// Practice tidak diverifikasi siapa pun, jadi seed acak di browser aman; tiap percobaan mendapat lalu lintas baru.
+const randomHex32=()=>`0x${Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('')}` as const;
 export function Practice() {
   // Mobil yang dipilih di Garasi (hanya yang dimiliki akun; tanpa login = Starter). Statistik dari shared config.
   const {tier}=useSelectedCar();
-  const [attempt,setAttempt]=useState(0);const runner=useMemo(()=>new LocalRunner({runId,seed,carTier:tier}),[attempt,tier]);
+  const [attempt,setAttempt]=useState(0);const runner=useMemo(()=>new LocalRunner({runId:randomHex32(),seed:randomHex32(),carTier:tier}),[attempt,tier]);
   const [revision,setRevision]=useState(0);
   const [assetsReady,setAssetsReady]=useState(false);const onAssetsReady=useCallback(()=>setAssetsReady(true),[]);
   useEffect(()=>{const t=setInterval(()=>setRevision(n=>n+1),100);return()=>clearInterval(t);},[]);
