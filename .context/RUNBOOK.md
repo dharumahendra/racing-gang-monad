@@ -1,6 +1,6 @@
 # Runbook — Racing Gang (lokal dan demo)
 
-Status 24 Oktober 2026. Kontrak sudah di Monad testnet dan `CHAIN_MODE=live` sudah diuji di anvil (`live-e2e`), tapi belum dijalankan terhadap testnet karena wallet backend belum diisi. Langkah di bawah memakai `CHAIN_MODE=mock` kecuali disebut lain. Tx hash/blok mock bukan bukti Monad; cek `chainMode` di `/config` atau `/health`.
+Status 24 Oktober 2026. Kontrak sudah di Monad testnet dan `CHAIN_MODE=live` sudah diuji di anvil (`live-e2e`), dan pada 24 Okt juga jalan terhadap testnet dari server lokal (bot: mepet tercatat, audit cocok). Kontrak di-deploy ulang 24 Okt (RunRegistry `0xE3c8…daCA`, CarNFT `0xD8A1…A736`, sudah di `deployments/monad-testnet.json`). Pakai RPC publik Monad (batas 15 request/detik per IP); RPC privat paket gratis belum tentu lebih baik: QuickNode Discover membatasi `getLogs` 5 blok dan bloknya tertinggal ±6 dtk (BACKEND_PLAN §P2). Saldo attester habis ±0,2 MON per run; cek dengan `status` sebelum demo. Langkah di bawah memakai `CHAIN_MODE=mock` kecuali disebut lain. Tx hash/blok mock bukan bukti Monad; cek `chainMode` di `/config` atau `/health`.
 
 ## 1. Prasyarat
 
@@ -87,7 +87,7 @@ pnpm --filter @racing-gang/backend stress -- --players 25 --spectators 50
 |---|---|---|
 | Login Google akun A dan B, wallet berbeda, `/me` cocok | Screenshot/alamat tersamarkan, log 401 untuk token lama | BLOCKED (dashboard Privy + `PRIVY_*` di `.env`) |
 | Run room + 3 gangguan dari 3 HP fisik | Video/foto, hasil `VERIFIED`, summary finalHash | BLOCKED (hosting publik + perangkat) |
-| Mepet tercatat di Monad testnet | Tx hash + receipt sukses + event cocok | BLOCKED (wallet backend); lolos di anvil |
-| Pembelian Tier 1 + transfer ditolak (soulbound) | Tx `buy`, revert transfer | BLOCKED (wallet backend + akun lulus); beli lolos di anvil |
-| Audit replay run | `pnpm --filter @racing-gang/backend audit -- --url <api> --run <id>` | Lokal tersedia; on-chain lolos di anvil, testnet menunggu run pertama |
+| Mepet tercatat di Monad testnet | Tx hash + receipt sukses + event cocok | PASS 24 Okt (server lokal, bot): 6 run, 398 mepet tercatat, mis. tx `0x72fae47c…8a4f` status 1. Median 1,7 dtk untuk 1 pemain, 2,0 dtk untuk 5 pemain dengan RPC publik |
+| Pembelian Tier 1 + transfer ditolak (soulbound) | Tx `buy`, revert transfer | BLOCKED (private key voucher signer di `.env` + akun lulus); beli lolos di anvil |
+| Audit replay run | `pnpm --filter @racing-gang/backend run audit -- --url <api> --run <id>` (`run` wajib; tanpa itu pnpm menjalankan `pnpm audit` bawaan) | PASS 24 Okt: run `0x4ef19b79…4287` cocok dengan event on-chain |
 | Akun presenter lulus lewat permainan sah | Run asli, bukan edit DB/bot | Belum |
