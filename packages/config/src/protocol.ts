@@ -129,6 +129,8 @@ export type ApiErrorCode =
   | 'BAD_REQUEST'
   | 'UNAUTHORIZED'
   | 'NOT_FOUND'
+  | 'RATE_LIMITED'
+  | 'INTERNAL'
   | 'ACTIVE_RUN_EXISTS'
   | 'RUN_LIMIT'
   | 'RUN_NOT_ENDED'
