@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { asc, eq } from 'drizzle-orm';
 import { CARS, EntryKind } from '@racing-gang/config';
 import type { Hex } from '@racing-gang/config/protocol';
-import { replay } from '@racing-gang/sim';
+import { auditRun, replay } from '@racing-gang/sim';
 import { mockBlockHash } from '../src/chain/mock';
 import { computeSeed } from '../src/chain/seed';
 import { rooms, runEntries, runs } from '../src/db/schema';
@@ -120,6 +120,17 @@ describe('/ws/play dan verifikasi', () => {
 
     const summary = (await t.app.inject({ method: 'GET', url: `/runs/${p.run.runId}` })).json();
     expect(summary.nearMissList.every((n: { txHash: string | null }) => n.txHash !== null)).toBe(true);
+    expect(summary.finalHash).toBe(p.client.sim.inputHash);
+
+    // Audit dari luar: log publik + catatan backend → semua cocok (sama dengan scripts/audit.ts).
+    const audit = auditRun(
+      { runId: log.runId, seed: log.seed, carTier: log.carTier, entries: log.entries },
+      {
+        nearMisses: summary.nearMissList,
+        end: { endTick: summary.endTick, totalNearMisses: summary.nearMisses, finalInputHash: summary.finalHash },
+      },
+    );
+    expect(audit.problems).toEqual([]);
     expect((await t.app.inject({ method: 'GET', url: '/health' })).json().activeRuns).toBe(0);
   });
 

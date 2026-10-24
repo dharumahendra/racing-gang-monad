@@ -12,7 +12,8 @@
     "bot": "tsx scripts/bot.ts",
     "spectators": "tsx scripts/spectators.ts",
     "status": "tsx scripts/status.ts",
-    "check-monad": "tsx scripts/check-monad.ts"
+    "check-monad": "tsx scripts/check-monad.ts",
+    "audit": "tsx scripts/audit.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",

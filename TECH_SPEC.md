@@ -590,6 +590,8 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 
 ### 8.5 Halaman audit (P1, dikerjakan Bayu)
 
+Logika pembanding sudah ada di `packages/sim` sebagai `auditRun(log, records)` (dipakai juga CLI `backend/scripts/audit.ts`); halaman ini cukup mengisi `records` dari event on-chain dan menampilkan hasilnya.
+
 1. Ambil `GET /runs/:id/log`.
 2. Replay dengan `packages/sim` di browser untuk mendapatkan daftar mepet `{ index, tick, vehicleType, inputHash }`.
 3. Ambil event `RunStarted`, `NearMiss`, dan `RunEnded` untuk `runId` itu langsung dari RPC.

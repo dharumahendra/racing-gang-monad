@@ -509,12 +509,13 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 
 | Item | Bagian | Terblokir oleh | Yang dibutuhkan |
 |---|---|---|---|
-| Tes `blockhash` Monad = hash blok dari RPC | Fase 6 | Bayu | Kontrak kecil `h(n)` di testnet. Kalau beda, set `SEED_SOURCE=event` (sudah didukung) |
+| ~~Tes `blockhash` Monad = hash blok dari RPC~~ | Fase 6 | **Selesai 22 Okt** tanpa wallet: `pnpm --filter @racing-gang/backend check-monad` (eth_call init code `BLOCKHASH`). 7/7 sampel sama, termasuk `latest − 3`, jadi `SEED_SOURCE=local` aman. Jalur cadangan `SEED_SOURCE=event` juga sudah diuji | — |
 | `CHAIN_MODE=live`: relayer, indexer, voucher signer | Fase 6, CH-1/2/3 | Bayu | Implementasi `RelayerPort`, indexer yang memanggil `bus.emit`, `VoucherSigner` (lihat `backend/src/chain/ports.ts`). `live.ts` sengaja menolak start sampai ini ada |
 | Alamat dan ABI kontrak di `packages/config/deployments/monad-testnet.json` | Fase 6, SC-5 | Bayu | Deploy kontrak ke Monad testnet |
 | Test Forge: hash log Solidity = `appendHash` sim | D3 | Bayu | Satu test `forge` dengan input sama dengan test sim |
-| Konfirmasi `CHAIN_ID` dan URL explorer resmi | Env | Bayu | Isi `CHAIN_ID` dan `EXPLORER_URL` |
-| Latensi on-chain nyata ≤ 2 dtk dan beban relayer di testnet | Fase 6 | Setelah CH-1 | `bot --parallel 5` dengan `CHAIN_MODE=live` |
+| Konfirmasi URL explorer resmi | Env | Bayu | `CHAIN_ID` = 10143 sudah terkonfirmasi dari RPC (`eth_chainId`). Waktu blok terukur ±300 ms (PRD menulis ±400 ms), jadi jendela `blockhash` 256 blok ≈ 77 dtk: relayer harus mengirim `RunStart` dalam beberapa detik setelah `POST /runs`. Tinggal `EXPLORER_URL` |
+| Latensi on-chain nyata ≤ 2 dtk dan beban relayer di testnet | Fase 6 | Setelah CH-1 | `bot --parallel 5` dengan `CHAIN_MODE=live`. Metriknya sudah ada: `/health.onChainLatency` (median, p90) dan `scripts/status.ts` memberi peringatan kalau median > 2 dtk |
+| Audit terhadap event on-chain | AU-1 | Setelah SC-5 | `pnpm --filter @racing-gang/backend audit -- --run <id> --rpc <url> --registry <alamat>`. Logika pembandingnya `auditRun` di `packages/sim`, bisa langsung dipakai halaman audit `/run/:id`. Jalur terhadap catatan backend sudah diuji; jalur event on-chain menunggu kontrak |
 | Deploy server publik (HTTPS/WSS, volume, 1 instance) | Fase 10 | Dharu | Akun hosting dan domain. Image sudah siap |
 | Uji dari HP lewat internet, 3+ HP | Fase 10–11 | Setelah deploy + frontend | URL publik backend dan frontend |
 | Golden test di browser (`/dev/golden`) | D3 | Raka | Sudah dikerjakan di branch `raka/foundation` (`frontend/src/pages/Golden.tsx`); tinggal di-merge |
@@ -542,5 +543,4 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 ### P4. Keterbatasan yang diketahui
 
 - Antrean relayer di mock ada di memori. Relayer live sebaiknya menyimpan antrean di DB: saat restart, backend mengirim ulang mepet dan `EndRec` yang belum tercatat, tapi `RunStart` yang hilang harus ditangani relayer.
-- Reservasi voucher yang kedaluwarsa baru dilepas 60 detik kemudian; selama jeda itu permintaan voucher baru bisa ditolak `INSUFFICIENT_COINS`.
 - Image Docker belum diuji di laptop (Docker Desktop tidak jalan), tapi lulus build dan smoke test di CI.

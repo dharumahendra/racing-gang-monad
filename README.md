@@ -52,7 +52,9 @@ Jalankan **satu instance saja**: state run dan room ada di memori. Database SQLi
 |---|---|
 | `pnpm --filter @racing-gang/backend bot -- --url <api> [--parallel 5] [--speedhack] [--disconnect 5] [--room-wait 10]` | Bot pemain lewat jaringan; mencocokkan mepet lokal dengan backend |
 | `pnpm --filter @racing-gang/backend spectators -- --url <api> --room <KODE> --count 50` | Uji beban penonton |
-| `pnpm --filter @racing-gang/backend status -- --url <api>` | Cek kesiapan demo: health, kontrak, saldo attester dan voucher signer |
+| `pnpm --filter @racing-gang/backend status -- --url <api>` | Cek kesiapan demo: health, kontrak, saldo attester dan voucher signer, median latensi on-chain |
+| `pnpm --filter @racing-gang/backend check-monad` | Cek asumsi chain tanpa wallet: chainId, waktu blok, `BLOCKHASH` di EVM = hash blok RPC |
+| `pnpm --filter @racing-gang/backend audit -- --url <api> --run <id> [--rpc <url> --registry <alamat>]` | Replay log publik satu run lalu cocokkan dengan catatan backend atau event on-chain |
 | `pnpm --filter @racing-gang/sim stats -- --seeds 200` | Statistik balance mepet per mobil (autopilot) |
 | `pnpm --filter @racing-gang/sim fixtures` | Buat ulang golden fixture setelah logika sim atau `CONFIG_VERSION` berubah |
 | `pnpm config:export` | Tulis `contract/config/cars.json` dari `packages/config` |
