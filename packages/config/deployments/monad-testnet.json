@@ -1,9 +1,9 @@
 {
   "chainId": 10143,
   "explorerUrl": "https://testnet.monadvision.com",
-  "deployBlock": 73297824,
-  "runRegistry": "0x5df0f8c94bdcaecae74c3db606ffce9ec09cbd93",
-  "carNFT": "0x6ac0e6d8e71d36ff31c61f391a4a7cfe2843654b",
+  "deployBlock": 73733089,
+  "runRegistry": "0xe3c8edd37798d5e03553e4f6df191bc8586adaca",
+  "carNFT": "0xd8a134916c85ace413289eaf674aedcd984ba736",
   "abi": {
     "RunRegistry": [
       {
