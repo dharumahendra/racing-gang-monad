@@ -32,6 +32,21 @@ const readAbi = parseAbi([
 let problems = 0;
 const warn = (msg: string) => { problems++; console.log(`  ⚠ ${msg}`); };
 
+/**
+ * RPC publik Monad membatasi 15 request/detik per IP. Jatahnya ikut terpakai oleh proses lain dari IP yang sama,
+ * jadi panggilan berurutan pun bisa ditolak "requests limited"; tunggu lalu ulang (0,5 / 1 / 2 / 4 dtk).
+ */
+async function limited<T>(call: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await call();
+    } catch (e) {
+      if (attempt >= 4 || !/requests limited/i.test(String((e as Error).message))) throw e;
+      await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
+    }
+  }
+}
+
 if (!args['skip-backend']) {
   console.log(`Backend ${args.url}`);
   try {
@@ -59,7 +74,7 @@ if (rpc) {
   const client = createPublicClient({ transport: http(rpc) });
   console.log(`\nRPC ${rpc}`);
   try {
-    console.log(`  blok terbaru ${await client.getBlockNumber()}`);
+    console.log(`  blok terbaru ${await limited(() => client.getBlockNumber())}`);
     const registry = process.env.RUN_REGISTRY_ADDRESS as Address | undefined;
     const carNFT = process.env.CAR_NFT_ADDRESS as Address | undefined;
     let roles: { attester: Address; voucherSigner: Address } | undefined;
@@ -72,7 +87,7 @@ if (rpc) {
     ] as const) {
       if (!key) { warn(`${label}: private key tidak ada di .env`); continue; }
       const address = privateKeyToAccount(key as Hex).address;
-      const balance = await client.getBalance({ address });
+      const balance = await limited(() => client.getBalance({ address }));
       console.log(`  ${label.padEnd(14)} ${address} · ${formatEther(balance)} MON`);
       if (onChain && getAddress(onChain) !== address) warn(`${label}: kunci di .env (${address}) bukan ${label} kontrak (${onChain})`);
       if (label === 'attester' && balance <= MIN_BALANCE) warn(`saldo attester ≤ ${formatEther(MIN_BALANCE)} MON (reserve balance Monad); isi dari faucet`);
@@ -86,9 +101,9 @@ if (rpc) {
 
 /** Parameter immutable kontrak harus sama dengan CARS; kalau beda, syarat/harga di game dan di chain tidak cocok. */
 async function checkContracts(client: ReturnType<typeof createPublicClient>, registry: Address, carNFT: Address) {
+  // Berurutan, bukan Promise.all, dan diulang saat ditolak rate limit (lihat limited()).
   const read = <T>(address: Address, functionName: string, args: unknown[] = []) =>
-    client.readContract({ address, abi: readAbi, functionName, args } as never) as Promise<T>;
-  // Berurutan, bukan Promise.all: RPC publik Monad membatasi 15 request/detik.
+    limited(() => client.readContract({ address, abi: readAbi, functionName, args } as never) as Promise<T>);
   const attester = await read<Address>(registry, 'attester');
   const owner = await read<Address>(registry, 'owner');
   const linkedNft = await read<Address>(registry, 'carNFT');
