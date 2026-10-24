@@ -49,13 +49,16 @@ Konfigurasi app pada 22 Oktober 2026 (dibaca lewat API Privy): `google_oauth=fal
 
 ### 5.1 Backend di Railway
 
-Build dan health check diatur `railway.json` di root (Dockerfile `backend/Dockerfile`, health `/health`, deploy hanya kalau `backend/`, `packages/`, atau lockfile berubah). Sisanya diatur di dashboard:
+`railway.json` di root **tidak lagi dibaca** untuk service baru: Railway menghentikan Config-as-code (service yang belum pernah memakainya tidak bisa opt-in sejak 2026-08-28, dan file lama hanya berlaku sampai 2026-12-01). Semua pengaturan dilakukan di dashboard:
 
-1. **New Project → Deploy from GitHub repo** → `dharumahendra/racing-gang-monad`, branch `main`. Root directory biarkan kosong (build butuh seluruh workspace).
+1. **New Project → Deploy from GitHub repo** → `dharumahendra/racing-gang-monad`, branch `main`. Root directory biarkan kosong (build butuh seluruh workspace). Railway mendeteksi monorepo pnpm dan otomatis membuat satu service per paket (`backend`, `sim`, `frontend`) dengan builder Railpack dan start command `pnpm --filter … start`, yang gagal dengan ``The executable `pnpm` could not be found``. Yang dipakai hanya service backend; `sim` adalah library, bukan server.
+   - **Settings → Build → Builder:** `Dockerfile`, Dockerfile Path `backend/Dockerfile`.
+   - **Settings → Deploy → Custom Start Command:** kosongkan supaya `CMD` Dockerfile yang dipakai.
+   - **Settings → Deploy → Healthcheck Path:** `/health`.
 2. **Volume:** service → *Attach Volume*, mount path `/data`. Volume Railway dimiliki root, sedangkan image berjalan sebagai user `node`, jadi tambahkan variabel `RAILWAY_RUN_UID=0`; tanpa itu SQLite gagal menulis `/data/racing-gang.db`.
 3. **Replica tetap 1** (service dengan volume memang tidak bisa diskalakan, dan state run/room ada di memori). Jangan aktifkan *serverless / app sleeping*.
 4. **Variables** (tab Variables, bukan file): `NODE_ENV=production`, `JWT_SECRET` (acak ≥ 32 karakter), `PUBLIC_ORIGIN` = URL HTTPS frontend, `CORS_ORIGIN` (opsional), `CHAIN_ID=10143`, `CHAIN_MODE=live`, `SEED_SOURCE=local`, `MONAD_RPC_URL`, `MONAD_WS_URL`, `EXPLORER_URL`, `RUN_REGISTRY_ADDRESS`, `CAR_NFT_ADDRESS`, `ATTESTER_PRIVATE_KEY`, `VOUCHER_SIGNER_PRIVATE_KEY`, `PRIVY_APP_ID`, `PRIVY_JWKS_URL` atau `PRIVY_VERIFICATION_KEY`, `PRIVY_APP_SECRET`, `ALLOW_SIWE_LOGIN=false`. `PORT` diisi Railway otomatis; `DATABASE_URL=/data/racing-gang.db` sudah default di image.
-5. **Networking → Generate Domain** (`*.up.railway.app`, HTTPS dan WSS langsung jalan). URL ini menjadi `VITE_API_URL` (`https://…`) dan `VITE_WS_URL` (`wss://…`) frontend; domain frontend didaftarkan di Privy dan `PUBLIC_ORIGIN`.
+5. **Networking → Generate Domain**, port `8080` (`*.up.railway.app`, HTTPS dan WSS langsung jalan; saat ini `racing-gangbackend-production.up.railway.app`). URL ini menjadi `VITE_API_URL` (`https://…`) dan `VITE_WS_URL` (`wss://…`) frontend; domain frontend didaftarkan di Privy dan `PUBLIC_ORIGIN`.
 6. Cek: `pnpm --filter @racing-gang/backend status -- --url https://<domain>`.
 
 Catatan: redeploy service bervolume selalu ada jeda mati singkat (deploy lama dan baru tidak boleh memasang volume bersamaan), dan run yang sedang jalan berakhir `PARTIAL`. Jangan merge ke `main` yang menyentuh backend selama demo; matikan auto-deploy di hari H kalau perlu.
