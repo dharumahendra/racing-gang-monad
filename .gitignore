@@ -18,6 +18,7 @@ coverage/
 contract/out/
 contract/cache/
 contract/broadcast/*/31337/
+contract/broadcast/**/dry-run/
 
 # OS / editor
 .DS_Store
