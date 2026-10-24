@@ -298,7 +298,7 @@ export class RunSession {
     const finalHash = this.sim.inputHash;
     this.#deps.db.update(runs).set({
       lifecycle: 'ENDED', result, endReason: reason, endTick, verifiedTick: endTick, nearMisses: total, finalHash,
-      flags: JSON.stringify(this.flags),
+      flags: JSON.stringify(this.flags), endedAt: this.#deps.now(),
     }).where(eq(runs.id, this.runId)).run();
     this.#deps.chain.relayer.enqueueEnd({ runId: this.runId, reason: EndReason[reason], endTick, totalNearMisses: total, finalInputHash: finalHash });
 

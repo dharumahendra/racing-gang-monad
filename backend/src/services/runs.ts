@@ -107,6 +107,7 @@ export class RunManager {
       const rep = replay({ runId: r.id as Hex, seed: r.seed as Hex, carTier: r.carTier, entries, endTick: r.verifiedTick });
       db.update(runs).set({
         lifecycle: 'ENDED', result: 'PARTIAL', endReason: 'TIMEOUT', endTick: rep.endTick, nearMisses: rep.nearMisses, finalHash: rep.finalHash,
+        endedAt: this.#deps.now(),
         flags: JSON.stringify([...JSON.parse(r.flags) as string[], 'SERVER_RESTART']),
       }).where(eq(runs.id, r.id)).run();
       // Antrean relayer di memori ikut hilang: kirim ulang mepet yang belum tercatat (duplikat dilewati kontrak).

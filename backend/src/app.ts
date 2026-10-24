@@ -11,6 +11,7 @@ import { registerErrorHandler } from './errors';
 import { authRoutes } from './routes/auth';
 import { configRoutes } from './routes/config';
 import { healthRoutes } from './routes/health';
+import { leaderboardRoutes } from './routes/leaderboard';
 import { meRoutes } from './routes/me';
 import { roomRoutes } from './routes/rooms';
 import { runRoutes } from './routes/runs';
@@ -79,6 +80,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyIns
   await runRoutes(app, ctx);
   await roomRoutes(app, ctx);
   await voucherRoutes(app, ctx);
+  await leaderboardRoutes(app, ctx);
   await playSocket(app, ctx);
   await watchSocket(app, ctx);
 
