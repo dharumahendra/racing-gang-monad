@@ -73,7 +73,7 @@ GitHub Actions (`.github/workflows/ci.yml`): typecheck, test, build, cek `cars.j
 
 | Kontrak | Alamat |
 |---|---|
-| RunRegistry | [`0x5DF0f8c94BdcAeCAe74C3db606FfcE9EC09cBD93`](https://testnet.monadvision.com/address/0x5DF0f8c94BdcAeCAe74C3db606FfcE9EC09cBD93) |
-| CarNFT | [`0x6Ac0e6D8e71D36fF31C61F391a4a7CFE2843654b`](https://testnet.monadvision.com/address/0x6Ac0e6D8e71D36fF31C61F391a4a7CFE2843654b) |
+| RunRegistry | [`0xE3c8EDd37798d5e03553E4F6Df191bC8586AdaCA`](https://testnet.monadvision.com/address/0xE3c8EDd37798d5e03553E4F6Df191bC8586AdaCA) |
+| CarNFT | [`0xD8A134916c85ACE413289eaF674aEDCd984BA736`](https://testnet.monadvision.com/address/0xD8A134916c85ACE413289eaF674aEDCd984BA736) |
 
-Chain ID 10143, blok deploy 73297824. Alamat dan ABI ada di `packages/config/deployments/monad-testnet.json`; langkah deploy dan `setBaseURI` di `contract/README.md`.
+Chain ID 10143, blok deploy 73733089 (deploy ulang 2026-10-24 dengan wallet baru dan optimasi gas). Alamat dan ABI ada di `packages/config/deployments/monad-testnet.json`; langkah deploy dan `setBaseURI` di `contract/README.md`.

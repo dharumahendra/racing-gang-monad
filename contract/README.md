@@ -28,13 +28,17 @@ CI menjalankan `forge fmt --check`, jadi jalankan `forge fmt` sebelum commit.
 
 | Kontrak | Alamat | Explorer |
 |---|---|---|
-| RunRegistry | `0x5DF0f8c94BdcAeCAe74C3db606FfcE9EC09cBD93` | [MonadVision](https://testnet.monadvision.com/address/0x5df0f8c94bdcaecae74c3db606ffce9ec09cbd93) · [Monadscan](https://testnet.monadscan.com/address/0x5df0f8c94bdcaecae74c3db606ffce9ec09cbd93) |
-| CarNFT | `0x6Ac0e6D8e71D36fF31C61F391a4a7CFE2843654b` | [MonadVision](https://testnet.monadvision.com/address/0x6ac0e6d8e71d36ff31c61f391a4a7cfe2843654b) · [Monadscan](https://testnet.monadscan.com/address/0x6ac0e6d8e71d36ff31c61f391a4a7cfe2843654b) |
+| RunRegistry | `0xE3c8EDd37798d5e03553E4F6Df191bC8586AdaCA` | [MonadVision](https://testnet.monadvision.com/address/0xe3c8edd37798d5e03553e4f6df191bc8586adaca) · [Monadscan](https://testnet.monadscan.com/address/0xe3c8edd37798d5e03553e4f6df191bc8586adaca) |
+| CarNFT | `0xD8A134916c85ACE413289eaF674aEDCd984BA736` | [MonadVision](https://testnet.monadvision.com/address/0xd8a134916c85ace413289eaf674aedcd984ba736) · [Monadscan](https://testnet.monadscan.com/address/0xd8a134916c85ace413289eaf674aedcd984ba736) |
 
-Deploy 2026-10-23, blok `73297824`, config versi 1, kedua kontrak terverifikasi. Owner = deployer
-`0xCca8…5be5`, attester `0x1E15…ca9B`, voucher signer `0x4323…a256`, treasury `0x6c87…1046`.
-`baseURI` masih kosong: diisi lewat `setBaseURI` setelah metadata mobil siap (lihat di bawah).
-Gas deploy: RunRegistry 1,41 jt, CarNFT 2,55 jt, `setCarNFT` 56 rb (total ±0,41 MON).
+Deploy 2026-10-24, blok `73733089`, kedua kontrak terverifikasi. Sudah memakai optimasi gas RunRegistry. Di-deploy dengan
+`cars.json` config versi 2; syarat, harga, dan suplai sama persis dengan config versi 3 (perubahan v3 hanya di sim),
+jadi tidak perlu deploy ulang.
+Owner = deployer `0xa046…6F80`, attester `0xf124…c2c0`, voucher signer `0xf93d…2e1F`, treasury `0x6c87…1046`.
+`baseURI` masih kosong: diisi lewat `setBaseURI` setelah metadata mobil di-hosting (lihat di bawah).
+
+Deployment lama (2026-10-23, RunRegistry `0x5DF0…BD93`, CarNFT `0x6Ac0…654b`) tidak dipakai lagi: wallet-nya
+diganti karena key lama pernah tertulis di chat.
 
 ## Deploy ke Monad testnet
 
@@ -108,4 +112,5 @@ Test integrasi `backend/test/live-anvil.test.ts` menjalankan anvil sendiri (butu
   | 1 mepet + lulus tier | 88,4 rb | ±112 rb | ±120 rb |
   | end run | 35,3 rb | ±47 rb | ±48 rb |
 
-  Angka nyata di testnet diukur ulang setelah deploy (SC-6).
+  Terukur di Monad testnet (`eth_estimateGas` dari attester): start run **84,2 rb** di kontrak baru vs 101,7 rb
+  di kontrak lama (−17%). Mepet butuh run yang sudah berjalan, jadi diukur dari transaksi relayer saat tes live (SC-6).
