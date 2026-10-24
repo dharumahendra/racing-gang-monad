@@ -1,6 +1,7 @@
 // Alamat dan ABI kontrak di Monad testnet. File JSON-nya ditulis oleh script deploy Bayu
 // (TECH_SPEC §6.4); sebelum deploy, semua alamat masih null.
 import monadTestnetJson from '../deployments/monad-testnet.json' with { type: 'json' };
+import collectiblesTestnetJson from '../deployments/collectibles-monad-testnet.json' with { type: 'json' };
 
 export type Deployment = {
   chainId: number;
@@ -33,4 +34,31 @@ export function getDeployment(raw: RawDeployment = monadTestnetJson as RawDeploy
     carNFT: raw.carNFT,
     abi: raw.abi,
   };
+}
+
+// Koleksi tambahan (kontrak Collectibles, terpisah dari CarNFT). File JSON-nya ditulis oleh
+// contract/script/export-collectibles.mjs; sebelum deploy, alamatnya masih null.
+
+export type CollectiblesDeployment = {
+  chainId: number;
+  explorerUrl: string | null;
+  deployBlock: number;
+  collectibles: `0x${string}`;
+  abi: readonly unknown[];
+};
+
+type RawCollectiblesDeployment = {
+  chainId: number | null;
+  explorerUrl: string | null;
+  deployBlock: number | null;
+  collectibles: string | null;
+  abi: readonly unknown[];
+};
+
+/** Deployment koleksi tambahan di Monad testnet, atau `null` kalau belum di-deploy. */
+export function getCollectiblesDeployment(
+  raw: RawCollectiblesDeployment = collectiblesTestnetJson as RawCollectiblesDeployment,
+): CollectiblesDeployment | null {
+  if (raw.chainId == null || raw.deployBlock == null || !isAddress(raw.collectibles)) return null;
+  return { chainId: raw.chainId, explorerUrl: raw.explorerUrl, deployBlock: raw.deployBlock, collectibles: raw.collectibles, abi: raw.abi };
 }

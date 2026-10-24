@@ -101,6 +101,26 @@ export function buildCarsJson() {
   };
 }
 
+/**
+ * Koleksi tambahan (kontrak RacingGangCollectibles, terpisah dari CarNFT): kosmetik tanpa efek gameplay.
+ * Dibeli dengan MON, 1 per desain per wallet, soulbound. id = id desain di kontrak dan nama file metadata.
+ */
+export const COLLECTIBLES = [
+  { id: 1, slug: 'mine-cart', name: 'Mine Cart',  priceMon: '0.05', supply: 100 },
+  { id: 2, slug: 'burger-car', name: 'Burger Car', priceMon: '0.05', supply: 100 },
+  { id: 3, slug: 'boat-car',  name: 'Boat Car',   priceMon: '0.05', supply: 100 },
+] as const;
+
+export type Collectible = (typeof COLLECTIBLES)[number];
+
+/** Isi `contract/config/collectibles.json`; index array = id desain (index 0 kosong). */
+export function buildCollectiblesJson() {
+  return {
+    priceWei: ['0', ...COLLECTIBLES.map((c) => monToWei(c.priceMon).toString())],
+    supply: [0, ...COLLECTIBLES.map((c) => c.supply)],
+  };
+}
+
 /** km/j untuk HUD (cm/tick × 1,08). Hanya tampilan, jangan dipakai di sim. */
 export const toKmh = (cmPerTick: number) => Math.round(cmPerTick * 1.08);
 

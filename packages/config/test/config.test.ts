@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   CARS,
+  COLLECTIBLES,
   EntryKind,
   MIN_SPEED,
   NEAR_MISS_MIN_SPEED,
   PLAYER_START_SPEED,
   TRAFFIC_SPEED,
   buildCarsJson,
+  buildCollectiblesJson,
   decodeRedData,
   disruptionCost,
   encodeRedData,
+  getCollectiblesDeployment,
   getDeployment,
   laneCenter,
   monToWei,
@@ -80,5 +83,16 @@ describe('config', () => {
     const addr = '0x' + '11'.repeat(20);
     const d = getDeployment({ chainId: 1, explorerUrl: null, deployBlock: 5, runRegistry: addr, carNFT: addr, abi: { RunRegistry: [], CarNFT: [] } });
     expect(d?.runRegistry).toBe(addr);
+  });
+
+  it('koleksi tambahan: id 1..3 berurutan, harga dan suplai sesuai collectibles.json', () => {
+    expect(COLLECTIBLES.map((c) => c.id)).toEqual([1, 2, 3]);
+    expect(buildCollectiblesJson()).toEqual({
+      priceWei: ['0', ...COLLECTIBLES.map((c) => monToWei(c.priceMon).toString())],
+      supply: [0, ...COLLECTIBLES.map((c) => c.supply)],
+    });
+    const addr = '0x' + '22'.repeat(20);
+    expect(getCollectiblesDeployment({ chainId: null, explorerUrl: null, deployBlock: null, collectibles: null, abi: [] })).toBeNull();
+    expect(getCollectiblesDeployment({ chainId: 10143, explorerUrl: null, deployBlock: 9, collectibles: addr, abi: [] })?.collectibles).toBe(addr);
   });
 });
