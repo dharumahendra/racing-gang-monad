@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "kind": "synthetic-interface-examples",
+    "version": 1,
+    "date": "2026-10-21",
+    "teamApproved": false,
+    "isGoldenFixture": false,
+    "note": "Independent examples, not one chronological run. Hex values are placeholders. Proposed shapes require review."
+  },
+  "userDecisions": {
+    "rearCamera": "required",
+    "cockpitCamera": "optional-after-P0",
+    "sharedPackagesAvailable": false,
+    "abiAvailable": false
+  },
+  "specPayloadExamples": {
+    "playInput": { "t": "input", "tick": 1, "kind": 2, "seq": 1 },
+    "playWatermark": { "t": "watermark", "tick": 1 },
+    "playReady": {
+      "t": "run.ready",
+      "runId": "0x1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "playGo": { "t": "run.go", "startAt": 1792569603000 },
+    "playPing": { "t": "ping", "clientMs": 1792569600000 },
+    "playPong": { "t": "pong", "clientMs": 1792569600000, "serverMs": 1792569600025 },
+    "playSnapshot": {
+      "t": "snapshot", "tick": 1, "x": 555, "z": 94,
+      "speed": 94, "targetLane": 2, "nearMisses": 0
+    },
+    "scheduledRed": {
+      "t": "disruption.scheduled", "id": "demo-disruption-1", "kind": "RED",
+      "lanes": [3], "durationIndex": 0, "warnTick": 315, "by": "Penonton"
+    },
+    "ackApplied": { "t": "disruption.ack", "id": "demo-disruption-1", "applied": true },
+    "ackTooLate": { "t": "disruption.ack", "id": "demo-disruption-2", "applied": false },
+    "verified": { "t": "nearMiss.verified", "index": 1, "tick": 200, "vehicleType": 0, "coins": 100 },
+    "watchNitro": { "t": "disrupt", "kind": "NITRO" },
+    "watchSpikes": { "t": "disrupt", "kind": "SPIKES", "lane": 0 },
+    "watchRed": { "t": "disrupt", "kind": "RED", "lane": 3, "durationIndex": 2 },
+    "watchEnergy": { "t": "energy", "value": 80 },
+    "watchAccepted": { "t": "disrupt.accepted", "id": "demo-disruption-1" },
+    "watchRejected": { "t": "disrupt.rejected", "reason": "ENERGY" },
+    "roomIdle": {
+      "t": "room.state", "code": "AB7K2M", "expiresAt": 1792570500000,
+      "spectators": 3, "run": null
+    }
+  },
+  "proposedShapeExamples": {
+    "simView": {
+      "tick": 0, "ended": false, "nearMisses": 0,
+      "player": {
+        "x": 525, "z": 0, "speed": 93, "targetLane": 1,
+        "braking": false, "slowTicks": 0, "nitroActive": false
+      },
+      "vehicles": [], "spikes": [], "redLanes": [], "disruptions": []
+    },
+    "recordedWithDecimalStringBlockNumber": {
+      "t": "nearMiss.recorded", "index": 1,
+      "txHash": "0x3333333333333333333333333333333333333333333333333333333333333333",
+      "blockNumber": "12345678", "latencyMs": 900
+    },
+    "runSummary": {
+      "runId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "lifecycle": "ENDED", "result": "VERIFIED", "chainStatus": "PENDING",
+      "reason": "CRASH", "endTick": 260, "nearMisses": 1,
+      "nearMissRecords": [
+        { "index": 1, "tick": 200, "vehicleType": 0, "coins": 100, "txHash": null, "blockNumber": null }
+      ]
+    }
+  },
+  "presentationExpectations": {
+    "balance": { "coins": 4000, "coinsReserved": 3000, "coinsPending": 200, "availableToSpend": 1000 },
+    "laneMapping": [ { "ui": 1, "api": 0 }, { "ui": 2, "api": 1 }, { "ui": 3, "api": 2 }, { "ui": 4, "api": 3 } ],
+    "durationMapping": [ { "seconds": 3, "index": 0 }, { "seconds": 5, "index": 1 }, { "seconds": 7, "index": 2 } ],
+    "redWarning": { "warnTick": 315, "activeTick": 375, "durationTicks": 90, "endTick": 465 },
+    "ackBoundaryCases": [
+      { "localTick": 314, "warnTick": 315, "previousDecision": null, "expectedApplied": true },
+      { "localTick": 315, "warnTick": 315, "previousDecision": null, "expectedApplied": false },
+      { "localTick": 316, "warnTick": 315, "previousDecision": true, "expectedApplied": true, "scheduleAgain": false }
+    ]
+  }
+}
