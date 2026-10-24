@@ -108,6 +108,30 @@ jobs:
           context: .
           file: backend/Dockerfile
           push: false
+          load: true
           tags: racing-gang-backend:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - if: steps.detect.outputs.found == 'true'
+        name: Smoke test container (/health, /config, migrasi DB di volume)
+        run: |
+          docker run -d --name rg -p 8080:8080 \
+            -e JWT_SECRET=ci-secret-ci-secret-ci-secret-ci-secret \
+            -e PUBLIC_ORIGIN=http://localhost:5173 \
+            -e CHAIN_ID=10143 \
+            -v rg-data:/data \
+            racing-gang-backend:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/health; then break; fi
+            sleep 1
+          done
+          echo
+          curl -fsS http://127.0.0.1:8080/health | grep -q '"ok":true'
+          curl -fsS http://127.0.0.1:8080/config | grep -q '"configVersion"'
+          docker exec rg ls -la /data
+          docker exec rg test -f /data/racing-gang.db
+
+      - if: always() && steps.detect.outputs.found == 'true'
+        name: Log container
+        run: docker logs rg || true

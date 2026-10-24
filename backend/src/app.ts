@@ -11,12 +11,17 @@ import { registerErrorHandler } from './errors';
 import { authRoutes } from './routes/auth';
 import { configRoutes } from './routes/config';
 import { healthRoutes } from './routes/health';
+import { leaderboardRoutes } from './routes/leaderboard';
 import { meRoutes } from './routes/me';
+import { roomRoutes } from './routes/rooms';
 import { runRoutes } from './routes/runs';
+import { voucherRoutes } from './routes/vouchers';
 import { registerChainHandlers } from './services/chainEvents';
+import { RoomManager } from './services/rooms';
 import { RunManager } from './services/runs';
 import { Hub } from './ws/hub';
 import { playSocket } from './ws/play';
+import { watchSocket } from './ws/watch';
 
 /** Dependensi bersama untuk semua route dan layanan. */
 export type AppContext = {
@@ -27,6 +32,7 @@ export type AppContext = {
   nonces: NonceStore;
   hub: Hub;
   runs: RunManager;
+  rooms: RoomManager;
   stats: { activeRuns: () => number };
 };
 
@@ -41,7 +47,12 @@ export type BuildAppOptions = {
 export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyInstance; ctx: AppContext }> {
   const now = opts.now ?? Date.now;
   const hub = new Hub();
-  const runs = new RunManager({ db: opts.db, chain: opts.chain, hub, now, env: opts.env });
+  let rooms: RoomManager | undefined;
+  const runs = new RunManager({
+    db: opts.db, chain: opts.chain, hub, now, env: opts.env,
+    notifyRoom: (code) => rooms?.broadcastState(code),
+  });
+  rooms = new RoomManager({ db: opts.db, hub, runs, now });
   const ctx: AppContext = {
     env: opts.env,
     db: opts.db,
@@ -50,6 +61,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyIns
     nonces: new NonceStore(now),
     hub,
     runs,
+    rooms,
     stats: { activeRuns: () => runs.size },
   };
   registerChainHandlers({ db: opts.db, chain: opts.chain, hub, now, runs });
@@ -66,7 +78,11 @@ export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyIns
   await authRoutes(app, ctx);
   await meRoutes(app, ctx);
   await runRoutes(app, ctx);
+  await roomRoutes(app, ctx);
+  await voucherRoutes(app, ctx);
+  await leaderboardRoutes(app, ctx);
   await playSocket(app, ctx);
+  await watchSocket(app, ctx);
 
   return { app, ctx };
 }

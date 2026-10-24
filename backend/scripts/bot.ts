@@ -5,6 +5,7 @@
 //   ... --speedhack             watermark palsu, harus berakhir INVALID
 //   ... --disconnect 5          putus 5 dtk di tick 600 lalu sambung ulang, harus tetap VERIFIED
 //   ... --key 0x...             private key wallet bot (default: kunci acak deterministik per indeks)
+//   ... --room-wait 10          buat room, cetak kodenya, tunggu 10 dtk (untuk scripts/spectators.ts), lalu main
 //
 // Hanya untuk testing. Jangan dipakai untuk meluluskan akun presenter.
 import { parseArgs } from 'node:util';
@@ -24,13 +25,15 @@ const { values: args } = parseArgs({
     parallel: { type: 'string', default: '1' },
     speedhack: { type: 'boolean', default: false },
     disconnect: { type: 'string' },
+    'room-wait': { type: 'string' },
   },
 });
 
 const api = async <T>(path: string, init: { method?: string; body?: unknown; token?: string } = {}): Promise<T> => {
   const res = await fetch(`${args.url}${path}`, {
     method: init.method ?? 'GET',
-    headers: { 'content-type': 'application/json', ...(init.token ? { authorization: `Bearer ${init.token}` } : {}) },
+    // content-type JSON hanya kalau ada body; Fastify menolak body kosong dengan content-type JSON.
+    headers: { ...(init.body ? { 'content-type': 'application/json' } : {}), ...(init.token ? { authorization: `Bearer ${init.token}` } : {}) },
     body: init.body ? JSON.stringify(init.body) : undefined,
   });
   const json = await res.json();
@@ -52,7 +55,13 @@ async function runBot(i: number) {
   const origin = new URL(args.origin!);
   const message = createSiweMessage({ address: account.address, chainId, domain: origin.host, nonce, uri: origin.origin, version: '1', issuedAt: new Date() });
   const { token } = await api<{ token: string }>('/auth/verify', { method: 'POST', body: { message, signature: await account.signMessage({ message }) } });
-  const run = await api<CreateRunResponse>('/runs', { method: 'POST', body: { carTier }, token });
+  let roomCode: string | undefined;
+  if (args['room-wait']) {
+    roomCode = (await api<{ code: string }>('/rooms', { method: 'POST', token })).code;
+    console.log(`${tag} room ${roomCode}; menunggu penonton ${args['room-wait']} dtk`);
+    await sleep(Number(args['room-wait']) * 1000);
+  }
+  const run = await api<CreateRunResponse>('/runs', { method: 'POST', body: { carTier, ...(roomCode ? { roomCode } : {}) }, token });
   console.log(`${tag} ${account.address} run ${run.runId.slice(0, 10)}… seed ${run.seed.slice(0, 10)}…`);
 
   // Transport dengan buffer saat putus (TECH_SPEC §4.1 "Saat koneksi putus")

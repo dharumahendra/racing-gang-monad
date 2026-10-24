@@ -1,7 +1,9 @@
 # TECH SPEC — Racing Gang
 
-**Versi:** Draft 1.2 · 21 Oktober 2026 · pasangan dari `PRD.md`
+**Versi:** Draft 1.3 · 22 Oktober 2026 · pasangan dari `PRD.md`
 **Pemilik bagian:** §3 Dharu · §4–5 Dharu · §6 Bayu · §7.3–7.5 Bayu · §8 Raka
+
+> **Perubahan 1.3 (Dharu, mengikuti implementasi backend):** §3.5 satu baris bisa berisi 2 kendaraan; §3.7 ID gangguan deterministik; §4.1 `run.go.seed` opsional dan pengiriman ulang status mepet saat reconnect; §5.3 estimasi tick tidak negatif selama hitung mundur, timeout `run.ready`, pemulihan setelah restart; §5.4 rumus `warnTick`; §5.6 skema. Alasan tiap keputusan ada di `BACKEND_PLAN.md`. Autentikasi (§5.1) belum diubah: lihat catatan Privy di sana.
 
 > Aturan emas: **semua logika game hanya ada di `packages/sim`**, dan paket yang sama dipakai oleh frontend, backend, dan halaman audit. Jangan pernah menulis ulang logika game di tempat lain.
 
@@ -230,8 +232,8 @@ loop:
      free = {0..3} \ {first, second}
      if free ∩ prevFree == ∅: (buang second, tetap 1 lajur)   // 1 lajur selalu valid
      else lanes.push(second)
-  for slot, lane in lanes: type = chance(200) ? TRUCK : CAR; id = k*2 + slot
-  yield { k, s, vehicles: [{ id, lane, type }] }
+  vehicles = [ { id: k*2 + slot, lane, type: chance(200) ? TRUCK : CAR } for slot, lane in lanes ]   // chance diambil per slot, urut lanes
+  yield { k, s, vehicles }
   prevFree = {0..3} \ lanes
   s += lerpInt(2800, 1600, x, rampS) + int(0, 800)
   k += 1
@@ -277,6 +279,7 @@ type Disruption = { id: string; source: 'NPC' | 'SPECTATOR'; kind: 'NITRO' | 'SP
   `r = int(0,999)` → `kind` (<350 nitro, <750 rantai, sisanya red) · `lane = int(0,3)` · `two = chance(300)` · `durIdx = int(0,2)` · `interval = int(240,360)`.
   Rantai memakai `lane`. Red zone memakai `[lane]`, atau `[min(lane,2), min(lane,2)+1]` jika `two`.
 - **Penonton:** backend menentukan `warnTick` dan mengirimnya ke pemain (§4.1). Gangguan hanya masuk log jika pemain mengonfirmasi menerimanya sebelum `warnTick`.
+- **ID gangguan di sim** diturunkan dari log supaya audit menghasilkan ID yang sama: NPC `n{k}` (urutan NPC ke-k), penonton `s{tick}` (lalu `s{tick}.1`, … kalau ada lebih dari satu di tick yang sama). ID gangguan di server (`disruption.scheduled.id`) terpisah dan dipetakan lewat `run_entries.disruption_id`. Data SPEC yang tidak valid (lajur di luar 0–3, `durationIndex` > 2) tetap ikut di-hash lalu dibatalkan (`DISRUPTION_DROPPED`).
 
 ### 3.8 Log dan hash chain
 
@@ -296,7 +299,7 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 | Arah | Tipe | Payload | Catatan |
 |---|---|---|---|
 | C→S | `ping` | `clientMs` | Sinkronisasi jam; S membalas `pong { clientMs, serverMs }` |
-| C→S | `run.ready` | `runId` | S membalas `run.go { startAt }` (`startAt = now + 3000`); tick 1 terjadi di `startAt + 33,3 ms` |
+| C→S | `run.ready` | `runId` | S membalas `run.go { startAt, seed? }` (`startAt = now + 3000`); tick 1 terjadi di `startAt + 33,3 ms`. `seed` hanya ada di mode `SEED_SOURCE=event` dan wajib dipakai client |
 | C→S | `input` | `tick, kind, seq` | Kirim segera saat ditekan |
 | C→S | `watermark` | `tick` | Setiap 100 ms; janji tidak ada input lagi untuk tick ≤ nilai ini |
 | S→C | `disruption.scheduled` | `id, kind, lanes, durationIndex?, warnTick, by` | Hanya untuk gangguan penonton |
@@ -311,6 +314,8 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 
 **Saat koneksi putus:** client tetap menjalankan sim, menyimpan `input` dan `disruption.ack` di buffer, lalu mengirim semuanya (berurutan) begitu tersambung. Gangguan penonton yang tidak diterima sebelum `warnTick` di-ack dengan `applied=false`.
 
+**Saat tersambung ulang:** server mengirim ulang `run.go`, `disruption.scheduled` yang belum di-ack, serta semua `nearMiss.verified` dan `nearMiss.recorded` run aktif. Client menghapus duplikat berdasarkan `index`. Koneksi baru dengan token yang sama menutup koneksi lama (kode 4000).
+
 ### 4.2 Penonton — `/ws/watch?room=<KODE>&nick=<opsional>`
 
 | Arah | Tipe | Payload |
@@ -322,6 +327,9 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 | C→S | `disrupt` | `kind: 'NITRO' \| 'SPIKES' \| 'RED'`, `lane?`, `durationIndex?` |
 | S→C | `disrupt.accepted` / `disrupt.rejected` | `id` / `reason: 'ENERGY' \| 'LIMIT' \| 'NO_RUN' \| 'RATE' \| 'ROOM_EXPIRED'` |
 | S→C | `nearMiss.recorded`, `run.result` | Sama dengan pemain |
+| S→C | `error` | `code: 'ROOM_NOT_FOUND' \| 'ROOM_EXPIRED' \| 'ROOM_FULL' \| 'BAD_MESSAGE'`, lalu koneksi ditutup (kecuali `BAD_MESSAGE`) |
+
+Room yang kodenya sudah kedaluwarsa masih bisa dimasuki selama run di dalamnya belum selesai. Host melihat jumlah penonton lewat `GET /rooms/:code` (polling); `room.state` hanya dikirim ke penonton.
 
 ## 5. Backend (`backend`)
 
@@ -355,7 +363,9 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
   - semua gangguan penonton dengan `warnTick ≤ T` sudah di-ack.
 - Gangguan dengan `applied=true` masuk log sebagai `SPEC_*` pada `warnTick`, dan dimasukkan ke sim dengan aturan urutan §3.4.
 - Setiap `NEAR_MISS` disimpan ke DB, dikirim sebagai `nearMiss.verified`, lalu dimasukkan ke antrean relayer.
-- **Anti-speedhack:** tolak run (status `INVALID`) jika `watermark > floor((nowServer − startAt) / 33.33) + 30`.
+- **Anti-speedhack:** tolak run (status `INVALID`) jika `watermark > max(0, floor((nowServer − startAt) × 30 / 1000)) + 30`. Estimasi tick tidak boleh negatif: selama hitung mundur watermark 0–30 tetap sah.
+- **Run tidak pernah siap:** run `CREATED` tanpa `run.ready` selama 60 dtk ditutup `PARTIAL` (`TIMEOUT`, flag `NO_READY`) supaya pemain bisa membuat run baru.
+- **Server restart:** run yang belum selesai ditutup `PARTIAL` pada `verified_tick` dengan hash akhir hasil replay `run_entries`; mepet yang belum tercatat dan `EndRec` dikirim ulang ke relayer.
 - **Selesai:** event `CRASH`, `RED_ZONE_FAIL`, atau `TIME_UP` dari sim backend → `RunEnd` ke relayer dan `run.result` ke client.
 - **Timeout:** jika pada `startAt + 100 dtk + 30 dtk` sim belum selesai, akhiri pada tick terakhir yang sudah terverifikasi dengan `reason = TIMEOUT` dan `status = PARTIAL`.
 - Jika klaim `run.end` dari client berbeda dengan hasil backend, catat sebagai flag anti-cheat. Hasil backend yang berlaku.
@@ -366,8 +376,8 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 - Energi penonton dihitung di server berdasarkan waktu nyata: `min(100, energi + 10/detik)`.
 - Saat menerima `disrupt`:
   1. Cek room aktif, ada run aktif, rate pesan, dan energi.
-  2. Hitung `warnTick = estimasiTickSekarang + 15`.
-  3. Cek awal batas §3.7 terhadap state sim backend (supaya jarang dibatalkan).
+  2. Hitung `warnTick = max(estimasiTickSekarang, watermark, tickSimBackend) + 15`. Client boleh lebih cepat sampai 30 tick, jadi `warnTick` harus mengikuti posisi client, bukan hanya jam server. Tolak (`LIMIT`) jika `warnTick + 60 > 3000`.
+  3. Cek awal batas §3.7 (`canSchedule` dari `packages/sim`) terhadap gangguan yang hidup di sim backend **ditambah** gangguan penonton yang sudah dijadwalkan tapi belum diproses. Karena jeda minimal 30 tick, paling banyak ada 1 gangguan penonton per tick.
   4. Kurangi energi, simpan, lalu kirim `disruption.scheduled` ke pemain dan semua penonton.
 - Jika pemain akhirnya mengirim `applied=false`, energi penonton **tidak** dikembalikan (sederhana untuk MVP).
 
@@ -387,15 +397,23 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 ```
 users(address PK, created_at)
 coin_ledger(id PK, address, delta INT, ref TEXT UNIQUE, created_at)          -- saldo = SUM(delta)
-reservations(nonce PK, address, tier, coin_cost, expires_at, status)          -- ACTIVE | CONSUMED | RELEASED
+reservations(nonce PK, address, tier, coin_cost, expires_at, status, voucher_json, created_at)
+                                                                             -- ACTIVE | CONSUMED | RELEASED; voucher_json untuk double-click
 qualifications(address, tier, run_id, tx_hash, block_number, PRIMARY KEY(address, tier))
                                                                              -- cache dari event Qualified; BUKAN gerbang pembelian
+owned_cars(address, tier, token_id, run_id, tx_hash, PRIMARY KEY(address, tier))
+                                                                             -- cache dari event Purchased, untuk /me
 rooms(code PK, host_address, created_at, expires_at)
-runs(id PK, address, car_tier, seed, seed_block, room_code, config_version, status, end_reason,
-     end_tick, near_misses, start_at, created_at, flags TEXT)
-run_entries(run_id, seq, tick, kind, data, PRIMARY KEY(run_id, seq))
-disruptions(id PK, run_id, source, kind, lanes, duration_index, warn_tick, applied, spectator_nick, created_at)
-near_misses(run_id, idx, tick, vehicle_id, vehicle_type, input_hash, tx_hash, block_number,
+runs(id PK, address, car_tier, seed, seed_block, room_code, config_version,
+     lifecycle,      -- CREATED | READY | RUNNING | ENDED
+     result,         -- VERIFIED | PARTIAL | INVALID (null sampai ENDED)
+     chain_status,   -- PENDING | RECORDED | RECORD_FAILED
+     end_reason, end_tick, near_misses, verified_tick, final_hash, start_at, ended_at, created_at, flags TEXT)
+run_entries(run_id, ord, tick, kind, data, source, client_seq, disruption_id, PRIMARY KEY(run_id, ord))
+                                                                             -- ord = urutan proses = urutan hash
+disruptions(id PK, run_id, source, kind, lanes, duration_index, warn_tick, sched_order, acked, applied,
+            spectator_nick, created_at)
+near_misses(run_id, idx, tick, vehicle_id, vehicle_type, coins, input_hash, tx_hash, block_number,
             verified_at, recorded_at, PRIMARY KEY(run_id, idx))
 chain_cursor(name PK, last_block)
 ```

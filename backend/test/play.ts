@@ -1,6 +1,6 @@
 // Helper test: pemain lewat WebSocket in-process (app.injectWS) dengan jam palsu.
 import type { WebSocket } from 'ws';
-import type { CreateRunResponse, PlayC2S, PlayS2C } from '@racing-gang/config/protocol';
+import type { CreateRunResponse, PlayC2S, PlayS2C, WatchC2S, WatchS2C } from '@racing-gang/config/protocol';
 import type { AutopilotOptions } from '@racing-gang/sim/dev';
 import { PlayerClient } from '../scripts/lib/playerClient';
 import { login, type makeTestApp } from './helpers';
@@ -29,9 +29,17 @@ export async function createRun(t: TestApp, token: string, body: object = { carT
 }
 
 /** Login, buat run, sambungkan WS, dan siapkan PlayerClient. */
-export async function startPlayer(t: TestApp, label = 'player-1', opts: { autopilot?: AutopilotOptions; carTier?: number } = {}) {
+export async function startPlayer(
+  t: TestApp,
+  label = 'player-1',
+  opts: { autopilot?: AutopilotOptions; carTier?: number; withRoom?: boolean } = {},
+) {
   const { token, account } = await login(t, label);
-  const res = await createRun(t, token, { carTier: opts.carTier ?? 0 });
+  let roomCode: string | undefined;
+  if (opts.withRoom) {
+    roomCode = (await t.app.inject({ method: 'POST', url: '/rooms', headers: { authorization: `Bearer ${token}` } })).json().code;
+  }
+  const res = await createRun(t, token, { carTier: opts.carTier ?? 0, ...(roomCode ? { roomCode } : {}) });
   if (res.statusCode !== 200) throw new Error(`POST /runs gagal: ${res.body}`);
   const run = res.json() as CreateRunResponse;
   const out: PlayC2S[] = [];
@@ -41,7 +49,28 @@ export async function startPlayer(t: TestApp, label = 'player-1', opts: { autopi
     send: (m) => { out.push(m); ws?.send(JSON.stringify(m)); },
   });
   ws = await connect(t, token, (m) => client.handle(m));
-  return { token, account, run, client, out, get ws() { return ws!; }, set ws(v: WebSocket) { ws = v; } };
+  return { token, account, run, client, out, roomCode, get ws() { return ws!; }, set ws(v: WebSocket) { ws = v; } };
+}
+
+/** Penonton lewat /ws/watch. `msgs` berisi semua pesan yang diterima. */
+export async function watch(t: TestApp, code: string, nick?: string) {
+  const msgs: WatchS2C[] = [];
+  let closeCode = 0;
+  const q = `room=${code}${nick !== undefined ? `&nick=${encodeURIComponent(nick)}` : ''}`;
+  const ws = await t.app.injectWS(`/ws/watch?${q}`, {}, {
+    onInit: (s) => {
+      s.on('message', (d) => msgs.push(JSON.parse(d.toString())));
+      s.on('close', (c) => { closeCode = c; });
+    },
+  });
+  const last = <K extends WatchS2C['t']>(k: K) => [...msgs].reverse().find((m) => m.t === k) as Extract<WatchS2C, { t: K }> | undefined;
+  const disrupt = async (m: Omit<WatchC2S, 't'>) => {
+    const before = msgs.filter((x) => x.t === 'disrupt.accepted' || x.t === 'disrupt.rejected').length;
+    ws.send(JSON.stringify({ t: 'disrupt', ...m }));
+    await waitFor(() => msgs.filter((x) => x.t === 'disrupt.accepted' || x.t === 'disrupt.rejected').length > before, 'balasan disrupt');
+    return [...msgs].reverse().find((x) => x.t === 'disrupt.accepted' || x.t === 'disrupt.rejected')!;
+  };
+  return { ws, msgs, last, disrupt, closeCode: () => closeCode };
 }
 
 /**

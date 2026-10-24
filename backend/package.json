@@ -9,7 +9,9 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "bot": "tsx scripts/bot.ts"
+    "bot": "tsx scripts/bot.ts",
+    "spectators": "tsx scripts/spectators.ts",
+    "status": "tsx scripts/status.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",
@@ -21,6 +23,7 @@
     "better-sqlite3": "^12",
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.7",
+    "tsx": "^4.19.0",
     "viem": "^2.21.0",
     "zod": "^4.6.7"
   },

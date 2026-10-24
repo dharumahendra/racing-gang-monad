@@ -43,6 +43,21 @@ describe('endpoint dasar', () => {
   });
 });
 
+describe('GET /leaderboard', () => {
+  it('urut mepet terbanyak, tanpa run INVALID atau yang belum selesai, dengan limit', async () => {
+    const now = t.clock.now();
+    const row = (i: number, n: number, result: 'VERIFIED' | 'PARTIAL' | 'INVALID' | null) => ({
+      id: `0x${i.toString(16).padStart(64, '0')}`, address: '0x1111111111111111111111111111111111111111', carTier: 0, seed: '0x',
+      seedBlock: 1, configVersion: 1, lifecycle: result ? ('ENDED' as const) : ('RUNNING' as const), result,
+      chainStatus: 'PENDING' as const, nearMisses: n, createdAt: now, endedAt: result ? now + i : null,
+    });
+    t.db.insert(runs).values([row(1, 40, 'VERIFIED'), row(2, 90, 'INVALID'), row(3, 75, 'PARTIAL'), row(4, 99, null), row(5, 40, 'VERIFIED')]).run();
+    const body = (await t.app.inject({ method: 'GET', url: '/leaderboard?limit=2' })).json();
+    expect(body.entries.map((e: { nearMisses: number; endedAt: number }) => [e.nearMisses, e.endedAt])).toEqual([[75, now + 3], [40, now + 1]]);
+    expect((await t.app.inject({ method: 'GET', url: '/leaderboard?limit=0' })).statusCode).toBe(400);
+  });
+});
+
 describe('ledger dan /me', () => {
   it('ref ledger idempoten', () => {
     const a = '0x1111111111111111111111111111111111111111' as const;

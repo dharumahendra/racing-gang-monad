@@ -91,11 +91,16 @@ export const runs = sqliteTable(
     verifiedTick: integer('verified_tick').notNull().default(0),
     finalHash: text('final_hash'),
     startAt: integer('start_at'),
+    endedAt: integer('ended_at'),
     createdAt: integer('created_at').notNull(),
     /** JSON array flag anti-cheat, mis. ["SPEEDHACK"]. */
     flags: text('flags').notNull().default('[]'),
   },
-  (t) => [index('runs_address_created').on(t.address, t.createdAt), index('runs_lifecycle').on(t.lifecycle)],
+  (t) => [
+    index('runs_address_created').on(t.address, t.createdAt),
+    index('runs_lifecycle').on(t.lifecycle),
+    index('runs_leaderboard').on(t.result, t.nearMisses),
+  ],
 );
 
 /** Log run. `ord` = urutan proses = urutan hash; audit replay berdasarkan `ord`. */
