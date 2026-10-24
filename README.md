@@ -7,6 +7,8 @@ Game balap jalan raya berbasis web. Pemain mengumpulkan **mepet** (near-miss); s
 | Apa | Link |
 |---|---|
 | Game (frontend, Vercel) | https://racing-gang-monad.vercel.app |
+| Video demo | [Google Drive](https://drive.google.com/drive/folders/1LtJqCLRKNtRlKCn9-M6jIW8JCoYEeYVl) |
+| X (Twitter) tim | [@RacingGangMon](https://x.com/RacingGangMon) |
 | Backend API (Railway) | https://racing-gangbackend-production.up.railway.app — cek [`/health`](https://racing-gangbackend-production.up.railway.app/health), [`/config`](https://racing-gangbackend-production.up.railway.app/config), [`/leaderboard`](https://racing-gangbackend-production.up.railway.app/leaderboard) |
 | WebSocket backend | `wss://racing-gangbackend-production.up.railway.app` (`/ws/play`, `/ws/watch`) |
 | Kontrak RunRegistry | [`0xE3c8EDd37798d5e03553E4F6Df191bC8586AdaCA`](https://testnet.monadvision.com/address/0xE3c8EDd37798d5e03553E4F6Df191bC8586AdaCA) |
