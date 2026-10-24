@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "bot": "tsx scripts/bot.ts",
     "spectators": "tsx scripts/spectators.ts",
-    "status": "tsx scripts/status.ts"
+    "status": "tsx scripts/status.ts",
+    "check-monad": "tsx scripts/check-monad.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",

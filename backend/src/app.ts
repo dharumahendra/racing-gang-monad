@@ -19,6 +19,7 @@ import { roomRoutes } from './routes/rooms';
 import { runRoutes } from './routes/runs';
 import { voucherRoutes } from './routes/vouchers';
 import { registerChainHandlers } from './services/chainEvents';
+import { LatencyStats } from './services/latency';
 import { RoomManager } from './services/rooms';
 import { RunManager } from './services/runs';
 import { Hub } from './ws/hub';
@@ -36,7 +37,7 @@ export type AppContext = {
   hub: Hub;
   runs: RunManager;
   rooms: RoomManager;
-  stats: { activeRuns: () => number };
+  stats: { activeRuns: () => number; latency: LatencyStats };
 };
 
 export type BuildAppOptions = {
@@ -56,9 +57,13 @@ export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyIns
   let rooms: RoomManager | undefined;
   const runs = new RunManager({ db, chain, hub, now, env, notifyRoom: (code) => rooms?.broadcastState(code) });
   rooms = new RoomManager({ db, hub, runs, now });
-  registerChainHandlers({ db, chain, hub, now, runs });
+  const latency = new LatencyStats();
 
   const app = Fastify({ logger: opts.logger ?? false, trustProxy: true, bodyLimit: 64 * 1024 });
+  registerChainHandlers({
+    db, chain, hub, now, runs, latency,
+    onLatencyReport: (s) => app.log.info({ onChainLatency: s }, 'latensi mepet → on-chain'),
+  });
   registerErrorHandler(app);
   await app.register(cors, { origin: corsOrigins(env), credentials: false });
   await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute' });
@@ -77,7 +82,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyIns
     env, db, chain, now, hub, runs, rooms,
     auth: new Authenticator(app, privy, env.ALLOW_SIWE_LOGIN),
     nonces: new NonceStore(now),
-    stats: { activeRuns: () => runs.size },
+    stats: { activeRuns: () => runs.size, latency },
   };
 
   await healthRoutes(app, ctx);

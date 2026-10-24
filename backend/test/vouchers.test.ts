@@ -84,6 +84,18 @@ describe('POST /vouchers', () => {
     expect(second.voucher.nonce).not.toBe(first.voucher.nonce);
   });
 
+  it('voucher baru langsung bisa diminta begitu yang lama kedaluwarsa (tanpa menunggu job pelepasan)', async () => {
+    qualify();
+    giveCoins(CARS[1].coinCost); // cukup untuk satu reservasi saja
+    const first = (await request(1)).json() as VoucherResponse;
+    t.clock.advance(CHAIN.voucherTtlSec * 1000 + 1);
+    const res = await request(1);
+    expect(res.statusCode).toBe(200);
+    expect((res.json() as VoucherResponse).voucher.nonce).not.toBe(first.voucher.nonce);
+    expect((await me()).coinsReserved).toBe(CARS[1].coinCost);
+    expect(t.db.select().from(reservations).where(eq(reservations.nonce, first.voucher.nonce)).get()?.status).toBe('RELEASED');
+  });
+
   it('event Purchased untuk reservasi yang sudah dilepas tetap memotong koin (chain adalah kebenaran)', async () => {
     qualify();
     giveCoins(CARS[1].coinCost);
