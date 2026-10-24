@@ -1,6 +1,6 @@
 # Runbook — Racing Gang (lokal dan demo)
 
-Status 22 Oktober 2026. Chain live belum tersedia; semua langkah di bawah memakai `CHAIN_MODE=mock` kecuali disebut lain. Tx hash/blok mock bukan bukti Monad.
+Status 24 Oktober 2026. Kontrak sudah di Monad testnet dan `CHAIN_MODE=live` sudah diuji di anvil (`live-e2e`), tapi belum dijalankan terhadap testnet karena wallet backend belum diisi. Langkah di bawah memakai `CHAIN_MODE=mock` kecuali disebut lain. Tx hash/blok mock bukan bukti Monad; cek `chainMode` di `/config` atau `/health`.
 
 ## 1. Prasyarat
 
@@ -70,11 +70,11 @@ pnpm --filter @racing-gang/backend stress -- --players 25 --spectators 50
 
 ## 8. Checklist bukti demo
 
-| Item | Bukti yang diminta | Status 22 Okt |
+| Item | Bukti yang diminta | Status 24 Okt |
 |---|---|---|
-| Login Google akun A dan B, wallet berbeda, `/me` cocok | Screenshot/alamat tersamarkan, log 401 untuk token lama | BLOCKED (dashboard + login pemilik) |
-| Run room + 3 gangguan dari 3 HP fisik | Video/foto, hasil `VERIFIED`, summary finalHash | BLOCKED (perangkat) |
-| Mepet tercatat di Monad testnet | Tx hash + receipt sukses + event cocok | BLOCKED (kontrak) |
-| Pembelian Tier 1 + transfer ditolak (soulbound) | Tx `buy`, revert transfer | BLOCKED (kontrak) |
-| Audit replay run | `pnpm --filter @racing-gang/backend audit -- --url <api> --run <id>` | Lokal tersedia; on-chain BLOCKED |
+| Login Google akun A dan B, wallet berbeda, `/me` cocok | Screenshot/alamat tersamarkan, log 401 untuk token lama | BLOCKED (dashboard Privy + `PRIVY_*` di `.env`) |
+| Run room + 3 gangguan dari 3 HP fisik | Video/foto, hasil `VERIFIED`, summary finalHash | BLOCKED (hosting publik + perangkat) |
+| Mepet tercatat di Monad testnet | Tx hash + receipt sukses + event cocok | BLOCKED (wallet backend); lolos di anvil |
+| Pembelian Tier 1 + transfer ditolak (soulbound) | Tx `buy`, revert transfer | BLOCKED (wallet backend + akun lulus); beli lolos di anvil |
+| Audit replay run | `pnpm --filter @racing-gang/backend audit -- --url <api> --run <id>` | Lokal tersedia; on-chain lolos di anvil, testnet menunggu run pertama |
 | Akun presenter lulus lewat permainan sah | Run asli, bukan edit DB/bot | Belum |

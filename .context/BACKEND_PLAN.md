@@ -486,9 +486,17 @@ Sisanya internal backend: formula `warnTick`, kolom `ord`, status 3 kolom, `owne
 
 ---
 
-## P. Status eksekusi (22 Oktober 2026)
+## P. Status eksekusi (24 Oktober 2026)
 
-Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan teruji di CI. Branch bertumpuk: `dharu/sim` → `dharu/server` → `dharu/runs` → `dharu/rooms-vouchers` (yang terakhir berisi semuanya). Belum ada yang di-merge ke `main`.
+Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan teruji di CI. PR #1–#7 (backend, frontend `raka/foundation`, kontrak + chain live Bayu) sudah di-merge ke `main`. Kontrak sudah di-deploy ke Monad testnet (blok 73297824); alamatnya di `packages/config/deployments/monad-testnet.json` dan README.
+
+Branch yang belum di-merge (bertumpuk, merge berurutan):
+1. `dharu/live-integration`: `chainMode` di `/config`, `live-e2e` (server live melawan kontrak di anvil: run, beli Tier 1, crash + restart), CI menjalankan `live-anvil.test` + `live-e2e`, Foundry CI dikunci v1.7.1.
+2. `dharu/smooth-steer`: setir tahan (`CONFIG_VERSION` 2), termasuk keyup di `use-driving-controls.ts`.
+
+Repo dipindah ke `dharumahendra/racing-gang-monad` (24 Okt) dengan riwayat dan nomor PR yang sama; setelah migrasi selesai, branch di atas dibuka sebagai PR #8 dan #9 di sana, lalu tim mengganti remote dan repo lama di-archive.
+
+Test terakhir: config 9, sim 47, backend 126, frontend 136, Forge 67; typecheck bersih.
 
 ### P1. Selesai
 
@@ -510,24 +518,24 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 | Item | Bagian | Terblokir oleh | Yang dibutuhkan |
 |---|---|---|---|
 | ~~Tes `blockhash` Monad = hash blok dari RPC~~ | Fase 6 | **Selesai 22 Okt** tanpa wallet: `pnpm --filter @racing-gang/backend check-monad` (eth_call init code `BLOCKHASH`). 7/7 sampel sama, termasuk `latest − 3`, jadi `SEED_SOURCE=local` aman. Jalur cadangan `SEED_SOURCE=event` juga sudah diuji | — |
-| `CHAIN_MODE=live`: relayer, indexer, voucher signer | Fase 6, CH-1/2/3 | Bayu | Implementasi `RelayerPort`, indexer yang memanggil `bus.emit`, `VoucherSigner` (lihat `backend/src/chain/ports.ts`). `live.ts` sengaja menolak start sampai ini ada |
-| Alamat dan ABI kontrak di `packages/config/deployments/monad-testnet.json` | Fase 6, SC-5 | Bayu | Deploy kontrak ke Monad testnet |
-| Test Forge: hash log Solidity = `appendHash` sim | D3 | Bayu | Satu test `forge` dengan input sama dengan test sim |
-| Konfirmasi URL explorer resmi | Env | Bayu | `CHAIN_ID` = 10143 sudah terkonfirmasi dari RPC (`eth_chainId`). Waktu blok terukur ±300 ms (PRD menulis ±400 ms), jadi jendela `blockhash` 256 blok ≈ 77 dtk: relayer harus mengirim `RunStart` dalam beberapa detik setelah `POST /runs`. Tinggal `EXPLORER_URL` |
-| Latensi on-chain nyata ≤ 2 dtk dan beban relayer di testnet | Fase 6 | Setelah CH-1 | `bot --parallel 5` dengan `CHAIN_MODE=live`. Metriknya sudah ada: `/health.onChainLatency` (median, p90) dan `scripts/status.ts` memberi peringatan kalau median > 2 dtk |
-| Audit terhadap event on-chain | AU-1 | Setelah SC-5 | `pnpm --filter @racing-gang/backend audit -- --run <id> --rpc <url> --registry <alamat>`. Logika pembandingnya `auditRun` di `packages/sim`, bisa langsung dipakai halaman audit `/run/:id`. Jalur terhadap catatan backend sudah diuji; jalur event on-chain menunggu kontrak |
+| ~~`CHAIN_MODE=live`: relayer, indexer, voucher signer~~ | Fase 6, CH-1/2/3 | — | **Selesai (PR #7, Bayu).** Diuji di anvil oleh `live-anvil.test` dan `live-e2e` (DB = kontrak, beli Tier 1, restart tanpa event hilang) |
+| ~~Alamat dan ABI kontrak di `packages/config/deployments/monad-testnet.json`~~ | Fase 6, SC-5 | — | **Selesai.** RunRegistry `0x5DF0…BD93`, CarNFT `0x6Ac0…654b` |
+| ~~Test Forge: hash log Solidity = `appendHash` sim~~ | D3 | — | **Selesai:** `contract/test/HashChain.t.sol` |
+| ~~Konfirmasi URL explorer resmi~~ | Env | — | **Selesai:** `https://testnet.monadvision.com` (di `deployments` dan `.env.example`). Waktu blok ±300 ms, jendela `blockhash` 256 blok ≈ 77 dtk |
+| Wallet backend di `backend/.env` | Fase 6 | Dharu + Bayu | Kunci attester dan voucher signer pernah tertulis di chat: buat wallet baru, `setAttester` / `setVoucherSigner` dari owner, isi attester > 10 MON. Hanya dua kunci itu yang masuk backend; deployer dan treasury tidak |
+| Latensi on-chain nyata ≤ 2 dtk dan beban relayer di testnet | Fase 6 | Wallet backend | `status`, lalu `bot --parallel 5` dengan `CHAIN_MODE=live` (SIWE hanya di server lokal). Metriknya sudah ada: `/health.onChainLatency` (median, p90) dan `scripts/status.ts` memberi peringatan kalau median > 2 dtk |
+| Audit terhadap event on-chain | AU-1 | Wallet backend | `pnpm --filter @racing-gang/backend audit -- --run <id> --rpc <url> --registry <alamat>` terhadap run testnet pertama. Jalur on-chain sudah lolos di anvil |
 | Deploy server publik (HTTPS/WSS, volume, 1 instance) | Fase 10 | Dharu | Akun hosting dan domain. Image sudah siap |
 | Uji dari HP lewat internet, 3+ HP | Fase 10–11 | Setelah deploy + frontend | URL publik backend dan frontend |
-| Golden test di browser (`/dev/golden`) | D3 | Raka | Sudah dikerjakan di branch `raka/foundation` (`frontend/src/pages/Golden.tsx`); tinggal di-merge |
-| Merge `raka/foundation` ke `main` | Repo | Raka / pemilik repo | Sudah diuji di worktree gabungan (22 Okt): satu-satunya konflik `pnpm-lock.yaml` (selesai dengan `pnpm install`); typecheck semua paket, 200 test (frontend 91), dan build frontend lulus. Klien asli frontend (`PlayClient`, `WatchClient`, room/run/summary API) melawan backend asli: room + run + penonton VERIFIED, mepet cocok, semua pesan server lolos validasi frontend; putus 3 dtk tetap VERIFIED |
+| ~~Golden test di browser (`/dev/golden`)~~ | D3 | — | **Selesai** (`frontend/src/pages/Golden.tsx`, PR #6) |
+| ~~Merge `raka/foundation` ke `main`~~ | Repo | — | **Selesai (PR #6)** |
 | Uji login Privy + Google sungguhan | Auth | Dharu + Raka | Backend sudah menerima token Privy (diuji dengan kunci dan server Privy tiruan). Untuk uji nyata: ambil **verification key** dan **app secret** dari dashboard Privy, isi `PRIVY_*` di `backend/.env`, daftarkan origin frontend, lalu login Google dari frontend |
-| Konflik `pnpm-lock.yaml` antara branch backend dan `raka/foundation` | Repo | Siapa pun yang merge kedua | Setelah merge, jalankan `pnpm install` lalu commit lockfile baru |
 | Review `protocol.ts` dan integrasi frontend | M0, FE-1–FE-8 | Raka | Lihat catatan frontend di P3 |
 | E2E-1 sampai E2E-7 | Fase 11 | Tim | Semua item di atas |
 | Akun presenter lulus Tier 1 secara manual | Fase 11 | Hari H | Main manual, bukan bot |
 | ~~Keputusan balance syarat mepet~~ | PRD §6.2 | — | **Diputuskan 22 Okt: tetap sesuai PRD (40 / 75 / 110 / 150).** Data `stats` (200 seed, autopilot): Starter p50 55 mepet, 68% run lulus Tier 1; Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Median mepet tidak naik untuk mobil yang lebih cepat (±48), jadi Tier 3/4 sangat langka. Kalau mau diubah, harus sebelum kontrak di-deploy (syarat immutable): ubah `CARS`, PRD §6.2, lalu `pnpm config:export` |
-| Setir tahan (`CONFIG_VERSION` 2) | TECH_SPEC §3.4 | — | **23 Okt.** Mobil bergeser selama ←/→ ditahan dan bisa berhenti di atas garis (`LEFT_OFF`=5, `RIGHT_OFF`=6). Data `stats` setelah perubahan **sama persis** dengan versi 1 (68% / 30% / 6% / 2%), jadi syarat 40/75/110/150 di kontrak tidak perlu diubah. Secara geometri posisi bebas juga tidak menambah peluang mepet: mepet mobil butuh jarak pusat 180–360 cm, truk 215–395 cm, dan satu kendaraan hanya dihitung sekali; posisi di atas garis justru menabrak kendaraan di kedua lajur. Mepet dua sisi sekaligus tetap hanya mungkin di sekitar pusat lajur (±10 cm untuk dua mobil, ±45 cm kalau ada truk), dan versi 1 memang selalu berhenti di pusat lajur. Frontend (Raka): kirim keyup, kontrol sentuh tahan, tampilan posisi bebas |
-| Merge branch ke `main` dan branch protection | Repo | Dharu | Keputusan pemilik repo |
+| Setir tahan (`CONFIG_VERSION` 2) | TECH_SPEC §3.4 | — | **23 Okt.** Mobil bergeser selama ←/→ ditahan dan bisa berhenti di atas garis (`LEFT_OFF`=5, `RIGHT_OFF`=6). Data `stats` setelah perubahan **sama persis** dengan versi 1 (68% / 30% / 6% / 2%), jadi syarat 40/75/110/150 di kontrak tidak perlu diubah. Secara geometri posisi bebas juga tidak menambah peluang mepet: mepet mobil butuh jarak pusat 180–360 cm, truk 215–395 cm, dan satu kendaraan hanya dihitung sekali; posisi di atas garis justru menabrak kendaraan di kedua lajur. Mepet dua sisi sekaligus tetap hanya mungkin di sekitar pusat lajur (±10 cm untuk dua mobil, ±45 cm kalau ada truk), dan versi 1 memang selalu berhenti di pusat lajur. Keyboard (tekan/lepas, auto-repeat, lepas otomatis saat blur) sudah di `use-driving-controls.ts`. Sisa untuk Raka: kontrol sentuh tahan di HP dan tampilan posisi bebas/`steer` |
+| Branch protection `main` | Repo | Dharu | Pasang di `racing-gang-monad` setelah migrasi selesai |
 
 ### P3. Catatan untuk frontend (Raka)
 
@@ -547,7 +555,7 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 
 ### P4. Keterbatasan yang diketahui
 
-- Antrean relayer di mock ada di memori. Saat start, backend mengirim ulang `RunStart`, mepet yang belum tercatat, dan `RunEnd` untuk semua run `chainStatus = PENDING` dalam 10 menit terakhir, termasuk run yang sudah selesai sebelum server mati. **Untuk Bayu:** relayer/kontrak harus memperlakukan `RunStart` dan mepet yang sudah ada sebagai sukses (idempoten), bukan revert yang memecah batch.
+- Antrean relayer ada di memori. Saat start, backend mengirim ulang `RunStart`, mepet yang belum tercatat, dan `RunEnd` untuk semua run `chainStatus = PENDING` dalam 10 menit terakhir, termasuk run yang sudah selesai sebelum server mati. Relayer live menangani kiriman ulang ini secara idempoten (revert `RunExists`/`IndexGap` diselaraskan dengan `getRun`); dibuktikan fase crash `live-e2e`.
 - Flag `SLOW_CLIENT` (slow-motion) dan `DISRUPTION_DODGE` (menolak gangguan penonton) hanya dicatat, tidak membatalkan run. Membatalkan butuh keputusan tim setelah perilaku frontend di HP diketahui (risiko salah tuduh ke presenter).
 - Kapasitas satu instance (laptop dev, mock chain): 25 pemain real-time + 90 penonton memakai ±25–30% CPU satu core, jeda event loop p50 ±6 ms, p99 ±45 ms. Overhead terbesar adalah query builder drizzle di jalur panas. Kalau perlu lebih dari ±80 pemain bersamaan, pakai prepared statement di `pump()` dan handler event chain.
 - Image Docker belum diuji di laptop (Docker Desktop tidak jalan), tapi lulus build dan smoke test di CI.
