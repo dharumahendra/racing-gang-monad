@@ -15,6 +15,10 @@ export function openDb(path: string): { db: Db; close: () => void } {
   if (path !== ':memory:') mkdirSync(dirname(resolve(path)), { recursive: true });
   const sqlite = new Database(path);
   sqlite.pragma('journal_mode = WAL');
+  // WAL + NORMAL: commit tidak fsync setiap kali (verifikasi menulis ±10 transaksi/dtk per pemain dan fsync
+  // memblok event loop). Tetap aman dari proses mati mendadak; hanya listrik padam yang bisa menghilangkan
+  // beberapa transaksi terakhir, dan DB tidak korup.
+  sqlite.pragma('synchronous = NORMAL');
   sqlite.pragma('foreign_keys = ON');
   sqlite.pragma('busy_timeout = 5000');
   const db = drizzle(sqlite, { schema });

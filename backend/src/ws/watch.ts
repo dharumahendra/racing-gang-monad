@@ -35,10 +35,21 @@ export async function watchSocket(app: FastifyInstance, ctx: AppContext) {
       } catch {
         return send(socket, { t: 'error', code: 'BAD_MESSAGE', message: 'Pesan tidak valid' } satisfies WatchS2C);
       }
-      const res = ctx.rooms.disrupt(code, socket, msg);
-      send(socket, (res.ok ? { t: 'disrupt.accepted', id: res.id } : { t: 'disrupt.rejected', reason: res.reason }) satisfies WatchS2C);
+      // Error tak terduga di listener WS mematikan seluruh server; cukup catat (lihat ws/play.ts).
+      try {
+        const res = ctx.rooms.disrupt(code, socket, msg);
+        send(socket, (res.ok ? { t: 'disrupt.accepted', id: res.id } : { t: 'disrupt.rejected', reason: res.reason }) satisfies WatchS2C);
+      } catch (e) {
+        req.log.error({ err: e, room: code }, 'gagal memproses gangguan penonton');
+      }
     });
 
-    socket.on('close', () => ctx.rooms.leave(code, socket));
+    socket.on('close', () => {
+      try {
+        ctx.rooms.leave(code, socket);
+      } catch (e) {
+        req.log.error({ err: e, room: code }, 'gagal melepas penonton');
+      }
+    });
   });
 }

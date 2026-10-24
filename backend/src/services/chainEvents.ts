@@ -43,15 +43,20 @@ export function handleChainEvent({ db, hub, now, runs: manager, latency, onLaten
 
     case 'NearMiss': {
       const t = now();
-      const row = db.select().from(nearMisses).where(and(eq(nearMisses.runId, e.runId), eq(nearMisses.idx, e.index))).get();
-      const coins = row?.coins ?? (e.vehicleType === VEHICLE.TRUCK.code ? VEHICLE.TRUCK.coins : VEHICLE.CAR.coins);
-      // Ledger mengikuti chain: koin dikreditkan dari event on-chain (PRD §5.4).
-      addLedgerEntry(db, getAddress(e.player), coins, `${e.runId}:${e.index}`, t);
-      if (!row || row.recordedAt !== null) return;
-      db.update(nearMisses)
-        .set({ txHash: e.txHash, blockNumber: Number(e.blockNumber), recordedAt: t })
-        .where(and(eq(nearMisses.runId, e.runId), eq(nearMisses.idx, e.index)))
-        .run();
+      // Satu transaksi per event: satu batch relayer bisa membawa 60 mepet, dan setiap commit terpisah memblok event loop.
+      const row = db.transaction((tx) => {
+        const r = tx.select().from(nearMisses).where(and(eq(nearMisses.runId, e.runId), eq(nearMisses.idx, e.index))).get();
+        const coins = r?.coins ?? (e.vehicleType === VEHICLE.TRUCK.code ? VEHICLE.TRUCK.coins : VEHICLE.CAR.coins);
+        // Ledger mengikuti chain: koin dikreditkan dari event on-chain (PRD §5.4).
+        addLedgerEntry(tx as unknown as Db, getAddress(e.player), coins, `${e.runId}:${e.index}`, t);
+        if (!r || r.recordedAt !== null) return null;
+        tx.update(nearMisses)
+          .set({ txHash: e.txHash, blockNumber: Number(e.blockNumber), recordedAt: t })
+          .where(and(eq(nearMisses.runId, e.runId), eq(nearMisses.idx, e.index)))
+          .run();
+        return r;
+      });
+      if (!row) return;
       const msg: PlayS2C = { t: 'nearMiss.recorded', index: e.index, txHash: e.txHash, blockNumber: Number(e.blockNumber), latencyMs: t - row.verifiedAt };
       if (latency) {
         latency.add(msg.latencyMs);

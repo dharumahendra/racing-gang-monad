@@ -1,4 +1,5 @@
-import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
+import { createHash } from 'node:crypto';
+import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyServerOptions } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
@@ -50,6 +51,12 @@ export type BuildAppOptions = {
   fetch?: typeof fetch;
 };
 
+/** Token tidak diverifikasi di sini (mahal); token palsu tetap ditolak 401 oleh route-nya. */
+export function rateLimitKey(req: FastifyRequest): string {
+  const auth = req.headers.authorization;
+  return auth?.startsWith('Bearer ') ? `t:${createHash('sha256').update(auth).digest('base64url').slice(0, 22)}` : `ip:${req.ip}`;
+}
+
 export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyInstance; ctx: AppContext }> {
   const { env, db, chain } = opts;
   const now = opts.now ?? Date.now;
@@ -66,7 +73,9 @@ export async function buildApp(opts: BuildAppOptions): Promise<{ app: FastifyIns
   });
   registerErrorHandler(app);
   await app.register(cors, { origin: corsOrigins(env), credentials: false });
-  await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute' });
+  // Kunci rate limit: token login kalau ada, IP kalau tidak. Di venue demo banyak HP keluar lewat satu IP publik
+  // (Wi-Fi yang sama), jadi limit per IP saja membuat pemain ke-N kena 429.
+  await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute', keyGenerator: rateLimitKey });
   await app.register(jwt, { secret: env.JWT_SECRET });
   await app.register(websocket, { options: { maxPayload: 4096 } });
 

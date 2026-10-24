@@ -49,7 +49,13 @@ export type SpecDisruption = {
   applied: boolean | null;
 };
 
-export type RunClaim = { tick: number; reason: EndReasonName; nearMisses: number; inputHash: Hex };
+// Slow-motion: tertinggal > SLOW_LAG_TICKS dari jam server terus-menerus selama SLOW_FLAG_MS → flag SLOW_CLIENT.
+export const SLOW_LAG_TICKS = 90;
+export const SLOW_FLAG_MS = 5000;
+/** Ack `applied=false` saat watermark masih > 10 tick sebelum warnTick → flag DISRUPTION_DODGE. */
+export const DODGE_MARGIN_TICKS = 10;
+
+export type RunClaim ={ tick: number; reason: EndReasonName; nearMisses: number; inputHash: Hex };
 
 type RunRow = typeof runs.$inferSelect;
 
@@ -86,6 +92,7 @@ export class RunSession {
   #inputs = new Map<number, LogEntry[]>();
   #spec = new Map<number, SpecDisruption>();
   #claim?: RunClaim;
+  #lagSince: number | null = null;
 
   constructor(deps: SessionDeps, row: RunRow, onFinished: (s: RunSession) => void) {
     this.#deps = deps;
@@ -137,6 +144,7 @@ export class RunSession {
     if (this.ended || this.startAt === null || tick <= this.watermark) return;
     if (tick > this.estTick() + NET.maxAheadTicks) return this.finish('INVALID', 'TIMEOUT', 'SPEEDHACK');
     this.watermark = Math.min(tick, RUN_TICKS);
+    this.#checkSlowMotion();
     if (this.lifecycle === 'READY') {
       this.lifecycle = 'RUNNING';
       this.#deps.db.update(runs).set({ lifecycle: 'RUNNING' }).where(eq(runs.id, this.runId)).run();
@@ -149,6 +157,8 @@ export class RunSession {
     if (!d || d.acked) return;
     d.acked = true;
     d.applied = applied;
+    // "Terlambat" padahal watermark client masih jauh sebelum warnTick: gangguan sengaja ditolak.
+    if (!applied && this.watermark + DODGE_MARGIN_TICKS < d.warnTick) this.#flag('DISRUPTION_DODGE');
     this.#deps.db.update(disruptions).set({ acked: true, applied }).where(eq(disruptions.id, id)).run();
     this.pump();
   }
@@ -356,6 +366,21 @@ export class RunSession {
       this.flags.push('CLAIM_MISMATCH');
       this.#deps.db.update(runs).set({ flags: JSON.stringify(this.flags) }).where(eq(runs.id, this.runId)).run();
     }
+  }
+
+  /**
+   * Slow-motion: client terus online (watermark berdatangan) tapi tertinggal > 3 dtk dari jam selama > 5 dtk.
+   * Putus lalu mengejar (PRD §8) hanya tertinggal sebentar, jadi tidak kena. Hanya flag, tidak membatalkan run.
+   */
+  #checkSlowMotion() {
+    const lag = this.estTick() - this.watermark;
+    if (lag <= SLOW_LAG_TICKS) {
+      this.#lagSince = null;
+      return;
+    }
+    const t = this.#deps.now();
+    this.#lagSince ??= t;
+    if (t - this.#lagSince >= SLOW_FLAG_MS) this.#flag('SLOW_CLIENT');
   }
 
   #flag(f: string) {

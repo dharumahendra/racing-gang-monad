@@ -4,7 +4,7 @@ import { buildApp } from './app';
 import { createChain } from './chain';
 import { openDb } from './db/client';
 import { loadEnv } from './env';
-import { releaseExpiredReservations } from './services/vouchers';
+import { startJobs } from './jobs';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 const env = loadEnv();
@@ -24,11 +24,7 @@ const { app, ctx } = await buildApp({
 await chain.start();
 const recovered = ctx.runs.recoverStaleRuns();
 if (recovered > 0) app.log.warn({ recovered }, 'run yang terputus karena restart ditutup sebagai PARTIAL');
-const jobs = [
-  setInterval(() => ctx.runs.checkTimeouts(), 1000),
-  setInterval(() => ctx.rooms.tickEnergy(), 1000),
-  setInterval(() => releaseExpiredReservations(ctx.db, ctx.now()), 30_000),
-];
+const stopJobs = startJobs(ctx, app.log);
 
 await app.listen({ host: env.HOST, port: env.PORT });
 app.log.info({ chainMode: chain.mode, chainId: env.CHAIN_ID }, 'Racing Gang backend siap');
@@ -39,7 +35,7 @@ for (const sig of ['SIGINT', 'SIGTERM'] as const) {
     if (closing) return;
     closing = true;
     app.log.info({ sig }, 'mematikan server');
-    jobs.forEach(clearInterval);
+    stopJobs();
     await app.close();
     await chain.stop();
     close();

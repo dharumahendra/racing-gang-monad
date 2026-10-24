@@ -68,7 +68,17 @@ export async function playSocket(app: FastifyInstance, ctx: AppContext) {
         setImmediate(() => socket.close(4401, 'unauthorized'));
       });
 
+    // Error tak terduga (mis. DB gagal menulis) di listener WS menjadi uncaught exception yang mematikan
+    // seluruh server; cukup catat lalu lanjut. Pesan berikutnya dari client diproses seperti biasa.
     function handle(raw: RawData) {
+      try {
+        processMessage(raw);
+      } catch (e) {
+        req.log.error({ err: e, address }, 'gagal memproses pesan /ws/play');
+      }
+    }
+
+    function processMessage(raw: RawData) {
       if (!address) return;
       const t = ctx.now();
       if (t - windowStart >= 1000) { windowStart = t; count = 0; }

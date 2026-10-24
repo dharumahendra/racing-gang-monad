@@ -525,7 +525,7 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 | Review `protocol.ts` dan integrasi frontend | M0, FE-1–FE-8 | Raka | Lihat catatan frontend di P3 |
 | E2E-1 sampai E2E-7 | Fase 11 | Tim | Semua item di atas |
 | Akun presenter lulus Tier 1 secara manual | Fase 11 | Hari H | Main manual, bukan bot |
-| Keputusan balance syarat mepet | PRD §6.2 | Tim | `pnpm --filter @racing-gang/sim stats` (200 seed): Starter p50 55 mepet, 68% run lulus Tier 1 (syarat 40); Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Autopilot bukan manusia, jadi ini batas atas kasar. Putuskan sebelum kontrak di-deploy (syarat immutable) |
+| ~~Keputusan balance syarat mepet~~ | PRD §6.2 | — | **Diputuskan 22 Okt: tetap sesuai PRD (40 / 75 / 110 / 150).** Data `stats` (200 seed, autopilot): Starter p50 55 mepet, 68% run lulus Tier 1; Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Median mepet tidak naik untuk mobil yang lebih cepat (±48), jadi Tier 3/4 sangat langka. Kalau mau diubah, harus sebelum kontrak di-deploy (syarat immutable): ubah `CARS`, PRD §6.2, lalu `pnpm config:export` |
 | Merge branch ke `main` dan branch protection | Repo | Dharu | Keputusan pemilik repo |
 
 ### P3. Catatan untuk frontend (Raka)
@@ -539,8 +539,14 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 - `pnpm install` di gabungan branch memberi peringatan peer dependency Privy (`react` 16–18 vs 19, `viem` 2.56.5 vs 2.57.7). Belum menyebabkan error di test dan build, tapi perlu dicek saat uji login Google sungguhan.
 - Setelah reconnect, kalau run sudah selesai saat offline, server mengirim `run.result` (sudah ditangani `PlayClient`).
 - Login: kirim access token Privy segar (`getAccessToken()`) sebagai `Authorization: Bearer` di REST dan `?token=` di `/ws/play`, seperti yang sudah dilakukan frontend. Endpoint `/auth/nonce` dan `/auth/verify` tidak ada di production.
+- Dari uji skenario terburuk (`WORST_CASE_TESTS.md`):
+  - `disruption.scheduled` dengan `id` yang sama bisa datang lagi setelah reconnect (ack sebelumnya hilang saat koneksi putus). Jawab dengan **keputusan `applied` yang sama** seperti pertama kali, jangan dihitung ulang dari tick sekarang. Kalau tidak, sim client dan backend berbeda. Sampai ack masuk, verifikasi backend berhenti di `warnTick`.
+  - Pesan yang dikirim saat WS belum terbuka (termasuk ack saat reconnect) harus disimpan lalu dikirim setelah terbuka.
+  - Kirim watermark terus selama game berjalan. Jangan membiarkan sim berjalan lebih lambat dari jam (mis. frame drop tanpa mengejar), karena tertinggal lebih dari 3 dtk selama 5 dtk diberi flag `SLOW_CLIENT`.
 
 ### P4. Keterbatasan yang diketahui
 
-- Antrean relayer di mock ada di memori. Relayer live sebaiknya menyimpan antrean di DB: saat restart, backend mengirim ulang mepet dan `EndRec` yang belum tercatat, tapi `RunStart` yang hilang harus ditangani relayer.
+- Antrean relayer di mock ada di memori. Saat start, backend mengirim ulang `RunStart`, mepet yang belum tercatat, dan `RunEnd` untuk semua run `chainStatus = PENDING` dalam 10 menit terakhir, termasuk run yang sudah selesai sebelum server mati. **Untuk Bayu:** relayer/kontrak harus memperlakukan `RunStart` dan mepet yang sudah ada sebagai sukses (idempoten), bukan revert yang memecah batch.
+- Flag `SLOW_CLIENT` (slow-motion) dan `DISRUPTION_DODGE` (menolak gangguan penonton) hanya dicatat, tidak membatalkan run. Membatalkan butuh keputusan tim setelah perilaku frontend di HP diketahui (risiko salah tuduh ke presenter).
+- Kapasitas satu instance (laptop dev, mock chain): 25 pemain real-time + 90 penonton memakai ±25–30% CPU satu core, jeda event loop p50 ±6 ms, p99 ±45 ms. Overhead terbesar adalah query builder drizzle di jalur panas. Kalau perlu lebih dari ±80 pemain bersamaan, pakai prepared statement di `pump()` dan handler event chain.
 - Image Docker belum diuji di laptop (Docker Desktop tidak jalan), tapi lulus build dan smoke test di CI.
