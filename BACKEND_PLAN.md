@@ -525,7 +525,7 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 | Review `protocol.ts` dan integrasi frontend | M0, FE-1–FE-8 | Raka | Lihat catatan frontend di P3 |
 | E2E-1 sampai E2E-7 | Fase 11 | Tim | Semua item di atas |
 | Akun presenter lulus Tier 1 secara manual | Fase 11 | Hari H | Main manual, bukan bot |
-| Keputusan balance syarat mepet | PRD §6.2 | Tim | `pnpm --filter @racing-gang/sim stats` (200 seed): Starter p50 55 mepet, 68% run lulus Tier 1 (syarat 40); Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Autopilot bukan manusia, jadi ini batas atas kasar. Putuskan sebelum kontrak di-deploy (syarat immutable) |
+| ~~Keputusan balance syarat mepet~~ | PRD §6.2 | — | **Diputuskan 22 Okt: tetap sesuai PRD (40 / 75 / 110 / 150).** Data `stats` (200 seed, autopilot): Starter p50 55 mepet, 68% run lulus Tier 1; Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Median mepet tidak naik untuk mobil yang lebih cepat (±48), jadi Tier 3/4 sangat langka. Kalau mau diubah, harus sebelum kontrak di-deploy (syarat immutable): ubah `CARS`, PRD §6.2, lalu `pnpm config:export` |
 | Merge branch ke `main` dan branch protection | Repo | Dharu | Keputusan pemilik repo |
 
 ### P3. Catatan untuk frontend (Raka)
