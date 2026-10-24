@@ -113,12 +113,14 @@ describe.skipIf(!hasAnvil || !hasArtifacts)('chain live di anvil', { timeout: 60
     relayer = new Relayer({ publicClient, walletClient: attester, registry, bus, log: silentLog });
     cursor = memoryCursorStore();
     // Mulai setelah blok terakhir supaya event dari test sebelumnya tidak ikut terbaca.
-    const startBlock = (await publicClient.getBlockNumber()) + 1n;
+    const startBlock = (await publicClient.getBlockNumber({ cacheTime: 0 })) + 1n;
     indexer = new Indexer({ publicClient, registry, carNFT, bus, cursor, startBlock, log: silentLog });
   });
 
   const newRunId = () => computeRunId(player, ++nonce);
-  const seedBlock = async () => (await publicClient.getBlockNumber()) - 3n;
+  // cacheTime 0: tanpa itu viem bisa mengembalikan nomor blok sebelum `mine` (cache = pollingInterval),
+  // sehingga run "baik" ikut mendapat seedBlock kedaluwarsa (flaky di CI).
+  const seedBlock = async () => (await publicClient.getBlockNumber({ cacheTime: 0 })) - 3n;
   const nm = (runId: Hex, index: number): NearMissRec => ({ runId, index, tick: index * 10, vehicleType: index % 5 === 0 ? 1 : 0, vehicleId: index, inputHash: ZERO_HASH });
   const drain = async () => {
     for (let i = 0; i < 20 && relayer.queueSize() > 0; i++) await relayer.flush();
