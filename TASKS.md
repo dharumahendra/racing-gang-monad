@@ -1,6 +1,6 @@
-# TASKS — MEPET (nama kerja)
+# TASKS — Racing Gang
 
-**Versi:** Draft 1.0 · 21 Oktober 2026 · pasangan dari `PRD.md` dan `TECH_SPEC.md`
+**Versi:** Draft 1.2 · 21 Oktober 2026 · pasangan dari `PRD.md` dan `TECH_SPEC.md`
 
 | Orang | Peran | Memegang |
 |---|---|---|
@@ -20,6 +20,7 @@ Prioritas: **P0** wajib ada untuk demo · **P1** sangat membantu pitch · **P2**
 4. **Interface dibekukan di M0**: tipe pesan WS (TECH_SPEC §4), REST (§5.1), ABI (§6). Perubahan setelah M0 harus disepakati bertiga.
 5. Branch per orang (`bayu/*`, `dharu/*`, `raka/*`), merge ke `main` sesering mungkin. `main` harus selalu bisa jalan.
 6. Di kode, gangguan "rantai" dinamai `SPIKES` supaya tidak tertukar dengan blockchain.
+7. **Jangan pernah menjadikan Claude (atau asisten AI lain) sebagai contributor di repo ini.** Commit, PR, dan riwayat git hanya atas nama anggota tim: tanpa trailer `Co-Authored-By: Claude`, tanpa author/committer Claude, dan tanpa teks "Generated with Claude" di pesan commit atau deskripsi PR.
 
 ## 1. Persiapan sebelum hari H (tanpa coding)
 
@@ -58,7 +59,7 @@ Makan siang bergantian supaya pekerjaan di jalur kritis tidak berhenti.
 | SC-4 | P0 | Test Foundry (daftar di bawah) | SC-2, SC-3 | `forge test` hijau |
 | SC-5 | P0 | Script deploy Monad testnet + verifikasi explorer + tulis `deployments/monad-testnet.json` | SC-4 | Alamat dan ABI terbaca oleh server dan web |
 | CH-1 | P0 | Relayer (`chain/relayer.ts`) sesuai §7.1 | SC-5, DH-5 | Mepet tercatat on-chain dengan median ≤ 2 dtk dari verifikasi |
-| CH-2 | P0 | Indexer (`chain/indexer.ts`) sesuai §7.2 + backfill dari `chain_cursor` | SC-5 | Koin terkredit dari event; `nearMiss.recorded` terkirim |
+| CH-2 | P0 | Indexer (`chain/indexer.ts`) sesuai §7.2 + backfill dari `chain_cursor` | SC-5 | Koin terkredit dari event; `Qualified` tersimpan di cache `qualifications`; `nearMiss.recorded` terkirim |
 | CH-3 | P0 | `signVoucher()` EIP-712 (§7.3) | SC-5 | Voucher dari server diterima `buy()` di testnet |
 | SC-6 | P1 | Ukur gas `submitBatch` untuk 1, 20, dan 60 record; sesuaikan `maxBatchNearMiss` | SC-5 | Angka gas dicatat di README |
 | AU-1 | P1 | Halaman audit `/run/:id` (TECH_SPEC §8.5) | DH-2, CH-2 | Run asli menghasilkan ✓ semua; log yang diubah sedikit menghasilkan ✗ |

@@ -1,6 +1,6 @@
-# TECH SPEC — MEPET (nama kerja)
+# TECH SPEC — Racing Gang
 
-**Versi:** Draft 1.0 · 21 Oktober 2026 · pasangan dari `PRD.md`
+**Versi:** Draft 1.2 · 21 Oktober 2026 · pasangan dari `PRD.md`
 **Pemilik bagian:** §3 Dharu · §4–5 Dharu · §6 Bayu · §7.3–7.5 Bayu · §8 Raka
 
 > Aturan emas: **semua logika game hanya ada di `packages/sim`**, dan paket yang sama dipakai oleh frontend, backend, dan halaman audit. Jangan pernah menulis ulang logika game di tempat lain.
@@ -33,7 +33,7 @@ Alur utama:
 2. Browser menjalankan `packages/sim` secara lokal dan mengirim input (bertanda tick) ke backend lewat WS.
 3. Backend menjalankan `packages/sim` yang sama. Setiap event `NEAR_MISS` masuk ke antrean relayer.
 4. Relayer mengirim `RunRegistry.submitBatch()` sekitar sekali per blok. Kontrak menyimpan hitungan dan menandai kelulusan (`Qualified`).
-5. Indexer membaca event: `NearMiss` → kredit koin dan kirim `nearMiss.recorded` ke browser; `Qualified` → status garasi; `Purchased` → potong koin.
+5. Indexer membaca event: `NearMiss` → kredit koin dan kirim `nearMiss.recorded` ke browser; `Qualified` → disimpan di DB **sebagai cache** untuk tampilan garasi (sumber kebenarannya tetap kontrak); `Purchased` → potong koin.
 6. Beli mobil: `POST /vouchers` → backend menyisihkan koin dan menandatangani voucher → browser memanggil `CarNFT.buy(voucher, sig)` dengan `value` = harga MON.
 
 ## 2. Repo, stack, dan konfigurasi
@@ -374,7 +374,7 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 - Koin dikreditkan oleh **indexer** saat event `NearMiss` terbaca (+100/+200 sesuai `vehicleType`), dengan referensi unik `runId:index` supaya idempoten.
 - `coinsPending` = mepet yang sudah terverifikasi tapi belum tercatat on-chain (hanya untuk tampilan).
 - `POST /vouchers`:
-  1. Cek `RunRegistry.isQualified(address, tier)`, belum memiliki tier itu, suplai belum habis, dan `koin − reserved ≥ coinCost`.
+  1. Cek `RunRegistry.isQualified(address, tier)` **langsung dari kontrak** (bukan dari cache DB), belum memiliki tier itu, suplai belum habis, dan `koin − reserved ≥ coinCost`. Cek ini hanya untuk UX; yang menegakkan tetap `CarNFT.buy()`.
   2. Buat reservasi `{ nonce, tier, coinCost, expiresAt = now + 600 dtk }`.
   3. Tanda tangani voucher EIP-712 (§6.3).
 - Saat event `Purchased(nonce)` terbaca: ledger `−coinCost` dengan referensi `voucher:nonce`, dan reservasi menjadi `CONSUMED`.
@@ -386,6 +386,8 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 users(address PK, created_at)
 coin_ledger(id PK, address, delta INT, ref TEXT UNIQUE, created_at)          -- saldo = SUM(delta)
 reservations(nonce PK, address, tier, coin_cost, expires_at, status)          -- ACTIVE | CONSUMED | RELEASED
+qualifications(address, tier, run_id, tx_hash, block_number, PRIMARY KEY(address, tier))
+                                                                             -- cache dari event Qualified; BUKAN gerbang pembelian
 rooms(code PK, host_address, created_at, expires_at)
 runs(id PK, address, car_tier, seed, seed_block, room_code, config_version, status, end_reason,
      end_tick, near_misses, start_at, created_at, flags TEXT)
@@ -451,6 +453,8 @@ Aturan, diproses berurutan: semua `s`, lalu semua `n`, lalu semua `e`.
 
 ### 6.2 `CarNFT.sol` (ERC-721 + ERC-5192, soulbound)
 
+Nama koleksi: **Racing Gang Cars**, simbol **RGC**.
+
 ```solidity
 struct Voucher { address buyer; uint8 tier; uint32 coinCost; uint256 nonce; uint64 expiry; }
 
@@ -482,7 +486,7 @@ Lain-lain:
 
 ### 6.3 EIP-712 voucher
 
-- Domain: `{ name: "MepetCars", version: "1", chainId, verifyingContract: CarNFT }`.
+- Domain: `{ name: "RacingGangCars", version: "1", chainId, verifyingContract: CarNFT }`.
 - Type: `Voucher(address buyer,uint8 tier,uint32 coinCost,uint256 nonce,uint64 expiry)`.
 - Backend menandatangani dengan `VOUCHER_SIGNER_PRIVATE_KEY`. Kunci ini **berbeda** dari kunci attester.
 
@@ -514,7 +518,7 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 - Tangani event:
   - `RunStarted`: cocokkan `seed` dengan DB; jika beda → run `INVALID`.
   - `NearMiss`: isi `tx_hash`, `block_number`, `recorded_at`, kredit koin, kirim `nearMiss.recorded` (dengan `latencyMs = recorded_at − verified_at`).
-  - `Qualified`: kirim `run.qualified`.
+  - `Qualified`: simpan ke tabel `qualifications` (cache untuk garasi) dan kirim `run.qualified`.
   - `Purchased`: potong koin dan konsumsi reservasi.
 
 ### 7.3 Voucher signer
