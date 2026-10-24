@@ -512,11 +512,13 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 | Latensi on-chain nyata ≤ 2 dtk dan beban relayer di testnet | Fase 6 | Setelah CH-1 | `bot --parallel 5` dengan `CHAIN_MODE=live` |
 | Deploy server publik (HTTPS/WSS, volume, 1 instance) | Fase 10 | Dharu | Akun hosting dan domain. Image sudah siap |
 | Uji dari HP lewat internet, 3+ HP | Fase 10–11 | Setelah deploy + frontend | URL publik backend dan frontend |
-| Golden test di browser (`/dev/golden`) | D3 | Raka | Halaman dev yang memuat `packages/sim/fixtures/*.json` |
+| Golden test di browser (`/dev/golden`) | D3 | Raka | Sudah dikerjakan di branch `raka/foundation` (`frontend/src/pages/Golden.tsx`); tinggal di-merge |
+| **Login Privy + Google** menggantikan SIWE di frontend | Auth, §5.1 | Keputusan tim | Frontend mengirim access token Privy ke `/me`; backend baru menerima JWT dari SIWE. Perlu verifikasi token Privy di backend (lihat `.context/PRIVY_AUTH_HANDOFF.md` di branch Raka) |
+| Konflik `pnpm-lock.yaml` antara branch backend dan `raka/foundation` | Repo | Siapa pun yang merge kedua | Setelah merge, jalankan `pnpm install` lalu commit lockfile baru |
 | Review `protocol.ts` dan integrasi frontend | M0, FE-1–FE-8 | Raka | Lihat catatan frontend di P3 |
 | E2E-1 sampai E2E-7 | Fase 11 | Tim | Semua item di atas |
 | Akun presenter lulus Tier 1 secara manual | Fase 11 | Hari H | Main manual, bukan bot |
-| Keputusan balance syarat mepet | PRD §6.2 | Tim | Autopilot sederhana mendapat 55–110 mepet per run, padahal Tier 1 hanya 40. Putuskan sebelum kontrak di-deploy (syarat immutable) |
+| Keputusan balance syarat mepet | PRD §6.2 | Tim | `pnpm --filter @racing-gang/sim stats` (200 seed): Starter p50 55 mepet, 68% run lulus Tier 1 (syarat 40); Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Autopilot bukan manusia, jadi ini batas atas kasar. Putuskan sebelum kontrak di-deploy (syarat immutable) |
 | Merge branch ke `main` dan branch protection | Repo | Dharu | Keputusan pemilik repo |
 
 ### P3. Catatan untuk frontend (Raka)
