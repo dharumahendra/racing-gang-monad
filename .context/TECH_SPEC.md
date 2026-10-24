@@ -1,7 +1,9 @@
 # TECH SPEC — Racing Gang
 
-**Versi:** Draft 1.2 · 21 Oktober 2026 · pasangan dari `PRD.md`
+**Versi:** Draft 1.3 · 22 Oktober 2026 · pasangan dari `PRD.md`
 **Pemilik bagian:** §3 Dharu · §4–5 Dharu · §6 Bayu · §7.3–7.5 Bayu · §8 Raka
+
+> **Perubahan 1.3 (Dharu, mengikuti implementasi backend):** §3.5 satu baris bisa berisi 2 kendaraan; §3.7 ID gangguan deterministik; §4.1 `run.go.seed` opsional dan pengiriman ulang status mepet saat reconnect; §5.3 estimasi tick tidak negatif selama hitung mundur, timeout `run.ready`, pemulihan setelah restart; §5.4 rumus `warnTick`; §5.6 skema. Alasan tiap keputusan ada di `BACKEND_PLAN.md`. **Login utama diganti ke Privy + Google** (§5.1): backend menerima access token Privy langsung; SIWE hanya jalur bot/pengembangan.
 
 > Aturan emas: **semua logika game hanya ada di `packages/sim`**, dan paket yang sama dipakai oleh frontend, backend, dan halaman audit. Jangan pernah menulis ulang logika game di tempat lain.
 
@@ -18,7 +20,7 @@
          │ watermark, ack, snapshot)  │                                      │ (disrupt)
          ▼                            │                                      ▼
  ┌──────────────────────── backend (Node) ─────────────────────────────────────────────────┐
- │ auth SIWE · runs · rooms · verifikasi (packages/sim) · ledger koin · voucher EIP-712     │
+ │ auth Privy · runs · rooms · verifikasi (packages/sim) · ledger koin · voucher EIP-712    │
  │ chain/relayer (1 tx per blok) · chain/indexer (event → DB → WS)                          │
  └───────┬───────────────────────────────────────────────────────────────┬─────────────────┘
          │ submitBatch() (attester)                                       │ eth_subscribe logs
@@ -29,7 +31,7 @@
 ```
 
 Alur utama:
-1. Pemain login dengan SIWE, lalu `POST /runs` → backend memilih `seedBlock`, menghitung `seed`, dan memasukkan `RunStart` ke antrean relayer.
+1. Pemain login dengan Google lewat Privy (embedded wallet dibuat otomatis), lalu `POST /runs` → backend memilih `seedBlock`, menghitung `seed`, dan memasukkan `RunStart` ke antrean relayer.
 2. Browser menjalankan `packages/sim` secara lokal dan mengirim input (bertanda tick) ke backend lewat WS.
 3. Backend menjalankan `packages/sim` yang sama. Setiap event `NEAR_MISS` masuk ke antrean relayer.
 4. Relayer mengirim `RunRegistry.submitBatch()` sekitar sekali per blok. Kontrak menyimpan hitungan dan menandai kelulusan (`Qualified`).
@@ -230,8 +232,8 @@ loop:
      free = {0..3} \ {first, second}
      if free ∩ prevFree == ∅: (buang second, tetap 1 lajur)   // 1 lajur selalu valid
      else lanes.push(second)
-  for slot, lane in lanes: type = chance(200) ? TRUCK : CAR; id = k*2 + slot
-  yield { k, s, vehicles: [{ id, lane, type }] }
+  vehicles = [ { id: k*2 + slot, lane, type: chance(200) ? TRUCK : CAR } for slot, lane in lanes ]   // chance diambil per slot, urut lanes
+  yield { k, s, vehicles }
   prevFree = {0..3} \ lanes
   s += lerpInt(2800, 1600, x, rampS) + int(0, 800)
   k += 1
@@ -277,6 +279,7 @@ type Disruption = { id: string; source: 'NPC' | 'SPECTATOR'; kind: 'NITRO' | 'SP
   `r = int(0,999)` → `kind` (<350 nitro, <750 rantai, sisanya red) · `lane = int(0,3)` · `two = chance(300)` · `durIdx = int(0,2)` · `interval = int(240,360)`.
   Rantai memakai `lane`. Red zone memakai `[lane]`, atau `[min(lane,2), min(lane,2)+1]` jika `two`.
 - **Penonton:** backend menentukan `warnTick` dan mengirimnya ke pemain (§4.1). Gangguan hanya masuk log jika pemain mengonfirmasi menerimanya sebelum `warnTick`.
+- **ID gangguan di sim** diturunkan dari log supaya audit menghasilkan ID yang sama: NPC `n{k}` (urutan NPC ke-k), penonton `s{tick}` (lalu `s{tick}.1`, … kalau ada lebih dari satu di tick yang sama). ID gangguan di server (`disruption.scheduled.id`) terpisah dan dipetakan lewat `run_entries.disruption_id`. Data SPEC yang tidak valid (lajur di luar 0–3, `durationIndex` > 2) tetap ikut di-hash lalu dibatalkan (`DISRUPTION_DROPPED`).
 
 ### 3.8 Log dan hash chain
 
@@ -296,7 +299,7 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 | Arah | Tipe | Payload | Catatan |
 |---|---|---|---|
 | C→S | `ping` | `clientMs` | Sinkronisasi jam; S membalas `pong { clientMs, serverMs }` |
-| C→S | `run.ready` | `runId` | S membalas `run.go { startAt }` (`startAt = now + 3000`); tick 1 terjadi di `startAt + 33,3 ms` |
+| C→S | `run.ready` | `runId` | S membalas `run.go { startAt, seed? }` (`startAt = now + 3000`); tick 1 terjadi di `startAt + 33,3 ms`. `seed` hanya ada di mode `SEED_SOURCE=event` dan wajib dipakai client |
 | C→S | `input` | `tick, kind, seq` | Kirim segera saat ditekan |
 | C→S | `watermark` | `tick` | Setiap 100 ms; janji tidak ada input lagi untuk tick ≤ nilai ini |
 | S→C | `disruption.scheduled` | `id, kind, lanes, durationIndex?, warnTick, by` | Hanya untuk gangguan penonton |
@@ -311,6 +314,8 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 
 **Saat koneksi putus:** client tetap menjalankan sim, menyimpan `input` dan `disruption.ack` di buffer, lalu mengirim semuanya (berurutan) begitu tersambung. Gangguan penonton yang tidak diterima sebelum `warnTick` di-ack dengan `applied=false`.
 
+**Saat tersambung ulang:** server mengirim ulang `run.go`, `disruption.scheduled` yang belum di-ack, serta semua `nearMiss.verified` dan `nearMiss.recorded` run aktif. Kalau run sudah selesai saat pemain offline (≤ 2 menit sebelumnya), server mengirim status mepet lalu `run.result`. Client menghapus duplikat berdasarkan `index`. Koneksi baru dengan token yang sama menutup koneksi lama (kode 4000).
+
 ### 4.2 Penonton — `/ws/watch?room=<KODE>&nick=<opsional>`
 
 | Arah | Tipe | Payload |
@@ -322,6 +327,9 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 | C→S | `disrupt` | `kind: 'NITRO' \| 'SPIKES' \| 'RED'`, `lane?`, `durationIndex?` |
 | S→C | `disrupt.accepted` / `disrupt.rejected` | `id` / `reason: 'ENERGY' \| 'LIMIT' \| 'NO_RUN' \| 'RATE' \| 'ROOM_EXPIRED'` |
 | S→C | `nearMiss.recorded`, `run.result` | Sama dengan pemain |
+| S→C | `error` | `code: 'ROOM_NOT_FOUND' \| 'ROOM_EXPIRED' \| 'ROOM_FULL' \| 'BAD_MESSAGE'`, lalu koneksi ditutup (kecuali `BAD_MESSAGE`) |
+
+Room yang kodenya sudah kedaluwarsa masih bisa dimasuki selama run di dalamnya belum selesai. Host melihat jumlah penonton lewat `GET /rooms/:code` (polling); `room.state` hanya dikirim ke penonton.
 
 ## 5. Backend (`backend`)
 
@@ -329,17 +337,24 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 
 | Method | Path | Auth | Fungsi |
 |---|---|---|---|
-| POST | `/auth/nonce` | — | `{ address }` → `{ nonce }`, berlaku 5 menit |
-| POST | `/auth/verify` | — | `{ message, signature }` (SIWE) → `{ token }` (JWT 12 jam) |
-| GET | `/me` | JWT | `address, coins, coinsPending, coinsReserved, ownedTiers, qualifiedTiers, bestRun` |
+| GET | `/me` | Token | `address, coins, coinsPending, coinsReserved, ownedTiers, qualifiedTiers, bestRun` |
 | GET | `/config` | — | Isi `packages/config` + alamat kontrak |
-| POST | `/rooms` | JWT | → `{ code, expiresAt }` |
+| POST | `/rooms` | Token | → `{ code, expiresAt }` (tanpa body) |
 | GET | `/rooms/:code` | — | Status room |
-| POST | `/runs` | JWT | `{ carTier, roomCode? }` → `{ runId, seed, seedBlock, configVersion }` |
+| POST | `/runs` | Token | `{ carTier, roomCode? }` → `{ runId, seed, seedBlock, configVersion }` |
 | GET | `/runs/:id` | — | Ringkasan, status, daftar mepet + tx hash |
 | GET | `/runs/:id/log` | — | Log lengkap untuk audit (setelah run selesai) |
-| POST | `/vouchers` | JWT | `{ tier }` → `{ voucher, signature, expiresAt }` |
+| POST | `/vouchers` | Token | `{ tier }` → `{ voucher, signature, expiresAt }` |
 | GET | `/leaderboard` | — | P1: mepet terbanyak per run |
+| POST | `/auth/nonce`, `/auth/verify` | — | Hanya jika `ALLOW_SIWE_LOGIN=true`: login SIWE untuk bot dan pengembangan → `{ token }` (JWT game HS256, 12 jam) |
+
+**Login (Privy + Google).** Frontend login dengan Google lewat Privy; embedded Ethereum wallet dibuat otomatis untuk pengguna baru. "Token" di tabel = access token Privy segar dari SDK (`getAccessToken()`), dikirim sebagai `Authorization: Bearer <token>` di REST dan `?token=<token>` di `/ws/play`. Backend:
+
+1. Memverifikasi token: ES256 dengan verification key app Privy, `iss = privy.io`, `aud = PRIVY_APP_ID`, `exp`; `sub` adalah DID Privy.
+2. Saat DID pertama kali dipakai, membaca embedded wallet Ethereum pengguna dari server Privy (`GET {PRIVY_API_URL}/v1/users/{did}`, Basic auth `APP_ID:APP_SECRET`) dan mengikatnya permanen ke DID di tabel `users`. Setelah itu alamat dibaca dari DB. Alamat dari client tidak pernah dipercaya, dan ikatan tidak ditimpa otomatis.
+3. Akun game = alamat wallet itu; koin, run, room, dan voucher terikat ke alamat tersebut.
+
+Error: token tidak valid → 401 `UNAUTHORIZED`; wallet belum dibuat → 409 `WALLET_NOT_READY`; server Privy tidak bisa dihubungi → 503 `AUTH_PROVIDER_UNAVAILABLE`. Di WS semua kegagalan login dikirim sebagai `error UNAUTHORIZED` lalu koneksi ditutup 4401. Token Privy berumur ±1 jam: frontend selalu mengambil token baru sebelum request dan saat menyambung ulang WS.
 
 ### 5.2 Membuat run (`POST /runs`)
 
@@ -355,7 +370,9 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
   - semua gangguan penonton dengan `warnTick ≤ T` sudah di-ack.
 - Gangguan dengan `applied=true` masuk log sebagai `SPEC_*` pada `warnTick`, dan dimasukkan ke sim dengan aturan urutan §3.4.
 - Setiap `NEAR_MISS` disimpan ke DB, dikirim sebagai `nearMiss.verified`, lalu dimasukkan ke antrean relayer.
-- **Anti-speedhack:** tolak run (status `INVALID`) jika `watermark > floor((nowServer − startAt) / 33.33) + 30`.
+- **Anti-speedhack:** tolak run (status `INVALID`) jika `watermark > max(0, floor((nowServer − startAt) × 30 / 1000)) + 30`. Estimasi tick tidak boleh negatif: selama hitung mundur watermark 0–30 tetap sah.
+- **Run tidak pernah siap:** run `CREATED` tanpa `run.ready` selama 60 dtk ditutup `PARTIAL` (`TIMEOUT`, flag `NO_READY`) supaya pemain bisa membuat run baru.
+- **Server restart:** run yang belum selesai ditutup `PARTIAL` pada `verified_tick` dengan hash akhir hasil replay `run_entries`; mepet yang belum tercatat dan `EndRec` dikirim ulang ke relayer.
 - **Selesai:** event `CRASH`, `RED_ZONE_FAIL`, atau `TIME_UP` dari sim backend → `RunEnd` ke relayer dan `run.result` ke client.
 - **Timeout:** jika pada `startAt + 100 dtk + 30 dtk` sim belum selesai, akhiri pada tick terakhir yang sudah terverifikasi dengan `reason = TIMEOUT` dan `status = PARTIAL`.
 - Jika klaim `run.end` dari client berbeda dengan hasil backend, catat sebagai flag anti-cheat. Hasil backend yang berlaku.
@@ -366,8 +383,8 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 - Energi penonton dihitung di server berdasarkan waktu nyata: `min(100, energi + 10/detik)`.
 - Saat menerima `disrupt`:
   1. Cek room aktif, ada run aktif, rate pesan, dan energi.
-  2. Hitung `warnTick = estimasiTickSekarang + 15`.
-  3. Cek awal batas §3.7 terhadap state sim backend (supaya jarang dibatalkan).
+  2. Hitung `warnTick = max(estimasiTickSekarang, watermark, tickSimBackend) + 15`. Client boleh lebih cepat sampai 30 tick, jadi `warnTick` harus mengikuti posisi client, bukan hanya jam server. Tolak (`LIMIT`) jika `warnTick + 60 > 3000`.
+  3. Cek awal batas §3.7 (`canSchedule` dari `packages/sim`) terhadap gangguan yang hidup di sim backend **ditambah** gangguan penonton yang sudah dijadwalkan tapi belum diproses. Karena jeda minimal 30 tick, paling banyak ada 1 gangguan penonton per tick.
   4. Kurangi energi, simpan, lalu kirim `disruption.scheduled` ke pemain dan semua penonton.
 - Jika pemain akhirnya mengirim `applied=false`, energi penonton **tidak** dikembalikan (sederhana untuk MVP).
 
@@ -387,15 +404,23 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 ```
 users(address PK, created_at)
 coin_ledger(id PK, address, delta INT, ref TEXT UNIQUE, created_at)          -- saldo = SUM(delta)
-reservations(nonce PK, address, tier, coin_cost, expires_at, status)          -- ACTIVE | CONSUMED | RELEASED
+reservations(nonce PK, address, tier, coin_cost, expires_at, status, voucher_json, created_at)
+                                                                             -- ACTIVE | CONSUMED | RELEASED; voucher_json untuk double-click
 qualifications(address, tier, run_id, tx_hash, block_number, PRIMARY KEY(address, tier))
                                                                              -- cache dari event Qualified; BUKAN gerbang pembelian
+owned_cars(address, tier, token_id, run_id, tx_hash, PRIMARY KEY(address, tier))
+                                                                             -- cache dari event Purchased, untuk /me
 rooms(code PK, host_address, created_at, expires_at)
-runs(id PK, address, car_tier, seed, seed_block, room_code, config_version, status, end_reason,
-     end_tick, near_misses, start_at, created_at, flags TEXT)
-run_entries(run_id, seq, tick, kind, data, PRIMARY KEY(run_id, seq))
-disruptions(id PK, run_id, source, kind, lanes, duration_index, warn_tick, applied, spectator_nick, created_at)
-near_misses(run_id, idx, tick, vehicle_id, vehicle_type, input_hash, tx_hash, block_number,
+runs(id PK, address, car_tier, seed, seed_block, room_code, config_version,
+     lifecycle,      -- CREATED | READY | RUNNING | ENDED
+     result,         -- VERIFIED | PARTIAL | INVALID (null sampai ENDED)
+     chain_status,   -- PENDING | RECORDED | RECORD_FAILED
+     end_reason, end_tick, near_misses, verified_tick, final_hash, start_at, ended_at, created_at, flags TEXT)
+run_entries(run_id, ord, tick, kind, data, source, client_seq, disruption_id, PRIMARY KEY(run_id, ord))
+                                                                             -- ord = urutan proses = urutan hash
+disruptions(id PK, run_id, source, kind, lanes, duration_index, warn_tick, sched_order, acked, applied,
+            spectator_nick, created_at)
+near_misses(run_id, idx, tick, vehicle_id, vehicle_type, coins, input_hash, tx_hash, block_number,
             verified_at, recorded_at, PRIMARY KEY(run_id, idx))
 chain_cursor(name PK, last_block)
 ```
@@ -533,7 +558,7 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 
 | Rute | Isi |
 |---|---|
-| `/` | Garasi: connect wallet dan SIWE; koin (terkonfirmasi, pending, disisihkan); 5 mobil dengan statistik, syarat, status lulus, status dimiliki, sisa suplai; tombol pilih mobil dan Beli |
+| `/` | Garasi: login Google lewat Privy (embedded wallet); koin (terkonfirmasi, pending, disisihkan); 5 mobil dengan statistik, syarat, status lulus, status dimiliki, sisa suplai; tombol pilih mobil dan Beli |
 | `/play` | Game dan HUD. Opsi "Main solo" atau "Buat room" |
 | `/room` | Host: kode room besar, QR (P1), jumlah penonton, tombol mulai run |
 | `/watch` dan `/watch/:code` | Penonton (mobile-first): masuk dengan kode dan nick; status run; bar energi; tombol Nitro, Rantai, Red zone (3/5/7 dtk); pemilih lajur 1–4; feed gangguan |
@@ -565,6 +590,8 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 
 ### 8.5 Halaman audit (P1, dikerjakan Bayu)
 
+Logika pembanding sudah ada di `packages/sim` sebagai `auditRun(log, records)` (dipakai juga CLI `backend/scripts/audit.ts`); halaman ini cukup mengisi `records` dari event on-chain dan menampilkan hasilnya.
+
 1. Ambil `GET /runs/:id/log`.
 2. Replay dengan `packages/sim` di browser untuk mendapatkan daftar mepet `{ index, tick, vehicleType, inputHash }`.
 3. Ambil event `RunStarted`, `NearMiss`, dan `RunEnded` untuk `runId` itu langsung dari RPC.
@@ -594,11 +621,15 @@ DEPLOYER_PRIVATE_KEY, ATTESTER_ADDRESS, VOUCHER_SIGNER_ADDRESS, TREASURY_ADDRESS
 
 # server
 DATABASE_URL, JWT_SECRET, CHAIN_ID, MONAD_RPC_URL, MONAD_WS_URL,
-ATTESTER_PRIVATE_KEY, VOUCHER_SIGNER_PRIVATE_KEY, RUN_REGISTRY_ADDRESS, CAR_NFT_ADDRESS, CORS_ORIGIN
+ATTESTER_PRIVATE_KEY, VOUCHER_SIGNER_PRIVATE_KEY, RUN_REGISTRY_ADDRESS, CAR_NFT_ADDRESS, CORS_ORIGIN,
+PUBLIC_ORIGIN, CHAIN_MODE, SEED_SOURCE,
+PRIVY_APP_ID, PRIVY_VERIFICATION_KEY, PRIVY_APP_SECRET, PRIVY_API_URL, ALLOW_SIWE_LOGIN
 
 # web
 VITE_API_URL, VITE_WS_URL, VITE_CHAIN_ID, VITE_RPC_URL, VITE_EXPLORER_URL,
-VITE_RUN_REGISTRY_ADDRESS, VITE_CAR_NFT_ADDRESS
+VITE_RUN_REGISTRY_ADDRESS, VITE_CAR_NFT_ADDRESS, VITE_PRIVY_APP_ID, VITE_PRIVY_CLIENT_ID
 ```
+
+`PRIVY_APP_SECRET` hanya ada di backend/hosting; jangan pernah di variabel `VITE_*`. Detail lengkap ada di `backend/.env.example`.
 
 RPC testnet umum: `https://testnet-rpc.monad.xyz` dan `wss://testnet-rpc.monad.xyz`. Cek `CHAIN_ID` dan URL explorer di dokumentasi resmi Monad. Untuk demo dengan banyak pemain, pertimbangkan RPC khusus (misalnya Alchemy atau QuickNode) agar tidak terkena rate limit RPC publik.

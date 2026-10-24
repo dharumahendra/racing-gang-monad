@@ -88,9 +88,13 @@ export type PlayC2S =
 
 export type PlayS2C =
   | { t: 'pong'; clientMs: number; serverMs: number }
-  /** Tick 1 terjadi di startAt + 33,3 ms. */
-  | { t: 'run.go'; startAt: number }
+  /**
+   * Tick 1 terjadi di startAt + 33,3 ms. `seed` hanya dikirim di mode SEED_SOURCE=event
+   * (seed diambil dari event RunStarted); kalau ada, client wajib memakainya menggantikan seed dari POST /runs.
+   */
+  | { t: 'run.go'; startAt: number; seed?: Hex }
   | DisruptionScheduled
+  /** Saat tersambung ulang, server mengirim ulang semua nearMiss.verified/recorded run aktif; hapus duplikat berdasarkan `index`. */
   | { t: 'nearMiss.verified'; index: number; tick: number; vehicleType: VehicleType; coins: number }
   | NearMissRecorded
   | { t: 'run.qualified'; tier: number; txHash: Hex }
@@ -129,6 +133,12 @@ export type ApiErrorCode =
   | 'BAD_REQUEST'
   | 'UNAUTHORIZED'
   | 'NOT_FOUND'
+  | 'RATE_LIMITED'
+  | 'INTERNAL'
+  /** Login Privy berhasil tapi embedded Ethereum wallet belum dibuat. */
+  | 'WALLET_NOT_READY'
+  /** Server Privy tidak bisa dihubungi untuk membaca wallet pengguna. */
+  | 'AUTH_PROVIDER_UNAVAILABLE'
   | 'ACTIVE_RUN_EXISTS'
   | 'RUN_LIMIT'
   | 'RUN_NOT_ENDED'
@@ -208,6 +218,8 @@ export type RunSummaryResponse = {
   endReason: EndReasonName | null;
   endTick: number | null;
   nearMisses: number;
+  /** Hash chain log setelah tick terakhir yang terverifikasi (null sampai run selesai). */
+  finalHash: Hex | null;
   startAt: number | null;
   createdAt: number;
   nearMissList: NearMissInfo[];

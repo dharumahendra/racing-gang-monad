@@ -1,0 +1,6 @@
+# Simpan semua file teks dengan LF supaya hasil di Windows, macOS, dan CI sama.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.glb binary
+*.gltf binary

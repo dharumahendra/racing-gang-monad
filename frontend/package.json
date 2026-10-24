@@ -14,7 +14,8 @@
     "test:hud": "node scripts/hud-check.mjs",
     "test:rooms": "node scripts/rooms-check.mjs",
     "test:results": "node scripts/results-check.mjs",
-    "test:performance": "node scripts/performance-check.mjs"
+    "test:performance": "node scripts/performance-check.mjs",
+    "test:service": "node scripts/service-check.mjs"
   },
   "dependencies": {
     "@racing-gang/config": "workspace:*",

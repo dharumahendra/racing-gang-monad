@@ -5,7 +5,7 @@ const root=process.env.APP_URL||'http://127.0.0.1:5173';const out=process.env.BR
 const browser=await chromium.launch({executablePath:process.env.BROWSER_EXECUTABLE||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--enable-unsafe-swiftshader']});
 const id=`0x${'11'.repeat(32)}`,other=`0x${'55'.repeat(32)}`,hash=`0x${'66'.repeat(32)}`;const seed='0x8cfd1f92705b1e83840e3e257e0120b7fc40a9569070f053c50a1d6ad428d684';
 const row={index:1,tick:10,vehicleType:1,coins:200,inputHash:`0x${'22'.repeat(32)}`,txHash:null,blockNumber:null};
-const initial={runId:id,player:`0x${'33'.repeat(20)}`,carTier:0,seed,seedBlock:1,configVersion:1,roomCode:'AB7K2M',lifecycle:'CREATED',result:null,chainStatus:'PENDING',endReason:null,endTick:null,nearMisses:0,startAt:null,createdAt:500,nearMissList:[]};
+const initial={runId:id,player:`0x${'33'.repeat(20)}`,carTier:0,seed,seedBlock:1,configVersion:1,roomCode:'AB7K2M',lifecycle:'CREATED',result:null,chainStatus:'PENDING',endReason:null,endTick:null,nearMisses:0,finalHash:null,startAt:null,createdAt:500,nearMissList:[]};
 const checks=[],errors=[];let reads=0,posts=0,connections=0;
 function observe(page){page.setDefaultNavigationTimeout(60000);page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(['warning','error'].includes(m.type()))errors.push(m.text());});}
 async function refresh(page){await page.getByRole('button',{name:'Perbarui status',exact:true}).click();}

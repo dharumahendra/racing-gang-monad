@@ -1,7 +1,7 @@
 import { Sim, type LogEntry, type SimView, type SimEvent } from '@racing-gang/sim';
 import { COUNTDOWN_MS, TICK_RATE, type PlayerInputKind } from '@racing-gang/config';
 export class LocalRunner {
-  readonly sim: Sim;
+  private _sim: Sim;
   current: SimView;
   previous: SimView;
   phase: 'idle' | 'countdown' | 'running' | 'ended' = 'idle';
@@ -11,7 +11,12 @@ export class LocalRunner {
   readonly events:SimEvent[]=[];
   private seq = 0;
   private pending: LogEntry[] = [];
-  constructor(params: ConstructorParameters<typeof Sim>[0]) { this.sim = new Sim(params); this.current = this.sim.view(); this.previous = this.current; }
+  constructor(private readonly params: ConstructorParameters<typeof Sim>[0]) { this._sim = new Sim(params); this.current = this.sim.view(); this.previous = this.current; }
+  get sim() { return this._sim; }
+  setSeedBeforeStart(seed: ConstructorParameters<typeof Sim>[0]['seed']) {
+    if(this.phase!=='idle')return false;
+    this._sim=new Sim({...this.params,seed});this.current=this._sim.view();this.previous=this.current;return true;
+  }
   start() { if(this.phase==='idle') this.phase='countdown'; }
   input(kind: PlayerInputKind) {
     if(this.phase!=='running')return null;

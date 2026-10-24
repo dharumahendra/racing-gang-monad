@@ -1,0 +1,14 @@
+**/node_modules
+.git
+.github
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/*.db-*
+**/dist
+**/coverage
+backend/data
+contract/out
+contract/cache
+contract/broadcast

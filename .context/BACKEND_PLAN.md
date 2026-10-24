@@ -161,8 +161,9 @@ db/schema.ts        Drizzle schema (F2)
 db/client.ts        better-sqlite3, PRAGMA journal_mode=WAL, foreign_keys=ON
 db/migrations/      hasil drizzle-kit
 auth/nonceStore.ts  Map<nonce, expiresAt>, sekali pakai
-auth/siwe.ts        verifikasi SIWE (viem/siwe)
-auth/guard.ts       preHandler requireAuth → req.address
+auth/privy.ts       login utama: verifikasi access token Privy + ikat DID ke embedded wallet
+auth/siwe.ts        login SIWE untuk bot dan pengembangan (ALLOW_SIWE_LOGIN)
+auth/guard.ts       Authenticator: token Privy (ES256) atau JWT game (HS256) → alamat wallet
 services/
   ledger.ts         credit, debit, balance, pending, reserved
   reservations.ts   create, consume, releaseExpired
@@ -214,8 +215,11 @@ Alasan perubahan:
 
 ### F3. Endpoint dasar
 
-- [ ] `POST /auth/nonce` → nonce acak 16 byte, berlaku 5 menit.
-- [ ] `POST /auth/verify` → `parseSiweMessage`; cek `domain == PUBLIC_ORIGIN host`, `chainId`, nonce ada dan belum kedaluwarsa; `verifySiweMessage`; hapus nonce; upsert `users`; JWT `{ sub: checksumAddress }` berlaku 12 jam. Address selalu disimpan dalam bentuk checksum.
+- [ ] **Login utama Privy + Google** (TECH_SPEC §5.1): setiap endpoint terlindungi dan `/ws/play` menerima access token Privy. Verifikasi ES256 dengan verification key, `iss = privy.io`, `aud = PRIVY_APP_ID`, `exp`. DID baru → baca embedded wallet Ethereum dari `GET /v1/users/{did}` (Basic auth app secret), simpan ke `users.privy_did`. Setelah itu dari DB; ikatan tidak pernah ditimpa dan satu wallet hanya untuk satu DID.
+- [ ] Login SIWE hanya kalau `ALLOW_SIWE_LOGIN=true` (bot dan pengembangan):
+  - `POST /auth/nonce` → nonce acak 16 byte, berlaku 5 menit.
+  - `POST /auth/verify` → `parseSiweMessage`; cek `domain == PUBLIC_ORIGIN host`, `chainId`, nonce ada dan belum kedaluwarsa; `verifySiweMessage`; hapus nonce; upsert `users`; JWT HS256 `{ sub: checksumAddress }` berlaku 12 jam.
+- [ ] Alamat selalu disimpan dalam bentuk checksum. Production wajib konfigurasi Privy lengkap.
 - [ ] `GET /config` → config + alamat kontrak + `chainId` + explorer.
 - [ ] `GET /me` →
   - `coins = SUM(delta)`
@@ -247,7 +251,7 @@ export type ChainEvent =
 
 Pembagian tugasnya: implementasi Bayu cukup memanggil `bus.emit(event)`, dan semua reaksi (ledger, DB, WS) ada di kode backend. `chain/mock.ts` mengeluarkan event ±500 ms setelah enqueue dengan txHash palsu, dan voucher signer mock memakai key lokal.
 
-**Selesai jika:** login SIWE dari frontend berhasil, dan `/me` mengembalikan data.
+**Selesai jika:** login Google (Privy) dari frontend berhasil, dan `/me` mengembalikan alamat embedded wallet yang sama dengan di frontend.
 
 ---
 
@@ -340,7 +344,7 @@ Semua handler harus **idempoten**, karena event bisa terbaca dua kali dari backf
 
 ### G6. Bot (`scripts/bot.ts`)
 
-- Login SIWE dengan private key dari env, `POST /runs`, buka WS, sinkronkan jam, `run.ready`.
+- Login SIWE dengan private key dari env (server harus `ALLOW_SIWE_LOGIN=true`), `POST /runs`, buka WS, sinkronkan jam, `run.ready`.
 - Jalankan `Sim` lokal dengan langkah tetap 33,33 ms. Kebijakan sederhana: cari kendaraan terdekat di depan, pindah ke lajur sebelahnya, dan hindari lajur yang ada kendaraan di jarak dekat.
 - Kirim input dan watermark sesuai protokol, tangani `disruption.scheduled`.
 - Akhirnya bandingkan mepet lokal dengan `nearMiss.verified`, lalu cetak PASS/FAIL.
@@ -447,7 +451,8 @@ Encoding data SPEC: `NITRO → 0`, `SPIKES → lane`, `RED → lane | (durIdx <<
 - [ ] `backend/Dockerfile`: Node 20 slim, pnpm, copy workspace (`packages/*` + `backend`), install dengan build `better-sqlite3`, jalankan dengan `tsx src/index.ts`. Migrasi otomatis saat start.
 - [ ] Volume di `/data`, `DATABASE_URL=/data/racing-gang.db`.
 - [ ] Secret hanya di hosting: `JWT_SECRET`, `ATTESTER_PRIVATE_KEY`, `VOUCHER_SIGNER_PRIVATE_KEY`. Sediakan `.env.example` tanpa nilai.
-- [ ] CORS ke domain frontend; `PUBLIC_ORIGIN` untuk cek domain SIWE.
+- [ ] CORS ke domain frontend (`PUBLIC_ORIGIN`, juga domain SIWE untuk bot).
+- [ ] Isi `PRIVY_APP_ID`, `PRIVY_VERIFICATION_KEY`, `PRIVY_APP_SECRET` sebagai secret hosting; daftarkan domain HTTPS frontend di dashboard Privy.
 - [ ] 1 instance, tanpa autoscale; health check ke `/health`.
 - [ ] Uji dari HP lewat data seluler: login, WS play, dan WS watch.
 - [ ] Logging pino: `runId`, `tick`, latensi relayer, flag anti-cheat.
@@ -478,3 +483,64 @@ Hanya dua yang menyentuh orang lain:
 2. **§3.5 typo generator** dan **ID gangguan deterministik**. Menyentuh halaman audit Bayu.
 
 Sisanya internal backend: formula `warnTick`, kolom `ord`, status 3 kolom, `owned_cars`, aturan room kedaluwarsa, dan reuse voucher.
+
+---
+
+## P. Status eksekusi (22 Oktober 2026)
+
+Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan teruji di CI. Branch bertumpuk: `dharu/sim` → `dharu/server` → `dharu/runs` → `dharu/rooms-vouchers` (yang terakhir berisi semuanya). Belum ada yang di-merge ke `main`.
+
+### P1. Selesai
+
+| Fase | Isi | Bukti |
+|---|---|---|
+| 1 | Monorepo pnpm, `packages/config`, `protocol.ts`, `cars.json` untuk kontrak | CI cek `cars.json` sinkron |
+| 2–3 | `packages/sim` lengkap: PRNG, lalu lintas, tabrakan, mepet, gangguan, NPC, replay, autopilot | 37 test + 3 golden fixture |
+| 4 | Fastify, SQLite/Drizzle, **login Privy + Google** (token Privy di REST dan WS, ikatan DID ↔ embedded wallet), SIWE untuk bot, `/me`, `/config`, `/health`, `chain/ports.ts`, mock chain, pembacaan kontrak live | Test auth SIWE + 9 test Privy (token salah, wallet belum siap, Privy mati, klaim wallet ganda, run penuh lewat WS) |
+| 5 | `POST /runs`, `/ws/play`, loop verifikasi, anti-speedhack, timeout, pemulihan setelah restart, reaksi event chain | Test + bot lewat jaringan: mepet lokal = backend |
+| 7 | `POST/GET /rooms`, `/ws/watch`, energi, batas, rate, `room.state` | Test + 50 penonton × ±3.700 gangguan, run tetap VERIFIED |
+| 8 | `POST /vouchers` (EIP-712 `RacingGangCars`), reservasi, pelepasan otomatis | Test alur DoD di mock: main → lulus → voucher → beli |
+| 9 | DH-9 reconnect + kirim ulang status mepet, DH-10 flag anti-cheat, DH-11 `GET /runs/:id`, `/runs/:id/log`, `/leaderboard` | Test |
+| 10 | `backend/Dockerfile`, `.dockerignore`, smoke test container di CI | CI: `/health` ok, DB di volume `/data` |
+| 11 | `scripts/bot.ts`, `scripts/spectators.ts`, `scripts/status.ts` | Dijalankan terhadap server lokal |
+| CI | Workspace, Foundry (aktif otomatis), Docker | Hijau di semua branch |
+
+### P2. Belum bisa dikerjakan (terblokir)
+
+| Item | Bagian | Terblokir oleh | Yang dibutuhkan |
+|---|---|---|---|
+| ~~Tes `blockhash` Monad = hash blok dari RPC~~ | Fase 6 | **Selesai 22 Okt** tanpa wallet: `pnpm --filter @racing-gang/backend check-monad` (eth_call init code `BLOCKHASH`). 7/7 sampel sama, termasuk `latest − 3`, jadi `SEED_SOURCE=local` aman. Jalur cadangan `SEED_SOURCE=event` juga sudah diuji | — |
+| `CHAIN_MODE=live`: relayer, indexer, voucher signer | Fase 6, CH-1/2/3 | Bayu | Implementasi `RelayerPort`, indexer yang memanggil `bus.emit`, `VoucherSigner` (lihat `backend/src/chain/ports.ts`). `live.ts` sengaja menolak start sampai ini ada |
+| Alamat dan ABI kontrak di `packages/config/deployments/monad-testnet.json` | Fase 6, SC-5 | Bayu | Deploy kontrak ke Monad testnet |
+| Test Forge: hash log Solidity = `appendHash` sim | D3 | Bayu | Satu test `forge` dengan input sama dengan test sim |
+| Konfirmasi URL explorer resmi | Env | Bayu | `CHAIN_ID` = 10143 sudah terkonfirmasi dari RPC (`eth_chainId`). Waktu blok terukur ±300 ms (PRD menulis ±400 ms), jadi jendela `blockhash` 256 blok ≈ 77 dtk: relayer harus mengirim `RunStart` dalam beberapa detik setelah `POST /runs`. Tinggal `EXPLORER_URL` |
+| Latensi on-chain nyata ≤ 2 dtk dan beban relayer di testnet | Fase 6 | Setelah CH-1 | `bot --parallel 5` dengan `CHAIN_MODE=live`. Metriknya sudah ada: `/health.onChainLatency` (median, p90) dan `scripts/status.ts` memberi peringatan kalau median > 2 dtk |
+| Audit terhadap event on-chain | AU-1 | Setelah SC-5 | `pnpm --filter @racing-gang/backend audit -- --run <id> --rpc <url> --registry <alamat>`. Logika pembandingnya `auditRun` di `packages/sim`, bisa langsung dipakai halaman audit `/run/:id`. Jalur terhadap catatan backend sudah diuji; jalur event on-chain menunggu kontrak |
+| Deploy server publik (HTTPS/WSS, volume, 1 instance) | Fase 10 | Dharu | Akun hosting dan domain. Image sudah siap |
+| Uji dari HP lewat internet, 3+ HP | Fase 10–11 | Setelah deploy + frontend | URL publik backend dan frontend |
+| Golden test di browser (`/dev/golden`) | D3 | Raka | Sudah dikerjakan di branch `raka/foundation` (`frontend/src/pages/Golden.tsx`); tinggal di-merge |
+| Merge `raka/foundation` ke `main` | Repo | Raka / pemilik repo | Sudah diuji di worktree gabungan (22 Okt): satu-satunya konflik `pnpm-lock.yaml` (selesai dengan `pnpm install`); typecheck semua paket, 200 test (frontend 91), dan build frontend lulus. Klien asli frontend (`PlayClient`, `WatchClient`, room/run/summary API) melawan backend asli: room + run + penonton VERIFIED, mepet cocok, semua pesan server lolos validasi frontend; putus 3 dtk tetap VERIFIED |
+| Uji login Privy + Google sungguhan | Auth | Dharu + Raka | Backend sudah menerima token Privy (diuji dengan kunci dan server Privy tiruan). Untuk uji nyata: ambil **verification key** dan **app secret** dari dashboard Privy, isi `PRIVY_*` di `backend/.env`, daftarkan origin frontend, lalu login Google dari frontend |
+| Konflik `pnpm-lock.yaml` antara branch backend dan `raka/foundation` | Repo | Siapa pun yang merge kedua | Setelah merge, jalankan `pnpm install` lalu commit lockfile baru |
+| Review `protocol.ts` dan integrasi frontend | M0, FE-1–FE-8 | Raka | Lihat catatan frontend di P3 |
+| E2E-1 sampai E2E-7 | Fase 11 | Tim | Semua item di atas |
+| Akun presenter lulus Tier 1 secara manual | Fase 11 | Hari H | Main manual, bukan bot |
+| Keputusan balance syarat mepet | PRD §6.2 | Tim | `pnpm --filter @racing-gang/sim stats` (200 seed): Starter p50 55 mepet, 68% run lulus Tier 1 (syarat 40); Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Autopilot bukan manusia, jadi ini batas atas kasar. Putuskan sebelum kontrak di-deploy (syarat immutable) |
+| Merge branch ke `main` dan branch protection | Repo | Dharu | Keputusan pemilik repo |
+
+### P3. Catatan untuk frontend (Raka)
+
+- `run.go` punya field `seed` opsional (mode `SEED_SOURCE=event`); kalau ada, pakai seed itu.
+- Setelah reconnect, server mengirim ulang semua `nearMiss.verified` dan `nearMiss.recorded`; hapus duplikat berdasarkan `index`.
+- Jangan kirim header `content-type: application/json` tanpa body (mis. `POST /rooms`); Fastify menolaknya dengan 400.
+- Jumlah penonton untuk host: polling `GET /rooms/:code`; `room.state` hanya dikirim ke penonton.
+- Kode error baru: `RATE_LIMITED`, `INTERNAL`, `RUN_NOT_ENDED`, `WALLET_NOT_READY` (409, embedded wallet belum dibuat), `AUTH_PROVIDER_UNAVAILABLE` (503, server Privy tidak bisa dihubungi).
+- `PlayClient` belum memakai `run.go.seed`. Hanya berpengaruh kalau backend terpaksa memakai `SEED_SOURCE=event` (blockhash Monad berbeda dari RPC); kalau terjadi, `PlayClient` harus mengganti sim dengan seed itu sebelum hitung mundur.
+- `pnpm install` di gabungan branch memberi peringatan peer dependency Privy (`react` 16–18 vs 19, `viem` 2.56.5 vs 2.57.7). Belum menyebabkan error di test dan build, tapi perlu dicek saat uji login Google sungguhan.
+- Setelah reconnect, kalau run sudah selesai saat offline, server mengirim `run.result` (sudah ditangani `PlayClient`).
+- Login: kirim access token Privy segar (`getAccessToken()`) sebagai `Authorization: Bearer` di REST dan `?token=` di `/ws/play`, seperti yang sudah dilakukan frontend. Endpoint `/auth/nonce` dan `/auth/verify` tidak ada di production.
+
+### P4. Keterbatasan yang diketahui
+
+- Antrean relayer di mock ada di memori. Relayer live sebaiknya menyimpan antrean di DB: saat restart, backend mengirim ulang mepet dan `EndRec` yang belum tercatat, tapi `RunStart` yang hilang harus ditangani relayer.
+- Image Docker belum diuji di laptop (Docker Desktop tidak jalan), tapi lulus build dan smoke test di CI.

@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { EntryKind } from '@racing-gang/config';
-import { replay } from '@racing-gang/sim';
+import { replay, Sim } from '@racing-gang/sim';
 import { PlayClient, type SocketPort } from './play-client';
 const params={runId:`0x${'11'.repeat(32)}` as const,seed:`0x${'22'.repeat(32)}` as const,carTier:0};
 class Socket implements SocketPort {
@@ -85,4 +85,27 @@ it('does not flush buffered input if reconnect opens after the grace period',asy
 });
 it('keeps the original outage deadline when a reconnect closes before opening',async()=>{
   const f=await setup();f.go();f.socket.close();f.setTime(2000);await f.client.connect(async()=> 'fresh');f.setTime(15000);f.sockets[1].close();f.setTime(32001);await f.client.connect(async()=> 'fresh');expect(f.client.status).toBe('expired');expect(f.sockets).toHaveLength(2);f.client.dispose();
+});
+
+it('uses the authoritative run.go seed before countdown without replacing the runner or mutating caller params',async()=>{
+  const f=await setup();const runner=f.client.runner;const original=params.seed;const seed=`0x${'5e'.repeat(32)}` as const;
+  f.socket.receive({t:'run.go',startAt:13000,seed});expect(f.client.runner).toBe(runner);expect(runner.sim.seed).toBe(seed);expect(f.client.params.seed).toBe(seed);expect(params.seed).toBe(original);
+  f.setTime(4000);f.client.pump();f.client.input(EntryKind.RIGHT);f.setTime(4200);f.client.pump();
+  const reference=new (runner.sim.constructor as any)({...params,seed});for(let tick=1;tick<=runner.current.tick;tick++)reference.step(runner.log.filter(e=>e.tick===tick));expect(runner.current).toEqual(reference.view());expect(runner.sim.inputHash).toBe(reference.inputHash);f.client.dispose();
+});
+it.each([null,'0x1234',7])('rejects a malformed authoritative seed %s before starting the simulation',async seed=>{
+  const f=await setup();f.socket.receive({t:'run.go',startAt:13000,seed});expect(f.client.status).toBe('error');expect(f.client.runner.phase).toBe('idle');expect(f.client.runner.sim.seed).toBe(params.seed);f.client.dispose();
+});
+it('preserves the POST seed in local-seed mode and never rewinds an active runner on duplicate go',async()=>{
+  const f=await setup();f.go();expect(f.client.runner.sim.seed).toBe(params.seed);f.setTime(4200);f.client.pump();const view=f.client.runner.current;
+  f.socket.receive({t:'run.go',startAt:13000,seed:`0x${'5e'.repeat(32)}`});expect(f.client.runner.current).toBe(view);expect(f.client.runner.sim.seed).toBe(params.seed);f.client.dispose();
+});
+it('keeps the adopted seed and state when the reconnect replays run.go',async()=>{
+  const f=await setup();const seed=`0x${'5e'.repeat(32)}`;f.socket.receive({t:'run.go',startAt:13000,seed});f.setTime(4200);f.client.pump();const tick=f.client.runner.current.tick;f.socket.close();await f.client.connect(async()=> 'fresh');const socket=f.sockets[1];socket.open();socket.receive({t:'run.go',startAt:13000,seed});expect(f.client.runner.sim.seed).toBe(seed);expect(f.client.runner.current.tick).toBe(tick);f.client.dispose();
+});
+
+
+it('flushes the terminal watermark before run.end even when the last publication was less than 100ms ago',async()=>{
+ const f=await setup();f.go();const reference=new Sim(params);while(!reference.ended)reference.step([]);const endAt=4000+reference.tick*1000/30;
+ f.setTime(endAt-10);f.client.pump();f.setTime(endAt+1);f.client.pump();const endIndex=f.socket.sent.findIndex(m=>m.t==='run.end');expect(endIndex).toBeGreaterThan(0);const marks=f.socket.sent.slice(0,endIndex).filter(m=>m.t==='watermark');expect(marks.at(-1).tick).toBe(f.socket.sent[endIndex].tick);f.client.dispose();
 });

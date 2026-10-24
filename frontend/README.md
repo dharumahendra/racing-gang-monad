@@ -1,4 +1,4 @@
-# Racing Gang frontend — T10 aset/render + Privy
+# Racing Gang frontend — integrasi backend lokal + Privy
 
 React + Vite + TypeScript, React Three Fiber/three.js, Privy Google login dan embedded wallet. Aturan game memakai packages/sim yang sama dengan backend, angka memakai packages/config.
 
@@ -19,10 +19,10 @@ Buka http://127.0.0.1:5173 (atau port yang ditulis Vite). Node >=22.12; package 
 - /play: latihan lokal tanpa login, countdown 3 detik, 4 lajur, kamera belakang, traffic, NPC, collision dan mepet dari sim bersama. Kiri/kanan atau A/D, tahan bawah/S untuk rem. Tab background tidak menghentikan waktu sim; runner mengejar tick saat frame kembali.
 - Latihan tidak memanggil POST /runs, tidak menambah saldo resmi, tidak membuka kelulusan dan tidak membuat transaksi.
 - /watch dan /watch/:code: panel publik tanpa login; adapter WS tersedia, pratinjau jujur saat layanan belum dikonfigurasi.
-- /room: adapter create/read room, kode/tautan penonton dan mulai run dalam room; aktif setelah layanan/Privy siap. /run/:id masih shell hasil.
+- /room: adapter create/read room, kode/tautan penonton dan mulai run dalam room; aktif setelah layanan/Privy siap. /run/:id membaca ringkasan hasil publik.
 - /dev/golden: development-only, replay tiga fixture resmi sim dan bandingkan seluruh events/hash. Tidak ada rute audit publik yang diklaim selesai.
 
-Adapter run/room/penonton sudah tersedia. Integrasi live menunggu App ID dan backend yang menerima token Privy serta menyediakan endpoint run/room/WS.
+Source backend Privy, run/room/WS dan summary sudah disinkronkan. Integrasi FE dengan backend asli lokal sudah diuji melalui HTTP/WS; layanan Privy eksternal dan blockchain memakai fixture terisolasi pada tes tersebut. Google OAuth dan transaksi testnet nyata masih memerlukan konfigurasi serta acceptance terpisah.
 
 ## Login Google / Privy
 
@@ -54,17 +54,17 @@ pnpm --filter @racing-gang/frontend test:browser
 
 Browser script memakai Edge Windows headless; BROWSER_EXECUTABLE dan APP_URL dapat diubah. Output screenshot/laporan ada di frontend/test-results, di-ignore Git. Script memeriksa GLB asli, semua model, golden replay, countdown, lajur, rem, navigasi publik dan layout HP. Sampel FPS headless bukan jaminan performa seluruh 100 detik pada laptop demo.
 
-Unit menguji runner deterministik dan session isolation. Pengujian Google OAuth/embedded-wallet nyata menunggu App ID. Unit FE bukan bukti otorisasi endpoint/kontrak. App ID publik sudah dikonfigurasi; Google OAuth dan provisioning wallet tetap memerlukan verifikasi langsung. Guard sim bawaan punya false positive CRLF pada komentar; source sim tidak diubah tahap ini.
+Unit menguji runner deterministik dan session isolation. App ID publik sudah dikonfigurasi dan SDK nyata berhasil memuat konfigurasi app. Google OAuth/provisioning wallet belum diuji dengan akun nyata. Tes integrasi backend menggunakan verifier JWT ES256 dan SQLite asli untuk penolakan token/audience serta akses lintas akun. Guard determinisme sekarang membedakan komentar/kode pada LF dan CRLF; aturan sim tidak diubah.
 
 ## Persiapan T04: run online
 
-`/online` menampilkan kesiapan layanan dan tidak membuat run saat mode masih mock atau konfigurasi/login belum lengkap. Aktifkan `VITE_DATA_MODE=live` hanya untuk layanan yang sudah siap. Halaman menggunakan profil `/me`, pilihan mobil yang dimiliki, satu `POST /runs` dengan token segar, lalu `/ws/play?token=...`. `VITE_WS_URL` berisi origin WS(S), misalnya `ws://127.0.0.1:3000`, tanpa `/ws/play`; `VITE_API_URL` adalah base HTTP(S). App ID publik tersedia dalam .env.example; backend run/WS belum aktif.
+`/online` menampilkan kesiapan layanan dan tidak membuat run saat mode masih mock atau konfigurasi/login belum lengkap. Aktifkan `VITE_DATA_MODE=live` hanya untuk layanan yang sudah siap. Halaman menggunakan profil `/me`, pilihan mobil yang dimiliki, satu `POST /runs` dengan token segar, lalu `/ws/play?token=...`. `VITE_WS_URL` berisi origin WS(S), misalnya `ws://127.0.0.1:3000`, tanpa `/ws/play`; `VITE_API_URL` adalah base HTTP(S). App ID publik tersedia dalam .env.example; jalankan backend secara terpisah dengan env yang valid sebelum mencoba UI online.
 
 REST memakai shared `CreateRunRequest/Response`, memeriksa configVersion serta seed, dan tidak mengulang POST otomatis. Jika hasil pembuatan ambigu, tombol tidak menawarkan pembuatan ulang. Pemeriksaan run aktif setelah respons hilang masih membutuhkan kontrak recovery backend.
 
-PlayClient menyinkronkan jam lewat ping/pong sebelum ready. Countdown mengikuti startAt server, input dikirim segera untuk tick+1, lalu watermark dan snapshot setiap 100 ms. Gangguan SPEC masuk pada warnTick hanya bila diterima sebelumnya; duplikat ID tidak diterapkan dua kali. Kegagalan pencatatan chain tidak menghentikan game. Hasil lokal, verified, recorded dan run.result tetap terpisah.
+PlayClient menyinkronkan jam lewat ping/pong sebelum ready. Seed otoritatif pada run.go diadopsi sebelum countdown tanpa mengganti objek runner; reconnect tidak mereset sim. Watermark tick terakhir selalu dikirim sebelum run.end, termasuk melalui buffer saat offline. Countdown mengikuti startAt server, input dikirim segera untuk tick+1, lalu watermark dan snapshot setiap 100 ms. Gangguan SPEC masuk pada warnTick hanya bila diterima sebelumnya; duplikat ID tidak diterapkan dua kali. Kegagalan pencatatan chain tidak menghentikan game. Hasil lokal, verified, recorded dan run.result tetap terpisah.
 
-Sambung ulang manual mengambil token baru dan mengirim buffer FIFO sebelum watermark baru. Buffer hanya di memori dan dibatasi grace period bersama 30 detik. Ini belum bukti recovery server: endpoint harus mengikat socket ke run milik identitas yang sama, dedup input/ack dan menangani pesan yang mungkin sudah diterima sebelum putus. Reload, cross-tab, pre-start resume dan resync hasil perlu acceptance T09 bersama backend; tidak ada pembuatan run baru otomatis.
+Sambung ulang manual mengambil token baru dan mengirim buffer FIFO sebelum watermark baru. Buffer hanya di memori dan dibatasi grace period bersama 30 detik. Integrasi lokal dengan server asli sudah menguji outage tiga detik dan replay hasil terminal setelah koneksi hilang. Ini belum acceptance layanan terpasang atau Google nyata. Reload, cross-tab, pre-start resume dan resync hasil perlu acceptance T09 bersama backend; tidak ada pembuatan run baru otomatis.
 
 `/dev/network` hanya development, memakai adapter yang sama dan endpoint fixture khusus. Halaman ini tidak membuat server palsu otomatis. Test memasang REST/WS simulasi lewat Playwright dan tidak memverifikasi Privy/otorisasi backend. Jalankan setelah Vite aktif:
 
@@ -105,7 +105,7 @@ Reconnect mengambil state baru dan tidak mengulang kiriman. Pergantian run memer
 pnpm --filter @racing-gang/frontend test:rooms
 ```
 
-Test memasang REST/WS simulasi dengan dua konteks penonton. Ini bukan bukti room live, kapasitas 50 penonton, otorisasi lintas akun, Privy atau chain. Route/module/token fixture tidak termasuk build produksi. T06 pembelian masih menunggu voucher/ABI/backend; T07/T08 berstatus FE adapter ready, live integration blocked. Lihat `.context/T07_T08_IMPLEMENTATION.md`.
+Test memasang REST/WS simulasi dengan dua konteks penonton. Ini bukan bukti room live, kapasitas 50 penonton, otorisasi lintas akun, Privy atau chain. Route/module/token fixture tidak termasuk build produksi. T07/T08 sudah melewati integrasi lokal backend asli. T06 memiliki adapter voucher tervalidasi; UI transaksi/pembelian masih menunggu ABI/deployment/relayer/signer nyata. Lihat `.context/T07_T08_IMPLEMENTATION.md`.
 
 ## T09: hasil dan pemulihan status
 
@@ -132,3 +132,30 @@ pnpm --filter @racing-gang/frontend test:performance
 ```
 
 Script mencatat GPU aktual, dimensi canvas, frame time, draw calls, triangle, geometry, jumlah instance dan console. Hasil JSON/screenshot di test-results; `BROWSER_REPORT_DIR` dapat diganti. Flag fallback SwiftShader tidak membuktikan GPU software; baca field GPU laporan. Skenario ini mengukur renderer sintetis, bukan acceptance gameplay/performa/audio manual di perangkat demo. Spike frame tetap perlu diperhatikan. Konversi scenery memerlukan source-index.json berupa array `{ "title": "PineTree_1.obj", "url": "URL Drive asli" }` untuk keenam file OBJ/MTL, selain dua file lisensi asli. Manifest output menyimpan provenance tanpa URL unduhan sementara.
+
+
+## Sinkronisasi backend — 22 Oktober 2026
+
+Branch FE menggabungkan main e91a03f melalui dharu/monad-checks 98b8993. Jalur lokal seed local/event, room/penonton, gangguan, reconnect, summary dan voucher sudah diuji terhadap server yang benar-benar mendengarkan HTTP/WS. Tidak ada bypass auth produksi: JWT ES256 baru ditandatangani dengan key test sementara; hanya lookup user Privy eksternal dan chain diganti fixture. Run milik host lain ditolak tanpa mutasi. Watch/summary tetap publik.
+
+Untuk mencoba login asli, isi backend/.env dari backend/.env.example: App ID yang sama, verification key publik, App Secret BARU yang sudah dirotasi, JWT_SECRET acak, PUBLIC_ORIGIN/CORS sesuai origin FE. Jangan gunakan secret yang pernah dibagikan dalam chat. Jalankan `pnpm --filter @racing-gang/backend dev` (default port 8080), lalu atur frontend/.env.local:
+
+```dotenv
+VITE_DATA_MODE=live
+VITE_API_URL=http://127.0.0.1:8080
+VITE_WS_URL=ws://127.0.0.1:8080
+```
+
+Restart Vite. VITE_DATA_MODE=live berarti membaca backend; backend CHAIN_MODE=mock tetap blockchain simulasi. Label /health menyatakan mock/live/unknown; receipt simulasi tidak menjadi bukti testnet. CHAIN_MODE=live masih ditahan implementasi relayer/indexer/signer tim.
+
+Adapter voucher hanya meminta reservasi tier menggunakan token baru dan memvalidasi buyer/cost/nonce/expiry/signature. Tidak ada auto-retry pada hasil POST ambigu, kredit saldo lokal, atau transaksi wallet. Audit UI publik dan pembelian belum diimplementasikan.
+
+```powershell
+pnpm -r --workspace-concurrency=1 test
+pnpm -r --workspace-concurrency=1 typecheck
+pnpm --filter @racing-gang/frontend build
+# Hanya integrasi FE dengan backend; tidak perlu kredensial asli:
+pnpm --filter @racing-gang/backend test -- test/frontend.integration.test.mjs
+```
+
+Regresi browser: test:browser, test:network, test:hud, test:rooms dan test:results memakai Vite development dengan App ID kosong, data mode mock, API/WS kosong. test:service memakai Vite terpisah dengan App ID kosong, data mode live, API berisi origin fixture (GET /health dicegat oleh Playwright); tidak memakai backend atau login. Seluruh server tes hanya lokal. Detail bukti dan batasan terbaru ada di .context/SYNC_IMPLEMENTATION.md.

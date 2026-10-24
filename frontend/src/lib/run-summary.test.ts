@@ -3,7 +3,7 @@ import { createSummaryApi, RunSummaryMonitor, summaryStats } from './run-summary
 import type { RunSummaryResponse } from '@racing-gang/config/protocol';
 const id=`0x${'11'.repeat(32)}` as const;
 const row={index:1,tick:10,vehicleType:1 as const,coins:200,inputHash:`0x${'22'.repeat(32)}` as const,txHash:null,blockNumber:null};
-const summary:RunSummaryResponse={runId:id,player:`0x${'33'.repeat(20)}`,seed:`0x${'44'.repeat(32)}`,seedBlock:1,configVersion:1,carTier:0,roomCode:null,lifecycle:'ENDED',result:'PARTIAL',chainStatus:'PENDING',endReason:'CRASH',endTick:50,nearMisses:2,startAt:1000,createdAt:500,nearMissList:[row]};
+const summary:RunSummaryResponse={runId:id,player:`0x${'33'.repeat(20)}`,seed:`0x${'44'.repeat(32)}`,seedBlock:1,configVersion:1,carTier:0,roomCode:null,lifecycle:'ENDED',result:'PARTIAL',chainStatus:'PENDING',endReason:'CRASH',endTick:50,nearMisses:2,finalHash:null,startAt:1000,createdAt:500,nearMissList:[row]};
 it('reads the exact public run without token, POST or local claims',async()=>{
   const calls:any[]=[];const api=createSummaryApi('https://game.test/',async(url,init)=>{calls.push({url,init});return Response.json(summary);});expect(await api.read(id)).toEqual(summary);expect(calls[0].url).toBe(`https://game.test/runs/${id}`);expect(calls[0].init.headers.Authorization).toBeUndefined();expect(calls[0].init.method).toBeUndefined();
 });
@@ -30,4 +30,13 @@ it('retains last known data with an error and later recovers chain status',async
 });
 it('rejects a backend regression from ended to running and stable metadata changes',async()=>{
   let body=summary;const monitor=new RunSummaryMonitor(id,{read:async()=>body});await monitor.poll();body={...summary,lifecycle:'RUNNING',result:null,endReason:null,endTick:null};await monitor.poll();expect(monitor.status).toBe('error');expect(monitor.summary?.lifecycle).toBe('ENDED');body={...summary,player:`0x${'66'.repeat(20)}`};await monitor.poll();expect(monitor.status).toBe('error');expect(monitor.summary?.player).toBe(summary.player);monitor.dispose();
+});
+
+it('rejects malformed final hashes instead of accepting a misleading audit summary',async()=>{
+  await expect(createSummaryApi('https://game.test',async()=>Response.json({...summary,finalHash:'bad'})).read(id)).rejects.toMatchObject({code:'INVALID_RESPONSE'});
+});
+it('accepts an authoritative seed change only while the previous summary has not started',async()=>{
+  let body:RunSummaryResponse={...summary,lifecycle:'CREATED',result:null,endReason:null,endTick:null,startAt:null,finalHash:null,nearMisses:0,nearMissList:[]};
+  const monitor=new RunSummaryMonitor(id,{read:async()=>body});await monitor.poll();const seed=`0x${'77'.repeat(32)}` as const;body={...body,lifecycle:'RUNNING',startAt:1000,seed};await monitor.poll();expect(monitor.status).toBe('ready');expect(monitor.summary?.seed).toBe(seed);
+  body={...body,seed:summary.seed};await monitor.poll();expect(monitor.status).toBe('error');expect(monitor.summary?.seed).toBe(seed);monitor.dispose();
 });

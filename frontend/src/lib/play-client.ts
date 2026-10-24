@@ -13,7 +13,7 @@ function valid(m:any):m is PlayS2C {
   if(!m||typeof m!=='object')return false;
   switch(m.t){
     case 'pong':return integer(m.clientMs)&&integer(m.serverMs);
-    case 'run.go':return integer(m.startAt);
+    case 'run.go':return integer(m.startAt)&&(m.seed===undefined||hex(m.seed));
     case 'disruption.scheduled':return text(m.id)&&typeof m.by==='string'&&m.by.length<=100&&integer(m.warnTick,RUN_TICKS)&&Array.isArray(m.lanes)&&m.lanes.every((n:unknown)=>integer(n,3))&&
       (m.kind==='NITRO'?m.lanes.length===0:m.kind==='SPIKES'?m.lanes.length===1:m.kind==='RED'&&m.lanes.length===1&&integer(m.durationIndex,2));
     case 'nearMiss.verified':return integer(m.index)&&m.index>0&&integer(m.tick,RUN_TICKS)&&integer(m.vehicleType,1)&&integer(m.coins);
@@ -30,6 +30,7 @@ class NetworkRunner extends LocalRunner {
   drive(ms:number){super.advance(ms);}
 }
 export class PlayClient {
+  readonly params:SimParams;
   readonly runner:NetworkRunner;
   status:Status='idle';error:string|null=null;result:RunResult|null=null;
   readonly verified=new Map<number,Extract<PlayS2C,{t:'nearMiss.verified'}>>();
@@ -39,8 +40,8 @@ export class PlayClient {
   private startAt:number|null=null;private lastClock=0;private lastPublish=-Infinity;private lastPing=-Infinity;
   private offlineAt:number|null=null;private readySent=false;private endSent=false;private specSeq=0;
   private outbox:PlayC2S[]=[];private acks=new Map<string,{fingerprint:string;applied:boolean;generation:number}>();
-  constructor(readonly params:SimParams,private url:string,private now=()=>performance.timeOrigin+performance.now(),private factory:(url:string)=>SocketPort=url=>new WebSocket(url)){
-    this.runner=new NetworkRunner(params,()=>this.update());
+  constructor(params:SimParams,private url:string,private now=()=>performance.timeOrigin+performance.now(),private factory:(url:string)=>SocketPort=url=>new WebSocket(url)){
+    this.params={...params};this.runner=new NetworkRunner(this.params,()=>this.update());
   }
   get pendingCount(){return this.outbox.length;}
   async connect(getToken:()=>Promise<string|null>){
@@ -79,6 +80,10 @@ export class PlayClient {
     }else if(m.t==='run.go'){
       if(this.startAt!==null)return;
       if(!this.readySent){this.fail('Waktu mulai diterima sebelum koneksi siap.');return;}
+      if(m.seed!==undefined){
+        if(!this.runner.setSeedBeforeStart(m.seed)){this.fail('Seed run diterima setelah permainan dimulai.');return;}
+        this.params.seed=m.seed;
+      }
       this.startAt=m.startAt;const serverNow=this.now()+this.offset;
       this.runner.start();this.runner.countdownMs=Math.max(0,m.startAt-serverNow);this.lastClock=serverNow;
       this.runner.drive(Math.max(0,serverNow-m.startAt));this.updateStatus();
@@ -121,7 +126,8 @@ export class PlayClient {
     if(this.expireOffline())return;
     if(this.startAt===null){if(this.socket?.readyState===1&&this.now()-this.connectedAt>10000){this.fail('Server belum memberikan waktu mulai. Periksa run aktif sebelum mencoba lagi.');return;}if(this.socket?.readyState===1&&this.now()-this.lastPing>=2000)this.ping();return;}
     this.update();this.flush();
-    if(this.now()-this.lastPublish>=NET.watermarkEveryMs){this.lastPublish=this.now();const view=this.runner.current;this.send({t:'watermark',tick:view.tick});this.send({t:'snapshot',tick:view.tick,x:view.player.x,z:view.player.z,speed:view.player.speed,targetLane:view.player.targetLane,nearMisses:view.nearMisses});}
+    const finishing=this.runner.phase==='ended'&&!this.endSent;
+    if(finishing||this.now()-this.lastPublish>=NET.watermarkEveryMs){this.lastPublish=this.now();const view=this.runner.current;this.send({t:'watermark',tick:view.tick},finishing);this.send({t:'snapshot',tick:view.tick,x:view.player.x,z:view.player.z,speed:view.player.speed,targetLane:view.player.targetLane,nearMisses:view.nearMisses});}
     if(this.runner.phase==='ended'&&!this.endSent){this.endSent=true;const view=this.runner.current;this.send({t:'run.end',tick:view.tick,reason:view.endReason!,nearMisses:view.nearMisses,inputHash:this.runner.sim.inputHash},true);}
   }
   private expireOffline(){if(!this.stopped&&this.offlineAt!==null&&this.now()-this.offlineAt>NET.offlineGraceMs){this.status='expired';this.error='Koneksi terputus terlalu lama. Periksa hasil run sebelum membuat run baru.';this.outbox=[];this.generation++;const socket=this.socket;this.socket=null;socket?.close();return true;}return false;}

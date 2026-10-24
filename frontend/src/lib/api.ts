@@ -8,7 +8,11 @@ export function createAuthApi(baseUrl: string, fetcher: typeof fetch = fetch): A
     catch { throw new ApiError('Backend tidak terjangkau. Periksa koneksi dan coba lagi.', 'NETWORK'); }
     if (response.status === 401) throw new ApiError('Sesi berakhir. Masuk lagi.', 'UNAUTHORIZED');
     const body = await response.json().catch(() => null);
-    if (!response.ok) throw new ApiError('Permintaan login ditolak backend. Coba masuk lagi.', body?.error?.code || 'API_ERROR');
+    if (!response.ok) {
+      const code=body?.error?.code||'API_ERROR';
+      const message=code==='WALLET_NOT_READY'?'Akun balap belum siap. Selesaikan pembuatan wallet lalu coba lagi.':code==='AUTH_PROVIDER_UNAVAILABLE'?'Layanan akun sementara belum tersedia. Coba lagi sebentar tanpa mengganti akun.':'Permintaan login ditolak backend. Coba masuk lagi.';
+      throw new ApiError(message,code);
+    }
     if (!body) throw new ApiError('Respons backend tidak valid.', 'INVALID_RESPONSE');
     return body;
   }

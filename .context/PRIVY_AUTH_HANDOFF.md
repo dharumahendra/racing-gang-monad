@@ -78,3 +78,12 @@ Google login mengurangi langkah onboarding; pendanaan gas relayer dan harga MON 
 - [Access token verification](https://docs.privy.io/authentication/user-authentication/access-tokens)
 
 Belum ada pesan yang dikirim ke Dharu/Bayu, perubahan dashboard, deployment, atau transaksi yang dilakukan.
+
+
+## Pembaruan sinkronisasi — 22 Oktober 2026
+
+Backend Dharu sekarang sudah masuk branch FE. Implementasi backend/src/auth/privy.ts menggunakan jose untuk signature ES256, issuer/audience/expiry, lalu lookup embedded wallet ke API Privy dan menyimpan binding DID/wallet di SQLite. Rekomendasi SDK di atas adalah catatan desain awal; implementasi aktif memakai verifier tersebut. Auth UI tetap Google/embedded wallet dan token segar dari SDK.
+
+Tes integrasi FE → HTTP/WS → verifier/DB asli lulus menggunakan key ES256 sementara dan fixture lookup user eksternal. Audience salah ditolak sebelum lookup; anonymous create ditolak; akun B tidak dapat memakai room A; forged buyer voucher ditolak tanpa perubahan reservasi. Ini bukan bukti Google OAuth, provisioning wallet atau jaringan Privy produksi.
+
+App ID publik sudah dikonfigurasi dan konfigurasi SDK nyata HTTP 200. Langkah berikutnya memerlukan verification key serta App Secret BARU setelah rotasi di dashboard, hanya di backend/.env/hosting, lalu uji dua akun Google nyata. Secret lama dari chat tidak dipakai/disimpan. Origin dev harus sesuai PUBLIC_ORIGIN/CORS dan daftar origin Privy. Backend source siap tidak berarti layanan terpasang atau chain live siap.
