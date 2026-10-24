@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CARS, EntryKind, RUN_TICKS, VEHICLE, laneCenter } from '@racing-gang/config';
+import { CARS, EntryKind, PLAYER_X_MAX, PLAYER_X_MIN, RUN_TICKS, VEHICLE, laneCenter } from '@racing-gang/config';
 import { playRun } from '../src/dev/index';
 import { appendHash, initialHash } from '../src/hash';
 import { newTrack, updateTrack } from '../src/nearMiss';
@@ -55,12 +55,60 @@ describe('Sim', () => {
     expect(() => sim.step([{ tick: 2, kind: EntryKind.LEFT, data: 0, seq: 1 }])).toThrow();
   });
 
-  it('pindah lajur bergerak bertahap dan berhenti di pusat lajur', () => {
-    const sim = new Sim({ runId: hex('r'), seed: hex('s'), carTier: 0 });
-    sim.step([{ tick: 1, kind: EntryKind.RIGHT, data: 0, seq: 1 }]);
-    expect(sim.view().player.x).toBe(laneCenter(1) + CARS[0].lateral);
-    for (let i = 0; i < 20; i++) sim.step([]);
-    expect(sim.view().player.x).toBe(laneCenter(2));
+  describe('setir tahan (CONFIG_VERSION 2)', () => {
+    const lat = CARS[0].lateral;
+    const input = (sim: Sim, ...kinds: EntryKind[]) =>
+      sim.step(kinds.map((kind, i) => ({ tick: sim.tick + 1, kind, data: 0, seq: sim.tick * 10 + i + 1 })));
+
+    it('bergeser selama ditahan dan berhenti di tengah garis saat dilepas', () => {
+      const sim = new Sim({ runId: hex('r'), seed: hex('s'), carTier: 0 });
+      input(sim, EntryKind.RIGHT);
+      expect(sim.view().player).toMatchObject({ x: laneCenter(1) + lat, steer: 1, targetLane: 2 });
+      for (let i = 0; i < 5; i++) input(sim);
+      expect(sim.view().player.x).toBe(laneCenter(1) + 6 * lat);
+      input(sim, EntryKind.RIGHT_OFF);
+      const x = sim.view().player.x;
+      expect(x).toBe(laneCenter(1) + 6 * lat); // tick pelepasan tidak bergeser
+      for (let i = 0; i < 10; i++) input(sim);
+      expect(sim.view().player).toMatchObject({ x, steer: 0 });
+      expect(x).toBeGreaterThan(laneCenter(1));
+      expect(x).toBeLessThan(laneCenter(2));
+    });
+
+    it('dibatasi pusat lajur paling kiri dan paling kanan', () => {
+      const sim = new Sim({ runId: hex('r'), seed: hex('s'), carTier: 0 });
+      input(sim, EntryKind.LEFT);
+      for (let i = 0; i < 13; i++) input(sim); // 350 cm butuh 12 tick; sisanya tertahan di batas
+      expect(sim.view().player).toMatchObject({ x: PLAYER_X_MIN, targetLane: 0 });
+      input(sim, EntryKind.LEFT_OFF, EntryKind.RIGHT);
+      for (let i = 0; i < 36; i++) input(sim); // 1050 cm butuh 35 tick
+      expect(sim.view().player).toMatchObject({ x: PLAYER_X_MAX, targetLane: 3 });
+    });
+
+    it('dua tombol: yang terakhir ditekan menang; melepasnya kembali ke tombol yang masih ditahan', () => {
+      const sim = new Sim({ runId: hex('r'), seed: hex('s'), carTier: 0 });
+      input(sim, EntryKind.LEFT);
+      input(sim, EntryKind.RIGHT);
+      expect(sim.view().player.steer).toBe(1);
+      input(sim, EntryKind.LEFT_OFF); // bukan arah aktif: tetap kanan
+      expect(sim.view().player.steer).toBe(1);
+      input(sim, EntryKind.LEFT);
+      input(sim, EntryKind.LEFT_OFF); // kembali ke kanan yang masih ditahan
+      expect(sim.view().player.steer).toBe(1);
+      input(sim, EntryKind.RIGHT_OFF);
+      expect(sim.view().player.steer).toBe(0);
+      input(sim, EntryKind.RIGHT_OFF, EntryKind.LEFT_OFF); // lepas tanpa tekan: tidak berefek
+      expect(sim.view().player.steer).toBe(0);
+    });
+
+    it('tekan berulang (auto-repeat keyboard) tidak mempercepat geseran', () => {
+      const a = new Sim({ runId: hex('r'), seed: hex('s'), carTier: 0 });
+      const b = new Sim({ runId: hex('r'), seed: hex('s'), carTier: 0 });
+      input(a, EntryKind.RIGHT);
+      input(b, EntryKind.RIGHT);
+      for (let i = 0; i < 5; i++) { input(a); input(b, EntryKind.RIGHT, EntryKind.RIGHT); }
+      expect(b.view().player.x).toBe(a.view().player.x);
+    });
   });
 
   it('hash chain: SPEC dulu lalu input, tidak tergantung urutan array', () => {

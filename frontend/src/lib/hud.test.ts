@@ -15,7 +15,7 @@ it('shows all pending disruptions with exact 60-tick countdown and human lane la
   expect(laneWarnings(current).filter(l=>l.kind==='RED').map(l=>l.lane)).toEqual([0,1]);
 });
 it('keeps actual +100/+200 near-miss events available even when a render frame skips ticks',()=>{
-  const runner=new LocalRunner({...params,seed:'0x8cfd1f92705b1e83840e3e257e0120b7fc40a9569070f053c50a1d6ad428d684'});runner.start();runner.advance(3000);runner.input(2);runner.advance(2400);
+  const runner=new LocalRunner({...params,seed:'0x8cfd1f92705b1e83840e3e257e0120b7fc40a9569070f053c50a1d6ad428d684'});runner.start();runner.advance(3000);runner.input(2);runner.advance(400);runner.input(6);runner.advance(2000);
   expect(runner.events.some(e=>e.type==='NEAR_MISS')).toBe(true);const pops=nearMissPops(runner.events,runner.current.tick);expect(pops.length).toBeGreaterThan(0);expect(pops.every(p=>p.coins===100||p.coins===200)).toBe(true);expect(nearMissPops(runner.events,runner.current.tick+100)).toEqual([]);
 });
 it('joins receipts and verified events by index even when a receipt arrives first, without crediting a balance',()=>{

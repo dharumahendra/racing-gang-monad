@@ -1,4 +1,4 @@
-import { EntryKind, NET, RUN_TICKS, encodeRedData, type PlayerInputKind } from '@racing-gang/config';
+import { EntryKind, NET, RUN_TICKS, encodeRedData, isPlayerInputKind, type PlayerInputKind } from '@racing-gang/config';
 import type { PlayC2S, PlayS2C, RunResult, DisruptionScheduled } from '@racing-gang/config/protocol';
 import type { SimParams } from '@racing-gang/sim';
 import { LocalRunner } from './runner';
@@ -123,7 +123,7 @@ export class PlayClient {
   }
   input(kind:PlayerInputKind){
     if(this.expireOffline())return;
-    this.update();if(this.stopped||['error','expired','result'].includes(this.status)||![1,2,3,4].includes(kind))return;
+    this.update();if(this.stopped||['error','expired','result'].includes(this.status)||!isPlayerInputKind(kind))return;
     const entry=this.runner.input(kind);if(entry)this.send({t:'input',tick:entry.tick,kind,seq:entry.seq},true);
   }
   pump(){

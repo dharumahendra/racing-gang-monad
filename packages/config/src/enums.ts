@@ -1,21 +1,32 @@
 // Kode numerik yang dipakai bersama oleh sim, server, kontrak, dan frontend.
 // Pakai objek `as const`, bukan `enum`, supaya bisa dijalankan tanpa transpile khusus.
 
-/** Jenis entri log input (TECH_SPEC §3.2). Nilai ini ikut di-hash, jangan diubah. */
+/**
+ * Jenis entri log input (TECH_SPEC §3.2). Nilai ini ikut di-hash, jangan diubah.
+ * Sejak CONFIG_VERSION 2 setir bersifat tahan: LEFT/RIGHT = tombol ditekan, LEFT_OFF/RIGHT_OFF = dilepas.
+ */
 export const EntryKind = {
   LEFT: 1,
   RIGHT: 2,
   BRAKE_ON: 3,
   BRAKE_OFF: 4,
+  LEFT_OFF: 5,
+  RIGHT_OFF: 6,
   SPEC_NITRO: 10,
   SPEC_SPIKES: 11,
   SPEC_RED: 12,
 } as const;
 export type EntryKind = (typeof EntryKind)[keyof typeof EntryKind];
-export type PlayerInputKind = typeof EntryKind.LEFT | typeof EntryKind.RIGHT | typeof EntryKind.BRAKE_ON | typeof EntryKind.BRAKE_OFF;
+export type PlayerInputKind =
+  | typeof EntryKind.LEFT
+  | typeof EntryKind.RIGHT
+  | typeof EntryKind.BRAKE_ON
+  | typeof EntryKind.BRAKE_OFF
+  | typeof EntryKind.LEFT_OFF
+  | typeof EntryKind.RIGHT_OFF;
 export type SpecEntryKind = typeof EntryKind.SPEC_NITRO | typeof EntryKind.SPEC_SPIKES | typeof EntryKind.SPEC_RED;
 
-export const isPlayerInputKind = (k: number): k is PlayerInputKind => k >= 1 && k <= 4;
+export const isPlayerInputKind = (k: number): k is PlayerInputKind => k >= 1 && k <= 6;
 export const isSpecEntryKind = (k: number): k is SpecEntryKind => k >= 10 && k <= 12;
 
 /** Alasan run berakhir, sama dengan `reason` di `RunRegistry` (TECH_SPEC §6.1). */

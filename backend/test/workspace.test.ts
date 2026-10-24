@@ -5,7 +5,7 @@ import { Sim } from '@racing-gang/sim';
 
 describe('workspace', () => {
   it('backend bisa meng-import config, protocol, dan sim', () => {
-    expect(CONFIG_VERSION).toBe(1);
+    expect(CONFIG_VERSION).toBe(2);
     expect(CARS).toHaveLength(5);
     const msg: PlayC2S = { t: 'watermark', tick: 0 };
     expect(msg.t).toBe('watermark');

@@ -58,7 +58,7 @@ describe('config', () => {
   });
 
   it('kode EntryKind tidak berubah (ikut di-hash)', () => {
-    expect(EntryKind).toEqual({ LEFT: 1, RIGHT: 2, BRAKE_ON: 3, BRAKE_OFF: 4, SPEC_NITRO: 10, SPEC_SPIKES: 11, SPEC_RED: 12 });
+    expect(EntryKind).toEqual({ LEFT: 1, RIGHT: 2, BRAKE_ON: 3, BRAKE_OFF: 4, LEFT_OFF: 5, RIGHT_OFF: 6, SPEC_NITRO: 10, SPEC_SPIKES: 11, SPEC_RED: 12 });
   });
 
   it('deployment Monad testnet terisi; null kalau alamat belum ada', () => {
