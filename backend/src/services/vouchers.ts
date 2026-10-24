@@ -1,7 +1,7 @@
 // Voucher pembelian mobil (TECH_SPEC §5.5, §6.3, BACKEND_PLAN J).
 // Cek di sini hanya untuk UX; yang menegakkan tetap CarNFT.buy(). Koin baru dipotong saat event Purchased terbaca.
 import { randomBytes } from 'node:crypto';
-import { and, eq, gt, lt } from 'drizzle-orm';
+import { and, eq, gt, lt, lte } from 'drizzle-orm';
 import { CARS, CHAIN, MAX_TIER } from '@racing-gang/config';
 import type { Address, VoucherResponse } from '@racing-gang/config/protocol';
 import type { Chain } from '../chain/ports';
@@ -49,6 +49,12 @@ export async function issueVoucher({ db, chain, now }: Deps, buyer: Address, tie
   return db.transaction((tx) => {
     const again = activeReservation(tx as unknown as Db, buyer, tier, t);
     if (again) return again;
+    // Reservasi kedaluwarsa untuk tier yang sama dilepas sekarang (tidak menunggu job + margin): kalau voucher lama
+    // masih sempat dipakai di chain, buy() kedua untuk tier yang sama ditolak kontrak (AlreadyOwned).
+    tx.update(reservations)
+      .set({ status: 'RELEASED' })
+      .where(and(eq(reservations.address, buyer), eq(reservations.tier, tier), eq(reservations.status, 'ACTIVE'), lte(reservations.expiresAt, t)))
+      .run();
     const available = balance(tx as unknown as Db, buyer) - reserved(tx as unknown as Db, buyer);
     if (available < car.coinCost) {
       throw new AppError(409, 'INSUFFICIENT_COINS', `Koin kurang: butuh ${car.coinCost}, tersedia ${available}`);

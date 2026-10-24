@@ -28,7 +28,8 @@ export async function runRoutes(app: FastifyInstance, ctx: AppContext) {
     return {
       runId: r.id as Hex, player: r.address as Address, carTier: r.carTier, seed: r.seed as Hex, seedBlock: r.seedBlock,
       configVersion: r.configVersion, roomCode: r.roomCode, lifecycle: r.lifecycle, result: r.result, chainStatus: r.chainStatus,
-      endReason: r.endReason as EndReasonName | null, endTick: r.endTick, nearMisses: r.nearMisses, startAt: r.startAt, createdAt: r.createdAt,
+      endReason: r.endReason as EndReasonName | null, endTick: r.endTick, nearMisses: r.nearMisses, finalHash: r.finalHash as Hex | null,
+      startAt: r.startAt, createdAt: r.createdAt,
       nearMissList: list.map((n) => ({
         index: n.idx, tick: n.tick, vehicleType: n.vehicleType as VehicleType, coins: n.coins, inputHash: n.inputHash as Hex,
         txHash: n.txHash as Hex | null, blockNumber: n.blockNumber,

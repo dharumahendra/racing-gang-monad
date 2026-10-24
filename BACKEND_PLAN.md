@@ -509,21 +509,23 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 
 | Item | Bagian | Terblokir oleh | Yang dibutuhkan |
 |---|---|---|---|
-| Tes `blockhash` Monad = hash blok dari RPC | Fase 6 | Bayu | Kontrak kecil `h(n)` di testnet. Kalau beda, set `SEED_SOURCE=event` (sudah didukung) |
+| ~~Tes `blockhash` Monad = hash blok dari RPC~~ | Fase 6 | **Selesai 22 Okt** tanpa wallet: `pnpm --filter @racing-gang/backend check-monad` (eth_call init code `BLOCKHASH`). 7/7 sampel sama, termasuk `latest − 3`, jadi `SEED_SOURCE=local` aman. Jalur cadangan `SEED_SOURCE=event` juga sudah diuji | — |
 | `CHAIN_MODE=live`: relayer, indexer, voucher signer | Fase 6, CH-1/2/3 | Bayu | Implementasi `RelayerPort`, indexer yang memanggil `bus.emit`, `VoucherSigner` (lihat `backend/src/chain/ports.ts`). `live.ts` sengaja menolak start sampai ini ada |
 | Alamat dan ABI kontrak di `packages/config/deployments/monad-testnet.json` | Fase 6, SC-5 | Bayu | Deploy kontrak ke Monad testnet |
 | Test Forge: hash log Solidity = `appendHash` sim | D3 | Bayu | Satu test `forge` dengan input sama dengan test sim |
-| Konfirmasi `CHAIN_ID` dan URL explorer resmi | Env | Bayu | Isi `CHAIN_ID` dan `EXPLORER_URL` |
-| Latensi on-chain nyata ≤ 2 dtk dan beban relayer di testnet | Fase 6 | Setelah CH-1 | `bot --parallel 5` dengan `CHAIN_MODE=live` |
+| Konfirmasi URL explorer resmi | Env | Bayu | `CHAIN_ID` = 10143 sudah terkonfirmasi dari RPC (`eth_chainId`). Waktu blok terukur ±300 ms (PRD menulis ±400 ms), jadi jendela `blockhash` 256 blok ≈ 77 dtk: relayer harus mengirim `RunStart` dalam beberapa detik setelah `POST /runs`. Tinggal `EXPLORER_URL` |
+| Latensi on-chain nyata ≤ 2 dtk dan beban relayer di testnet | Fase 6 | Setelah CH-1 | `bot --parallel 5` dengan `CHAIN_MODE=live`. Metriknya sudah ada: `/health.onChainLatency` (median, p90) dan `scripts/status.ts` memberi peringatan kalau median > 2 dtk |
+| Audit terhadap event on-chain | AU-1 | Setelah SC-5 | `pnpm --filter @racing-gang/backend audit -- --run <id> --rpc <url> --registry <alamat>`. Logika pembandingnya `auditRun` di `packages/sim`, bisa langsung dipakai halaman audit `/run/:id`. Jalur terhadap catatan backend sudah diuji; jalur event on-chain menunggu kontrak |
 | Deploy server publik (HTTPS/WSS, volume, 1 instance) | Fase 10 | Dharu | Akun hosting dan domain. Image sudah siap |
 | Uji dari HP lewat internet, 3+ HP | Fase 10–11 | Setelah deploy + frontend | URL publik backend dan frontend |
 | Golden test di browser (`/dev/golden`) | D3 | Raka | Sudah dikerjakan di branch `raka/foundation` (`frontend/src/pages/Golden.tsx`); tinggal di-merge |
+| Merge `raka/foundation` ke `main` | Repo | Raka / pemilik repo | Sudah diuji di worktree gabungan (22 Okt): satu-satunya konflik `pnpm-lock.yaml` (selesai dengan `pnpm install`); typecheck semua paket, 200 test (frontend 91), dan build frontend lulus. Klien asli frontend (`PlayClient`, `WatchClient`, room/run/summary API) melawan backend asli: room + run + penonton VERIFIED, mepet cocok, semua pesan server lolos validasi frontend; putus 3 dtk tetap VERIFIED |
 | Uji login Privy + Google sungguhan | Auth | Dharu + Raka | Backend sudah menerima token Privy (diuji dengan kunci dan server Privy tiruan). Untuk uji nyata: ambil **verification key** dan **app secret** dari dashboard Privy, isi `PRIVY_*` di `backend/.env`, daftarkan origin frontend, lalu login Google dari frontend |
 | Konflik `pnpm-lock.yaml` antara branch backend dan `raka/foundation` | Repo | Siapa pun yang merge kedua | Setelah merge, jalankan `pnpm install` lalu commit lockfile baru |
 | Review `protocol.ts` dan integrasi frontend | M0, FE-1–FE-8 | Raka | Lihat catatan frontend di P3 |
 | E2E-1 sampai E2E-7 | Fase 11 | Tim | Semua item di atas |
 | Akun presenter lulus Tier 1 secara manual | Fase 11 | Hari H | Main manual, bukan bot |
-| Keputusan balance syarat mepet | PRD §6.2 | Tim | `pnpm --filter @racing-gang/sim stats` (200 seed): Starter p50 55 mepet, 68% run lulus Tier 1 (syarat 40); Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Autopilot bukan manusia, jadi ini batas atas kasar. Putuskan sebelum kontrak di-deploy (syarat immutable) |
+| ~~Keputusan balance syarat mepet~~ | PRD §6.2 | — | **Diputuskan 22 Okt: tetap sesuai PRD (40 / 75 / 110 / 150).** Data `stats` (200 seed, autopilot): Starter p50 55 mepet, 68% run lulus Tier 1; Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Median mepet tidak naik untuk mobil yang lebih cepat (±48), jadi Tier 3/4 sangat langka. Kalau mau diubah, harus sebelum kontrak di-deploy (syarat immutable): ubah `CARS`, PRD §6.2, lalu `pnpm config:export` |
 | Merge branch ke `main` dan branch protection | Repo | Dharu | Keputusan pemilik repo |
 
 ### P3. Catatan untuk frontend (Raka)
@@ -533,10 +535,12 @@ Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan ter
 - Jangan kirim header `content-type: application/json` tanpa body (mis. `POST /rooms`); Fastify menolaknya dengan 400.
 - Jumlah penonton untuk host: polling `GET /rooms/:code`; `room.state` hanya dikirim ke penonton.
 - Kode error baru: `RATE_LIMITED`, `INTERNAL`, `RUN_NOT_ENDED`, `WALLET_NOT_READY` (409, embedded wallet belum dibuat), `AUTH_PROVIDER_UNAVAILABLE` (503, server Privy tidak bisa dihubungi).
+- `PlayClient` belum memakai `run.go.seed`. Hanya berpengaruh kalau backend terpaksa memakai `SEED_SOURCE=event` (blockhash Monad berbeda dari RPC); kalau terjadi, `PlayClient` harus mengganti sim dengan seed itu sebelum hitung mundur.
+- `pnpm install` di gabungan branch memberi peringatan peer dependency Privy (`react` 16–18 vs 19, `viem` 2.56.5 vs 2.57.7). Belum menyebabkan error di test dan build, tapi perlu dicek saat uji login Google sungguhan.
+- Setelah reconnect, kalau run sudah selesai saat offline, server mengirim `run.result` (sudah ditangani `PlayClient`).
 - Login: kirim access token Privy segar (`getAccessToken()`) sebagai `Authorization: Bearer` di REST dan `?token=` di `/ws/play`, seperti yang sudah dilakukan frontend. Endpoint `/auth/nonce` dan `/auth/verify` tidak ada di production.
 
 ### P4. Keterbatasan yang diketahui
 
 - Antrean relayer di mock ada di memori. Relayer live sebaiknya menyimpan antrean di DB: saat restart, backend mengirim ulang mepet dan `EndRec` yang belum tercatat, tapi `RunStart` yang hilang harus ditangani relayer.
-- Reservasi voucher yang kedaluwarsa baru dilepas 60 detik kemudian; selama jeda itu permintaan voucher baru bisa ditolak `INSUFFICIENT_COINS`.
 - Image Docker belum diuji di laptop (Docker Desktop tidak jalan), tapi lulus build dan smoke test di CI.

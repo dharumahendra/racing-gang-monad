@@ -16,7 +16,11 @@ const warn = (msg: string) => { problems++; console.log(`  ⚠ ${msg}`); };
 
 console.log(`Backend ${args.url}`);
 try {
-  const health = (await (await fetch(`${args.url}/health`)).json()) as { chainMode: string; relayerQueue: number };
+  const health = (await (await fetch(`${args.url}/health`)).json()) as {
+    chainMode: string;
+    relayerQueue: number;
+    onChainLatency: { samples: number; medianMs: number; p90Ms: number } | null;
+  };
   const config = (await (await fetch(`${args.url}/config`)).json()) as ConfigResponse;
   console.log(`  health      ${JSON.stringify(health)}`);
   console.log(`  chainId     ${config.chainId} · configVersion ${config.configVersion}`);
@@ -24,6 +28,8 @@ try {
   if (health.chainMode !== 'live') warn(`chainMode = ${health.chainMode} (bukan live; feed on-chain palsu)`);
   if (health.relayerQueue > 60) warn(`antrean relayer ${health.relayerQueue} (relayer tertinggal?)`);
   if (!config.contracts) warn('alamat kontrak belum ada di /config');
+  const lat = health.onChainLatency;
+  if (lat && lat.medianMs > 2000) warn(`median latensi on-chain ${lat.medianMs} ms > 2000 ms (PRD §11)`);
 } catch (e) {
   warn(`backend tidak bisa diakses: ${(e as Error).message}`);
 }

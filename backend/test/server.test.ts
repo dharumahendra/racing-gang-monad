@@ -23,7 +23,7 @@ describe('env', () => {
 describe('endpoint dasar', () => {
   it('/health', async () => {
     const res = await t.app.inject({ method: 'GET', url: '/health' });
-    expect(res.json()).toEqual({ ok: true, chainMode: 'mock', relayerQueue: 0, activeRuns: 0 });
+    expect(res.json()).toEqual({ ok: true, chainMode: 'mock', relayerQueue: 0, activeRuns: 0, onChainLatency: null });
   });
 
   it('/config berisi konstanta game, CARS dengan priceWei, dan kontrak null sebelum deploy', async () => {

@@ -218,6 +218,8 @@ export type RunSummaryResponse = {
   endReason: EndReasonName | null;
   endTick: number | null;
   nearMisses: number;
+  /** Hash chain log setelah tick terakhir yang terverifikasi (null sampai run selesai). */
+  finalHash: Hex | null;
   startAt: number | null;
   createdAt: number;
   nearMissList: NearMissInfo[];

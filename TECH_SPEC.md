@@ -314,7 +314,7 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 
 **Saat koneksi putus:** client tetap menjalankan sim, menyimpan `input` dan `disruption.ack` di buffer, lalu mengirim semuanya (berurutan) begitu tersambung. Gangguan penonton yang tidak diterima sebelum `warnTick` di-ack dengan `applied=false`.
 
-**Saat tersambung ulang:** server mengirim ulang `run.go`, `disruption.scheduled` yang belum di-ack, serta semua `nearMiss.verified` dan `nearMiss.recorded` run aktif. Client menghapus duplikat berdasarkan `index`. Koneksi baru dengan token yang sama menutup koneksi lama (kode 4000).
+**Saat tersambung ulang:** server mengirim ulang `run.go`, `disruption.scheduled` yang belum di-ack, serta semua `nearMiss.verified` dan `nearMiss.recorded` run aktif. Kalau run sudah selesai saat pemain offline (≤ 2 menit sebelumnya), server mengirim status mepet lalu `run.result`. Client menghapus duplikat berdasarkan `index`. Koneksi baru dengan token yang sama menutup koneksi lama (kode 4000).
 
 ### 4.2 Penonton — `/ws/watch?room=<KODE>&nick=<opsional>`
 
@@ -589,6 +589,8 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 4. Tunggu receipt, lalu refresh `/me`. Tampilkan lencana "Soulbound" dan tombol "Coba transfer" (P1, untuk demo: diharapkan gagal).
 
 ### 8.5 Halaman audit (P1, dikerjakan Bayu)
+
+Logika pembanding sudah ada di `packages/sim` sebagai `auditRun(log, records)` (dipakai juga CLI `backend/scripts/audit.ts`); halaman ini cukup mengisi `records` dari event on-chain dan menampilkan hasilnya.
 
 1. Ambil `GET /runs/:id/log`.
 2. Replay dengan `packages/sim` di browser untuk mendapatkan daftar mepet `{ index, tick, vehicleType, inputHash }`.

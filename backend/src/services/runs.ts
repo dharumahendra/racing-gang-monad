@@ -34,6 +34,15 @@ export class RunManager {
     return this.#byAddress.get(address);
   }
 
+  /** Run aktif pemain, atau run terakhirnya yang baru selesai (≤ 2 menit), untuk dikirim ulang saat reconnect. */
+  latestFor(address: Address): RunSession | undefined {
+    const active = this.#byAddress.get(address);
+    if (active) return active;
+    let latest: { s: RunSession; at: number } | undefined;
+    for (const r of this.#recent.values()) if (r.s.address === address && (!latest || r.at > latest.at)) latest = r;
+    return latest?.s;
+  }
+
   get(runId: Hex): RunSession | undefined {
     return this.#sessions.get(runId) ?? this.#recent.get(runId)?.s;
   }

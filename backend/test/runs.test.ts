@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { asc, eq } from 'drizzle-orm';
 import { CARS, EntryKind } from '@racing-gang/config';
 import type { Hex } from '@racing-gang/config/protocol';
-import { replay } from '@racing-gang/sim';
+import { auditRun, replay } from '@racing-gang/sim';
 import { mockBlockHash } from '../src/chain/mock';
 import { computeSeed } from '../src/chain/seed';
 import { rooms, runEntries, runs } from '../src/db/schema';
@@ -120,6 +120,17 @@ describe('/ws/play dan verifikasi', () => {
 
     const summary = (await t.app.inject({ method: 'GET', url: `/runs/${p.run.runId}` })).json();
     expect(summary.nearMissList.every((n: { txHash: string | null }) => n.txHash !== null)).toBe(true);
+    expect(summary.finalHash).toBe(p.client.sim.inputHash);
+
+    // Audit dari luar: log publik + catatan backend → semua cocok (sama dengan scripts/audit.ts).
+    const audit = auditRun(
+      { runId: log.runId, seed: log.seed, carTier: log.carTier, entries: log.entries },
+      {
+        nearMisses: summary.nearMissList,
+        end: { endTick: summary.endTick, totalNearMisses: summary.nearMisses, finalInputHash: summary.finalHash },
+      },
+    );
+    expect(audit.problems).toEqual([]);
     expect((await t.app.inject({ method: 'GET', url: '/health' })).json().activeRuns).toBe(0);
   });
 
@@ -194,6 +205,23 @@ describe('/ws/play dan verifikasi', () => {
     expect(p.client.result?.status).toBe('VERIFIED');
     while (t.chain.relayer.queueSize() > 0) await t.chain.flush(); // maks 60 mepet per batch
     await waitFor(() => p.client.recorded.length === p.client.localNearMisses.length, 'semua nearMiss.recorded');
+  });
+
+  it('run selesai saat pemain offline: run.result dikirim saat tersambung lagi', async () => {
+    const p = await startPlayer(t);
+    await playToEnd(t, p, async (step) => {
+      if (step === 20) {
+        p.ws.terminate();
+        await tick();
+        t.clock.advance(RUN_TIMEOUT_MS);
+        t.ctx.runs.checkTimeouts(); // server menutup run PARTIAL saat pemain offline
+        expect(p.client.result).toBeNull();
+        p.ws = await connect(t, p.token, (m) => p.client.handle(m));
+        await waitFor(() => p.client.result !== null, 'run.result setelah reconnect');
+      }
+    });
+    expect(p.client.result).toMatchObject({ status: 'PARTIAL', reason: 'TIMEOUT' });
+    expect(p.client.verified.length).toBe(runRow(p.run.runId).nearMisses);
   });
 
   it('klaim run.end yang berbeda → flag CLAIM_MISMATCH; input terlambat → LATE_INPUT', async () => {

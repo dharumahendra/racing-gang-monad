@@ -8,16 +8,26 @@ import type { Chain, ChainEvent } from '../chain/ports';
 import type { Db } from '../db/client';
 import { nearMisses, ownedCars, qualifications, reservations, runs } from '../db/schema';
 import type { Hub } from '../ws/hub';
+import type { LatencyStats } from './latency';
 import { addLedgerEntry } from './ledger';
 import type { RunManager } from './runs';
 
-type Deps = { db: Db; chain: Chain; hub: Hub; now: () => number; runs: RunManager };
+type Deps = {
+  db: Db;
+  chain: Chain;
+  hub: Hub;
+  now: () => number;
+  runs: RunManager;
+  latency?: LatencyStats;
+  /** Dipanggil setiap 20 sampel latensi baru (log server). */
+  onLatencyReport?: (s: NonNullable<ReturnType<LatencyStats['summary']>>) => void;
+};
 
 export function registerChainHandlers(deps: Deps) {
   deps.chain.bus.on((e) => handleChainEvent(deps, e));
 }
 
-export function handleChainEvent({ db, hub, now, runs: manager }: Deps, e: ChainEvent) {
+export function handleChainEvent({ db, hub, now, runs: manager, latency, onLatencyReport }: Deps, e: ChainEvent) {
   const run = 'runId' in e ? db.select().from(runs).where(eq(runs.id, e.runId)).get() : undefined;
 
   switch (e.type) {
@@ -43,6 +53,11 @@ export function handleChainEvent({ db, hub, now, runs: manager }: Deps, e: Chain
         .where(and(eq(nearMisses.runId, e.runId), eq(nearMisses.idx, e.index)))
         .run();
       const msg: PlayS2C = { t: 'nearMiss.recorded', index: e.index, txHash: e.txHash, blockNumber: Number(e.blockNumber), latencyMs: t - row.verifiedAt };
+      if (latency) {
+        latency.add(msg.latencyMs);
+        const s = latency.summary();
+        if (s && latency.total % 20 === 0) onLatencyReport?.(s);
+      }
       if (run) {
         hub.toPlayer(getAddress(run.address), msg);
         hub.toRoom(run.roomCode, msg);
