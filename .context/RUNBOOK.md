@@ -85,9 +85,9 @@ pnpm --filter @racing-gang/backend stress -- --players 25 --spectators 50
 
 | Item | Bukti yang diminta | Status 24 Okt |
 |---|---|---|
-| Login Google akun A dan B, wallet berbeda, `/me` cocok | Screenshot/alamat tersamarkan, log 401 untuk token lama | BLOCKED (dashboard Privy + `PRIVY_*` di `.env`) |
-| Run room + 3 gangguan dari 3 HP fisik | Video/foto, hasil `VERIFIED`, summary finalHash | BLOCKED (hosting publik + perangkat) |
+| Login Google akun A dan B, wallet berbeda, `/me` cocok | Screenshot/alamat tersamarkan, log 401 untuk token lama | Belum (konfigurasi siap: Railway + Vercel memakai app Privy `cmvlv4s3x…`; tinggal login manual dari Vercel) |
+| Run room + 3 gangguan dari 3 HP fisik | Video/foto, hasil `VERIFIED`, summary finalHash | Belum (hosting siap: Railway + Vercel; tinggal 3 HP) |
 | Mepet tercatat di Monad testnet | Tx hash + receipt sukses + event cocok | PASS 24 Okt (server lokal, bot): 6 run, 398 mepet tercatat, mis. tx `0x72fae47c…8a4f` status 1. Median 1,7 dtk untuk 1 pemain, 2,0 dtk untuk 5 pemain dengan RPC publik |
-| Pembelian Tier 1 + transfer ditolak (soulbound) | Tx `buy`, revert transfer | BLOCKED (private key voucher signer di `.env` + akun lulus); beli lolos di anvil |
+| Pembelian Tier 1 + transfer ditolak (soulbound) | Tx `buy`, revert transfer | PASS 24 Okt (bot, server lokal live): tx `buy` `0xfc637b2a…890b` sukses, tokenId 1 `locked`, `transferFrom` revert `Soulbound`, koin −3000 tepat sekali. Lewat UI Garage belum diuji |
 | Audit replay run | `pnpm --filter @racing-gang/backend run audit -- --url <api> --run <id>` (`run` wajib; tanpa itu pnpm menjalankan `pnpm audit` bawaan) | PASS 24 Okt: run `0x4ef19b79…4287` cocok dengan event on-chain |
 | Akun presenter lulus lewat permainan sah | Run asli, bukan edit DB/bot | Belum |
