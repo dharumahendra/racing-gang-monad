@@ -1,0 +1,11 @@
+<!doctype html><html><head><script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head><body style="margin:0"><script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+const sources=['/assets/unityfan/UF001.glb','/assets/unityfan/UF033.glb','/assets/unityfan/UF037.glb','/assets/carconcept/CarConcept.glb'];
+const tier=Number(new URLSearchParams(location.search).get('tier'));
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(1024,1024);renderer.setPixelRatio(1);renderer.setClearColor('#101216');document.body.append(renderer.domElement);
+const scene=new THREE.Scene();scene.add(new THREE.HemisphereLight(0xffffff,0x444455,3));const light=new THREE.DirectionalLight(0xffffff,5);light.position.set(-3,6,-4);scene.add(light);
+const camera=new THREE.PerspectiveCamera(38,1,.1,100);camera.position.set(-5,2.8,-6);camera.lookAt(0,.7,0);
+try{const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(sources[tier-1]);scene.add(gltf.scene);renderer.render(scene,camera);window.exportReady=true;}catch(e){window.exportError=String(e);}
+</script></body></html>
