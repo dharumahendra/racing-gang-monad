@@ -39,6 +39,7 @@ export class PlayClient {
   readonly qualified=new Map<number,Extract<PlayS2C,{t:'run.qualified'}>>();
   private socket:SocketPort|null=null;private generation=0;private stopped=false;
   private offset=0;private pingAt:number|null=null;private bestRtt=Infinity;private connectedAt=0;
+  private advancing=false;
   private startAt:number|null=null;private lastClock=0;private lastPublish=-Infinity;private lastPing=-Infinity;
   private offlineAt:number|null=null;private readySent=false;private endSent=false;private specSeq=0;
   private outbox:PlayC2S[]=[];private acks=new Map<string,{fingerprint:string;applied:boolean;generation:number}>();
@@ -90,7 +91,7 @@ export class PlayClient {
       }
       this.startAt=m.startAt;const serverNow=this.now()+this.offset;
       this.runner.start();this.runner.countdownMs=Math.max(0,m.startAt-serverNow);this.lastClock=serverNow;
-      this.runner.drive(Math.max(0,serverNow-m.startAt));this.updateStatus();
+      this.drive(Math.max(0,serverNow-m.startAt));this.updateStatus();
     }else if(m.t==='disruption.scheduled')this.disrupt(m);
     else if(m.t==='nearMiss.verified')this.verified.set(m.index,m);
     else if(m.t==='nearMiss.recorded')this.recorded.set(m.index,m);
@@ -116,10 +117,15 @@ export class PlayClient {
     this.send({t:'disruption.ack',id:m.id,applied},true);
   }
   private updateStatus(){if(this.status==='disconnected'||this.status==='connecting')return;this.status=this.runner.phase==='ended'?'waiting_result':this.runner.phase==='countdown'?'countdown':'running';}
+  private drive(ms:number){
+    this.advancing=true;
+    try{this.runner.drive(ms);}finally{this.advancing=false;}
+  }
   private update(){
-    if(this.startAt===null||this.stopped||['error','expired','result'].includes(this.status))return;
+    // A GO listener can send input while drive() is still before tick 1. Do not step recursively.
+    if(this.advancing||this.startAt===null||this.stopped||['error','expired','result'].includes(this.status))return;
     const clock=this.now()+this.offset;const delta=Math.max(0,clock-this.lastClock);this.lastClock=Math.max(this.lastClock,clock);
-    this.runner.drive(delta);this.updateStatus();
+    this.drive(delta);this.updateStatus();
   }
   input(kind:PlayerInputKind){
     if(this.expireOffline())return;

@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { EntryKind } from '@racing-gang/config';
+import { HeldDrivingInputs } from './driving-input';
 import { replay, Sim } from '@racing-gang/sim';
 import { PlayClient, type SocketPort } from './play-client';
 const params={runId:`0x${'11'.repeat(32)}` as const,seed:`0x${'22'.repeat(32)}` as const,carTier:0};
@@ -131,4 +132,18 @@ it('buffers steering release during disconnect and sends it once on reconnect',a
  expect(socket.sent.filter(m=>m.t==='input').map(m=>m.kind)).toEqual([EntryKind.RIGHT_OFF]);
  expect(f.client.runner.current.player.steer).toBe(0);
  expect(f.client.runner.log.filter(e=>e.kind===EntryKind.RIGHT_OFF)).toHaveLength(1);f.client.dispose();
+});
+
+it('sends countdown-held controls at tick 1 before the first covering watermark even if the clock advances during dispatch',async()=>{
+ const f=await setup();f.go();
+ const held=new HeldDrivingInputs(kind=>{f.setTime(4130);f.client.input(kind);},()=>f.client.runner.phase==='running',()=>f.client.runner.phase==='countdown'||f.client.runner.phase==='running');
+ const stop=f.client.runner.onRunning(()=>held.flush());
+ held.press('key:ArrowRight',EntryKind.RIGHT);held.press('pointer:1',EntryKind.BRAKE_ON);
+ f.setTime(3990);f.client.pump();f.setTime(4090);f.client.pump();
+ expect(f.client.runner.log.map(e=>[e.tick,e.kind])).toEqual([[1,EntryKind.RIGHT],[1,EntryKind.BRAKE_ON]]);
+ const input=f.socket.sent.findIndex(m=>m.t==='input');
+ const mark=f.socket.sent.findIndex(m=>m.t==='watermark'&&m.tick>=1);
+ expect(input).toBeGreaterThanOrEqual(0);expect(mark).toBeGreaterThan(input);
+ expect(f.socket.sent.filter(m=>m.t==='input').map(m=>m.tick)).toEqual([1,1]);
+ stop();f.client.dispose();
 });

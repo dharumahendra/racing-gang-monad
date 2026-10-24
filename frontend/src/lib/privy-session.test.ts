@@ -1,5 +1,6 @@
 import { it, expect } from 'vitest';
 import { createPrivySession } from './privy-session';
+import type { Account } from './session';
 const address = '0x1111111111111111111111111111111111111111';
 const who = { subject:'did:privy:one', address };
 const profile = { address, coins:0, coinsPending:0, coinsReserved:0, ownedTiers:[0], qualifiedTiers:[] } as const;
@@ -33,4 +34,34 @@ it('invalidates account A when Privy subject changes even if address is unchange
   const next=s.connect({subject:'did:privy:two',address},async()=>'b-token'); await new Promise(resolve=>setTimeout(resolve,0));
   releaseOld(account); await old; expect(s.getState().status).toBe('connecting');
   finish(account); await next; expect(s.getState().status).toBe('ready');
+});
+
+// Regresi: ganti akun Google (logout akun A lalu login akun B) tidak boleh menampilkan akun A,
+// walau respons /me akun A baru datang belakangan. Meniru urutan Bridge: reset() -> connect(B).
+it('ignores a late account-A profile after logging out and signing in as account B', async () => {
+  const addressB = '0x2222222222222222222222222222222222222222';
+  const accountA: Account = { ...account };
+  const accountB: Account = { ...account, address: addressB, coins: 999 };
+  let finishA!: (value: Account) => void;
+  const profiles: Record<string, Account> = {
+    'a-token': accountA,
+    'b-token': accountB,
+  };
+  const s = createPrivySession((token) =>
+    token === 'a-token' ? new Promise<Account>((resolve) => { finishA = resolve; }) : Promise.resolve(profiles[token]!),
+  );
+  // Login akun A: /me-nya menggantung.
+  const pendingA = s.connect(who, async () => 'a-token');
+  await new Promise((r) => setTimeout(r, 0));
+  expect(s.getState().status).toBe('connecting');
+  // Logout lalu login akun B (urutan Bridge pada perubahan identitas Privy).
+  s.reset();
+  await s.connect({ subject: 'did:privy:two', address: addressB }, async () => 'b-token');
+  expect(s.getState().status).toBe('ready');
+  expect(s.getState().account?.address).toBe(addressB);
+  // Respons akun A yang terlambat harus diabaikan sepenuhnya.
+  finishA(accountA); await pendingA;
+  expect(s.getState().status).toBe('ready');
+  expect(s.getState().account?.address).toBe(addressB);
+  expect(s.getState().account?.coins).toBe(999);
 });

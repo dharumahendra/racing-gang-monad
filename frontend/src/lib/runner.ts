@@ -11,6 +11,7 @@ export class LocalRunner {
   readonly events:SimEvent[]=[];
   private seq = 0;
   private pending: LogEntry[] = [];
+  private runningListeners = new Set<()=>void>();
   constructor(private readonly params: ConstructorParameters<typeof Sim>[0]) { this._sim = new Sim(params); this.current = this.sim.view(); this.previous = this.current; }
   get sim() { return this._sim; }
   setSeedBeforeStart(seed: ConstructorParameters<typeof Sim>[0]['seed']) {
@@ -18,6 +19,11 @@ export class LocalRunner {
     this._sim=new Sim({...this.params,seed});this.current=this._sim.view();this.previous=this.current;return true;
   }
   start() { if(this.phase==='idle') this.phase='countdown'; }
+  /** Notify controls synchronously at GO, before the first simulation tick. */
+  onRunning(listener:()=>void) {
+    this.runningListeners.add(listener);
+    return ()=>{this.runningListeners.delete(listener);};
+  }
   input(kind: PlayerInputKind) {
     if(this.phase!=='running')return null;
     const entry={tick:this.sim.tick+1,kind,data:0,seq:++this.seq};
@@ -32,6 +38,7 @@ export class LocalRunner {
     if(this.phase==='countdown') {
       const used=Math.min(ms,this.countdownMs); this.countdownMs-=used; ms-=used;
       if(this.countdownMs>0)return; this.phase='running';
+      for(const listener of this.runningListeners)listener();
     }
     this.accumulator+=ms;
     const step=1000/TICK_RATE;

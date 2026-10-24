@@ -48,3 +48,82 @@ it.each(['onPointerUp','onPointerCancel','onPointerLeave','onLostPointerCapture'
  handlers[event](e);handlers.onLostPointerCapture(e);
  expect(captures.size).toBe(0);expect(sent).toEqual([EntryKind.LEFT,EntryKind.LEFT_OFF]);
 });
+
+// --- Regresi: tombol yang ditahan selama hitung mundur harus langsung berlaku saat GO ---
+// Membungkus HeldDrivingInputs persis seperti useDrivingControls: active = running, trackable = countdown|running,
+// dan flush() dipanggil saat fase berpindah ke running.
+function harness(){
+ const sent:number[]=[];let phase:'idle'|'countdown'|'running'|'ended'='idle';
+ const held=new HeldDrivingInputs(k=>sent.push(k),()=>phase==='running',()=>phase==='countdown'||phase==='running');
+ return {sent,held,set(next:typeof phase){phase=next;if(next==='running')held.flush();else held.releaseAll();}};
+}
+it('applies a key held during countdown the moment the run starts, without a re-press',()=>{
+ const h=harness();h.set('countdown');
+ h.held.press('key:ArrowLeft',EntryKind.LEFT);
+ expect(h.sent).toEqual([]); // belum running: dicatat tapi belum dikirim
+ h.set('running');
+ expect(h.sent).toEqual([EntryKind.LEFT]); // flush menerapkan tahanan tepat saat GO
+ h.held.release('key:ArrowLeft');
+ expect(h.sent).toEqual([EntryKind.LEFT,EntryKind.LEFT_OFF]);
+});
+it('applies a touch/pointer hold from countdown at GO, and OFF fires only once on release',()=>{
+ const h=harness();h.set('countdown');
+ h.held.press('pointer:1',EntryKind.RIGHT);h.set('running');
+ expect(h.sent).toEqual([EntryKind.RIGHT]);
+ h.held.release('pointer:1');h.held.release('pointer:1');
+ expect(h.sent).toEqual([EntryKind.RIGHT,EntryKind.RIGHT_OFF]);
+});
+it('does not reactivate an input released or blurred during countdown',()=>{
+ const h=harness();h.set('countdown');
+ h.held.press('key:ArrowLeft',EntryKind.LEFT);h.held.release('key:ArrowLeft'); // dilepas sebelum GO
+ h.held.press('pointer:9',EntryKind.RIGHT);h.held.releaseAll();               // dibatalkan (blur/pindah tab)
+ h.set('running');
+ expect(h.sent).toEqual([]); // tidak ada yang ditahan saat GO → tidak ada input hantu
+});
+it('does not double-dispatch when the same action is held from several sources across GO',()=>{
+ const h=harness();h.set('countdown');
+ h.held.press('key:ArrowLeft',EntryKind.LEFT);h.held.press('pointer:1',EntryKind.LEFT);
+ h.set('running');
+ expect(h.sent).toEqual([EntryKind.LEFT]); // satu ON walau dua sumber menahan aksi sama
+ h.held.release('key:ArrowLeft');
+ expect(h.sent).toEqual([EntryKind.LEFT]); // masih ditahan pointer: belum OFF
+ h.held.release('pointer:1');
+ expect(h.sent).toEqual([EntryKind.LEFT,EntryKind.LEFT_OFF]);
+});
+it('ignores presses while idle so nothing leaks into the next run',()=>{
+ const h=harness(); // mulai idle
+ h.held.press('key:ArrowLeft',EntryKind.LEFT); // idle: tidak trackable
+ h.set('countdown');h.set('running');
+ expect(h.sent).toEqual([]);
+});
+it('end-to-end: a hold entered during the LocalRunner countdown steers from the first running tick',()=>{
+ const runner=new LocalRunner(params);runner.start(); // fase countdown
+ const held=new HeldDrivingInputs(k=>runner.input(k),()=>runner.phase==='running',()=>runner.phase==='countdown'||runner.phase==='running');
+ held.press('pointer:1',EntryKind.RIGHT); // ditahan selama hitung mundur
+ expect(runner.log).toEqual([]); // input belum masuk log saat countdown
+ runner.advance(COUNTDOWN_MS); // habiskan hitung mundur → running
+ held.flush(); // seperti useDrivingControls saat fase jadi running
+ const before=runner.current.player.x;runner.advance(200);
+ expect(runner.current.player.x).toBeGreaterThan(before); // langsung menyetir tanpa re-press
+ expect(runner.log.map(e=>e.kind)).toEqual([EntryKind.RIGHT]);
+});
+
+// The frame crossing GO must apply held controls before consuming any game tick.
+it.each([EntryKind.RIGHT,EntryKind.BRAKE_ON])('applies countdown hold %s at tick 1 when a frame crosses GO',kind=>{
+ const runner=new LocalRunner(params);runner.start();
+ const held=new HeldDrivingInputs(k=>runner.input(k),()=>runner.phase==='running',()=>runner.phase==='countdown'||runner.phase==='running');
+ const stop=runner.onRunning(()=>held.flush());
+ held.press('pointer:1',kind);
+ runner.advance(COUNTDOWN_MS-10);runner.advance(100);
+ expect(runner.current.tick).toBe(2);
+ expect(runner.log.map(e=>[e.tick,e.kind])).toEqual([[1,kind]]);
+ expect(kind===EntryKind.RIGHT?runner.current.player.steer:runner.current.player.braking).toBe(kind===EntryKind.RIGHT?1:true);
+ stop();held.releaseAll();
+});
+it('does not resurrect a cancelled countdown hold at the synchronous GO boundary',()=>{
+ const runner=new LocalRunner(params);runner.start();
+ const held=new HeldDrivingInputs(k=>runner.input(k),()=>runner.phase==='running',()=>runner.phase==='countdown'||runner.phase==='running');
+ const stop=runner.onRunning(()=>held.flush());
+ held.press('key:ArrowRight',EntryKind.RIGHT);held.releaseAll();runner.advance(COUNTDOWN_MS+100);
+ expect(runner.log).toEqual([]);expect(runner.current.player.steer).toBe(0);stop();
+});
