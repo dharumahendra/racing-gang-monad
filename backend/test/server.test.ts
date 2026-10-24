@@ -23,7 +23,10 @@ describe('env', () => {
 describe('endpoint dasar', () => {
   it('/health', async () => {
     const res = await t.app.inject({ method: 'GET', url: '/health' });
-    expect(res.json()).toEqual({ ok: true, chainMode: 'mock', relayerQueue: 0, activeRuns: 0, onChainLatency: null });
+    const body = res.json();
+    expect(body).toMatchObject({ ok: true, chainMode: 'mock', relayerQueue: 0, activeRuns: 0, onChainLatency: null, connections: { players: 0, rooms: 0 } });
+    expect(body.eventLoopLagMs).toEqual({ p50: expect.any(Number), p99: expect.any(Number), max: expect.any(Number) });
+    expect(body.memoryMb).toBeGreaterThan(0);
   });
 
   it('/config berisi konstanta game, CARS dengan priceWei, dan alamat kontrak dari deployments', async () => {

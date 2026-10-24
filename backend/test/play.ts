@@ -44,12 +44,22 @@ export async function startPlayer(
   const run = res.json() as CreateRunResponse;
   const out: PlayC2S[] = [];
   let ws: WebSocket | null = null;
+  // Seperti frontend: pesan saat koneksi belum terbuka (mis. ack yang dikirim saat reconnect) disimpan lalu dikirim ulang.
+  const buffer: string[] = [];
   const client = new PlayerClient({
     runId: run.runId, seed: run.seed, carTier: opts.carTier ?? 0, autopilot: opts.autopilot,
-    send: (m) => { out.push(m); ws?.send(JSON.stringify(m)); },
+    send: (m) => {
+      out.push(m);
+      if (ws?.readyState === 1) ws.send(JSON.stringify(m));
+      else buffer.push(JSON.stringify(m));
+    },
   });
   ws = await connect(t, token, (m) => client.handle(m));
-  return { token, account, run, client, out, roomCode, get ws() { return ws!; }, set ws(v: WebSocket) { ws = v; } };
+  const setWs = (v: WebSocket) => {
+    ws = v;
+    for (const d of buffer.splice(0)) v.send(d);
+  };
+  return { token, account, run, client, out, roomCode, get ws() { return ws!; }, set ws(v: WebSocket) { setWs(v); } };
 }
 
 /** Penonton lewat /ws/watch. `msgs` berisi semua pesan yang diterima. */

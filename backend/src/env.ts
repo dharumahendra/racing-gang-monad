@@ -39,17 +39,23 @@ const schema = z
     PRIVY_APP_ID: z.string().min(1).optional(),
     /** Verification key (PEM, "-----BEGIN PUBLIC KEY-----") dari dashboard Privy; `\n` boleh ditulis literal. */
     PRIVY_VERIFICATION_KEY: z.string().min(1).optional(),
+    /** Alternatif/tambahan PEM: URL JWKS publik Privy. Bila diisi, dipakai untuk verifikasi (mendukung rotasi kunci). */
+    PRIVY_JWKS_URL: z.url().optional(),
     /** Rahasia server Privy untuk membaca embedded wallet pengguna. Jangan pernah dikirim ke frontend. */
     PRIVY_APP_SECRET: z.string().min(1).optional(),
     PRIVY_API_URL: z.url().default('https://api.privy.io'),
     /** Login SIWE langsung dengan wallet: untuk bot dan pengembangan. Matikan di production kecuali untuk uji bot. */
     ALLOW_SIWE_LOGIN: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
+    /** Khusus pengembangan: "0xAlamat:tier,..." dianggap memiliki mobil (lihat devGrants.ts). Hanya mock + non-production. */
+    DEV_GRANT_TIERS: z.string().optional(),
   })
   .superRefine((e, ctx) => {
-    const privy = [e.PRIVY_APP_ID, e.PRIVY_VERIFICATION_KEY, e.PRIVY_APP_SECRET];
+    const privy = [e.PRIVY_APP_ID, e.PRIVY_VERIFICATION_KEY || e.PRIVY_JWKS_URL, e.PRIVY_APP_SECRET];
     if (privy.some(Boolean) && !privy.every(Boolean)) {
       for (const key of ['PRIVY_APP_ID', 'PRIVY_VERIFICATION_KEY', 'PRIVY_APP_SECRET'] as const) {
-        if (!e[key]) ctx.addIssue({ code: 'custom', path: [key], message: 'konfigurasi Privy harus lengkap (APP_ID, VERIFICATION_KEY, APP_SECRET)' });
+        if (!e[key] && !(key === 'PRIVY_VERIFICATION_KEY' && e.PRIVY_JWKS_URL)) {
+          ctx.addIssue({ code: 'custom', path: [key], message: 'konfigurasi Privy harus lengkap (APP_ID, VERIFICATION_KEY atau JWKS_URL, APP_SECRET)' });
+        }
       }
     }
     if (e.NODE_ENV === 'production' && !e.PRIVY_APP_ID) {
@@ -57,6 +63,9 @@ const schema = z
     }
     if (!e.PRIVY_APP_ID && !e.ALLOW_SIWE_LOGIN) {
       ctx.addIssue({ code: 'custom', path: ['PRIVY_APP_ID'], message: 'tidak ada metode login: isi konfigurasi Privy atau set ALLOW_SIWE_LOGIN=true' });
+    }
+    if (e.DEV_GRANT_TIERS && (e.CHAIN_MODE !== 'mock' || e.NODE_ENV === 'production')) {
+      ctx.addIssue({ code: 'custom', path: ['DEV_GRANT_TIERS'], message: 'hanya boleh dengan CHAIN_MODE=mock di luar production' });
     }
     if (e.CHAIN_MODE !== 'live') return;
     for (const key of LIVE_REQUIRED) {

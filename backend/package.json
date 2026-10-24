@@ -13,7 +13,10 @@
     "spectators": "tsx scripts/spectators.ts",
     "status": "tsx scripts/status.ts",
     "check-monad": "tsx scripts/check-monad.ts",
-    "audit": "tsx scripts/audit.ts"
+    "audit": "tsx scripts/audit.ts",
+    "stress": "tsx scripts/stress.ts",
+    "bigdb": "tsx scripts/bigdb.ts",
+    "crash-test": "tsx scripts/crash-test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",

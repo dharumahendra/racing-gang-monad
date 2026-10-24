@@ -25,6 +25,8 @@ export type DisruptRequest = { kind: DisruptionKind; lane?: number; durationInde
 
 type Deps = { db: Db; hub: Hub; runs: RunManager; now: () => number };
 
+const ROW_CACHE_MAX = 10_000;
+
 export const sanitizeNick = (raw: string | undefined, fallbackId: string) => {
   const clean = (raw ?? '').replace(/[\u0000-\u001f\u007f<>"'`]/g, '').trim().slice(0, 16);
   return clean || `Penonton-${fallbackId.slice(0, 4).toUpperCase()}`;
@@ -34,6 +36,7 @@ export class RoomManager {
   readonly #deps: Deps;
   #spectators = new Map<string, Map<WebSocket, Spectator>>();
   #nextId = 0;
+  #rows = new Map<string, typeof rooms.$inferSelect>();
 
   constructor(deps: Deps) {
     this.#deps = deps;
@@ -50,8 +53,17 @@ export class RoomManager {
     throw new Error('Gagal membuat kode room unik');
   }
 
+  /** Baris room tidak pernah berubah setelah dibuat, jadi di-cache (dibaca di setiap pesan penonton). */
   row(code: string) {
-    return this.#deps.db.select().from(rooms).where(eq(rooms.code, code.toUpperCase())).get();
+    const key = code.toUpperCase();
+    const cached = this.#rows.get(key);
+    if (cached) return cached;
+    const r = this.#deps.db.select().from(rooms).where(eq(rooms.code, key)).get();
+    if (r) {
+      if (this.#rows.size >= ROW_CACHE_MAX) this.#rows.clear();
+      this.#rows.set(key, r);
+    }
+    return r;
   }
 
   runInfo(code: string): RoomRunInfo | null {

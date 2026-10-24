@@ -1,5 +1,6 @@
 // Skema DB (TECH_SPEC §5.6 + keputusan BACKEND_PLAN F2). Semua waktu dalam ms epoch.
 // Alamat selalu disimpan dalam format checksum (viem getAddress).
+import { sql } from 'drizzle-orm';
 import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import type { RunChainStatus, RunLifecycle, RunResultStatus } from '@racing-gang/config';
 
@@ -104,7 +105,11 @@ export const runs = sqliteTable(
   (t) => [
     index('runs_address_created').on(t.address, t.createdAt),
     index('runs_lifecycle').on(t.lifecycle),
-    index('runs_leaderboard').on(t.result, t.nearMisses),
+    // Urutan sama persis dengan query /leaderboard, jadi SQLite cukup membaca N baris pertama index
+    // (tanpa index ini: sort seluruh run setiap request, ±150 ms di 50.000 run, memblok event loop).
+    index('runs_leaderboard_v2')
+      .on(sql`${t.nearMisses} DESC`, t.endedAt)
+      .where(sql`${t.result} IN ('VERIFIED', 'PARTIAL')`),
   ],
 );
 

@@ -1,0 +1,232 @@
+/* Garage: the car is the hero. Brand roles and fonts come from styles.css. */
+:root{--motion-press:120ms;--ease-out:cubic-bezier(.23,1,.32,1)}
+.garage-topline{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:24px}
+.garage-topline .eyebrow{font-size:0.8571rem;letter-spacing:0;margin-bottom:3px}
+.garage-topline h1{font-size:1.7143rem}
+.garage-balance{position:relative;min-width:0;max-width:100%;font-size:0.9286rem}
+.garage-balance summary{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;list-style:none}
+.garage-balance summary::-webkit-details-marker,.vehicle-specs summary::-webkit-details-marker{display:none}
+.garage-balance summary>svg:first-child{color:var(--gold);width:18px;height:18px}
+.garage-balance summary>svg:last-child{width:13px;height:13px;color:var(--muted)}
+.garage-balance[open] summary>svg:last-child{transform:rotate(90deg)}
+.garage-balance summary>span{color:var(--muted)}
+.garage-balance strong{font:600 1.2857rem var(--font-display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.balance-breakdown{position:absolute;z-index:10;right:0;top:100%;width:max-content;min-width:280px;max-width:calc(100vw - 32px);padding:20px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.balance-breakdown p{color:var(--muted);margin:0 0 12px;font-size:0.8571rem}
+.balance-breakdown dl{margin:0;display:grid;gap:12px}
+.balance-breakdown dl>div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:16px}
+.balance-breakdown dt{color:var(--muted);font-size:0.8571rem;overflow-wrap:anywhere}
+.balance-breakdown dd{margin:0;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right;min-width:0}
+.garage-layout{display:flex;flex-direction:column;flex:1;min-height:0;width:100%;gap:0}
+.showroom-stage-wrap{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;width:100%}
+.car-loop-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:10;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:8px;background:transparent;border:none;box-shadow:none;border-radius:0;color:rgba(255,255,255,.8);cursor:pointer;transition:transform .2s cubic-bezier(.16,1,.3,1),color .2s ease,filter .2s ease}
+.car-loop-btn.prev{left:max(16px,calc(50% - 360px))}
+.car-loop-btn.next{right:max(16px,calc(50% - 360px))}
+.car-loop-btn:hover{background:transparent;border:none;box-shadow:none;color:#ed01fe;filter:drop-shadow(0 0 14px rgba(237,1,254,.85));transform:translateY(-50%) scale(1.2)}
+.car-loop-btn:active{transform:translateY(-50%) scale(.92)}
+.car-loop-btn svg{width:36px;height:36px;stroke-width:2.2px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+:root[data-theme='dark'] .car-loop-btn{background:transparent;border:none;box-shadow:none;color:rgba(255,255,255,.8)}
+:root[data-theme='dark'] .car-loop-btn:hover{background:transparent;border:none;box-shadow:none;color:#ed01fe;filter:drop-shadow(0 0 14px rgba(237,1,254,.85))}
+.vehicle-roster{min-width:0;padding-top:8px}
+.garage-page .section-label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:18px}
+.garage-page .section-label h2{font:600 1rem var(--font-display);margin:0}
+.garage-page .section-label>span{color:var(--subtle);font-size:0.8571rem;font-variant-numeric:tabular-nums}
+.tier-picker{display:flex;flex-direction:column;gap:4px}
+.tier-picker button{display:flex;align-items:flex-start;gap:12px;text-align:left;width:100%;min-width:0;min-height:76px;padding:14px 12px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--ink)}
+.tier-picker button[aria-pressed='true']{background:var(--surface-high)}
+.vehicle-index{font:500 0.8571rem var(--font-display);color:var(--subtle);flex-shrink:0;align-self:flex-start;padding-top:4px}
+.vehicle-row-copy{min-width:0;flex:1}
+.vehicle-name{display:block;font:600 1.2143rem/1.35 var(--font-display);letter-spacing:-.025em;overflow-wrap:anywhere}
+.vehicle-caption{display:block;font-size:0.8571rem;line-height:1.6;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+.tier-picker button>svg{width:14px;height:14px;color:var(--subtle);margin-top:4px}
+.tier-picker button[aria-pressed='true']>.vehicle-index{color:var(--accent-ink)}
+.roster-note{padding:0 12px;margin:20px 0 0;color:var(--muted);font-size:0.8571rem;line-height:1.7}
+.garage-showcase{min-width:0;overflow:hidden;background:#0b0d12 url('/assets/backgroundShowroom.png') center bottom / cover no-repeat;border-radius:var(--radius-lg);border:1px solid rgba(255,255,255,.08);box-shadow:0 16px 40px rgba(0,0,0,.4);position:relative}
+.garage-showcase .selected-car-heading h2{color:#ffffff}
+.garage-showcase .selected-car-class{color:rgba(255,255,255,.75)}
+.garage-showcase .ownership-state{color:rgba(255,255,255,.75)}
+.garage-showcase .vehicle-top-speed strong{color:#ffffff}
+.garage-showcase .vehicle-top-speed>span{color:rgba(255,255,255,.75)}
+.garage-showcase .vehicle-top-speed small{color:rgba(255,255,255,.6)}
+.garage-showcase .specs-badge-btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#ed01fe;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.garage-showcase .specs-badge-btn:hover{background:rgba(237,1,254,.2);border-color:#ed01fe;color:#f68aff}
+.garage-showcase .specs-badge-btn svg{color:#ed01fe}
+.selected-car-heading{position:relative;z-index:2;pointer-events:none;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding:24px 32px 16px}
+.selected-car-heading>div:first-child{min-width:0}
+.selected-car-class{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 8px;color:var(--muted);font-size:0.8571rem;line-height:1.7}
+.ownership-state{display:inline-flex;align-items:center;gap:5px;font-size:0.8571rem;color:var(--muted)}
+.ownership-state svg{width:13px;height:13px}
+.selected-car-heading h2{margin:0;font-size:clamp(2.2857rem,3vw,3.2857rem);line-height:1.14;letter-spacing:-.05em;overflow-wrap:anywhere}
+.selected-car-title-wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;pointer-events:auto}
+.specs-badge-btn{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:6px 14px;background:var(--surface);border:1px solid var(--line);color:var(--accent-ink);border-radius:8px;font-family:var(--font-display);font-weight:700;font-size:0.8571rem;letter-spacing:.04em;cursor:pointer;transition:all .15s ease}
+.specs-badge-btn:hover{background:var(--accent-soft);border-color:var(--accent);transform:translateY(-1px)}
+.specs-badge-btn svg{width:14px;height:14px;color:var(--accent-ink)}
+.specs-modal-backdrop{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:20px;animation:fadeIn .2s ease-out}
+.specs-modal-card{width:100%;max-width:500px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.35);padding:24px;animation:scaleUp .2s ease-out}
+:root[data-theme='dark'] .specs-modal-card{background:#161920;border-color:rgba(255,255,255,.14);box-shadow:0 25px 60px rgba(0,0,0,.8),0 0 20px rgba(237,1,254,.1)}
+.specs-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.specs-modal-class{display:block;font-size:0.7857rem;letter-spacing:.08em;color:var(--accent-ink);font-weight:700;margin-bottom:4px}
+.specs-modal-header h3{margin:0;font-family:var(--font-display);font-size:1.5rem;color:var(--ink)}
+.specs-modal-close{display:grid;place-items:center;width:32px;height:32px;background:var(--surface);border:1px solid var(--line);border-radius:8px;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;transition:all .15s ease}
+.specs-modal-close:hover{background:var(--danger-soft);color:var(--danger);border-color:var(--danger-line)}
+.specs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:0 0 20px}
+.spec-item{padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.spec-item dt{font-size:0.7857rem;color:var(--muted);margin-bottom:4px}
+.spec-item dd{margin:0;font-family:var(--font-display);font-weight:700;font-size:1.0714rem;color:var(--ink);font-variant-numeric:tabular-nums}
+.specs-notice{padding:12px 14px;background:var(--surface);border-left:3px solid var(--accent);border-radius:4px;margin-bottom:20px}
+.specs-notice p{margin:0;font-size:0.8571rem;line-height:1.6;color:var(--muted)}
+.specs-purchase-btn{width:100%}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleUp{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.selected-car-description{color:var(--muted);font-size:0.9286rem;margin:8px 0 0}
+.vehicle-top-speed{text-align:right;flex-shrink:0;padding-top:4px}
+.vehicle-top-speed>span{color:var(--muted);font-size:0.8571rem}
+.vehicle-top-speed strong{display:block;font:500 2.7143rem/1.25 var(--font-display);letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.vehicle-top-speed small{font:500 0.8571rem var(--font-body);letter-spacing:0;color:var(--muted);margin-left:6px}
+.actual-car{display:block;position:relative;width:100%;height:100%;min-height:300px;margin-top:0;isolation:isolate;cursor:default}
+.actual-car:active{cursor:default}
+.actual-car canvas{display:block;touch-action:none}
+.stage-label{position:absolute;inset:45% 16px auto;text-align:center;color:var(--muted);font-size:0.9286rem;pointer-events:none;letter-spacing:0}
+.scene-fallback{display:grid;place-content:center;min-height:300px;padding:24px;color:var(--muted);font-size:0.9286rem;background:var(--surface)}
+.showroom-toolbar{display:none!important}
+.showroom-hint{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:0.8571rem}
+.showroom-hint .status-dot{width:5px;height:5px}
+.showroom-controls{display:flex;align-items:center;gap:2px}
+.showroom-controls button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:8px;border:0;background:transparent;color:var(--muted);border-radius:var(--radius-sm);font:500 0.9286rem var(--font-body)}
+.showroom-controls button:last-child,.showroom-controls button:nth-last-child(2){font-size:1.4286rem;font-weight:400}
+.showroom-controls svg{width:16px;height:16px}
+.showroom-control-divider{height:16px;border-left:1px solid var(--line);margin:0 6px}
+@media (min-width: 761px) {
+  html:has(.garage-page),
+  body:has(.garage-page),
+  body.garage-route,
+  body.garage-route .app-shell {
+    overflow-y: hidden !important;
+    height: 100vh;
+    height: 100dvh;
+  }
+  .app-content:has(.garage-page),
+  body.garage-route .app-content {
+    overflow-y: hidden !important;
+    padding-bottom: 0 !important;
+    flex: 1;
+    min-height: 0;
+  }
+  .garage-page {
+    overflow-y: hidden !important;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  .actual-car {
+    height: 100% !important;
+    min-height: 340px;
+    margin-top: 0 !important;
+  }
+}
+.garage-race-action{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;padding:20px 28px;border-top:1px solid var(--line);background:var(--paper)}
+.race-action-label{display:flex;align-items:center;gap:9px;font:600 1.2143rem var(--font-display)}
+.race-action-label svg{width:18px;height:18px}
+.garage-race-action p{font-size:0.8571rem;color:var(--muted);line-height:1.7;margin:6px 0 0}
+.garage-race-action p>span{display:block}
+.garage-start{flex-shrink:0;font-size:1.0714rem;min-height:50px;padding:14px 22px}
+.garage-support{width:100%;min-width:0}
+.vehicle-specs{border-bottom:1px solid var(--line)}
+.vehicle-specs>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px;padding:18px 0;cursor:pointer;font:500 1rem var(--font-display)}
+.vehicle-specs>summary>svg{width:15px;height:15px;color:var(--muted)}
+.vehicle-specs[open]>summary>svg{transform:rotate(90deg)}
+.vehicle-spec-content{padding:0 0 24px}
+.car-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:4px 0 24px}
+.car-stats>div{min-width:0}
+.car-stats dt{font-size:0.8571rem;color:var(--muted);margin-bottom:6px}
+.car-stats dd{margin:0;font:600 1.3571rem/1.4 var(--font-display);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.purchase-info{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.purchase-info p{color:var(--muted);font-size:0.8571rem;line-height:1.7;max-width:48em;margin:0}
+.purchase-gate{font-size:0.8571rem;flex-shrink:0;max-width:100%;text-align:center}
+.garage-secondary-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:18px}
+.garage-secondary-actions p{display:flex;align-items:center;gap:8px;font-size:0.8571rem;color:var(--muted);margin:0}
+.garage-secondary-actions p svg{width:14px;height:14px}
+.garage-secondary-actions>div{display:flex;align-items:center;gap:24px;flex-shrink:0}
+.garage-secondary-actions a{display:inline-flex;align-items:center;gap:8px;min-height:44px;font:500 0.9286rem var(--font-display);text-decoration:none;text-underline-offset:4px}
+.garage-secondary-actions a svg{width:16px;height:16px}
+.garage-secondary-actions a svg:last-child{width:13px;height:13px}
+.garage-empty{padding:80px 24px;text-align:center;background:var(--paper);border-radius:var(--radius-lg)}
+.garage-empty>svg{color:var(--muted);width:36px;height:36px;margin-bottom:20px}
+.garage-empty p{color:var(--muted)}
+.garage-data-switch{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:30;display:flex;flex-wrap:wrap;justify-content:center;gap:2px;padding:3px;max-width:calc(100vw - 16px);background:#e5e7eb;color:#111827;border:1px solid #9ca3af;border-radius:6px;font:0.8571rem system-ui}
+.garage-data-switch a{display:block;text-decoration:none;white-space:nowrap;padding:8px 10px;min-height:36px;border-radius:3px}
+.garage-data-switch a[aria-current]{background:white}
+
+/* Quiet global navigation; the shell still exposes every existing destination. */
+
+
+.nav-caption{letter-spacing:0;font-size:0.8571rem}
+.nav-bottom>svg,.nav-rule{display:none}
+.nav-bottom strong{font-size:1.2857rem;color:var(--muted)}
+.nav-bottom p{font-size:0.8571rem}
+.nav-bottom>small{font-size:0.7857rem;letter-spacing:0}
+
+@media(hover:hover) and (pointer:fine){
+ .tier-picker button:hover,.showroom-controls button:hover{background:var(--surface-high);color:var(--ink)}
+ .garage-secondary-actions a:hover{text-decoration:underline}
+ .garage-page button:not(:disabled){transition:transform var(--motion-press) var(--ease-out)}
+ .garage-page button:active:not(:disabled):not(:focus-visible),.garage-start:active:not(:focus-visible){transform:scale(.98)}
+ .garage-start{transition:transform var(--motion-press) var(--ease-out)}
+}
+.garage-page button:focus-visible,.garage-start:focus-visible{transition:none}
+.garage-page button:focus-visible:active,.garage-start:focus-visible:active{transform:none}
+@media(min-width:1700px){.actual-car{height:500px}}
+@media(max-width:1280px){.selected-car-heading{padding:24px}.showroom-toolbar{padding-inline:20px}.showroom-hint>span:last-child{display:none}.garage-race-action{padding:20px}.garage-secondary-actions{flex-wrap:wrap}.purchase-info{align-items:flex-start;flex-direction:column;gap:16px}}
+@media(max-width:1100px){actual-car{height:300px}.garage-topline{margin-bottom:20px}.garage-topline h1{font-size:1.7143rem}}
+@media(max-width:760px){
+ .garage-topline{gap:12px;align-items:center;flex-wrap:wrap}.garage-topline .eyebrow{font-size:0.7857rem}.garage-balance summary{gap:6px;font-size:0.8571rem}.garage-balance summary>span{display:none}.garage-balance strong{font-size:1.1429rem}
+ .garage-layout{display:flex;flex-direction:column;width:100%;gap:20px}
+ .garage-support{width:100%}
+ .selected-car-heading{padding:20px 20px 16px;gap:16px}.selected-car-heading h2{font-size:2.2857rem}.selected-car-class{font-size:0.8571rem;gap:6px 10px}.ownership-state{font-size:0.7857rem}.selected-car-description{font-size:0.8571rem}.vehicle-top-speed strong{font-size:2.1429rem}.vehicle-top-speed>span{font-size:0.7857rem}
+ .actual-car{height:300px;margin-top:0}.showroom-toolbar{padding:4px 12px;gap:4px}.showroom-hint{font-size:0.7857rem}.showroom-controls{gap:0;margin-left:auto}.showroom-controls button{min-width:44px;padding:7px}.showroom-controls button>span{display:none}.showroom-control-divider{margin-inline:2px}
+ .garage-race-action{gap:16px;padding:18px 20px;align-items:flex-start}.race-action-label{font-size:1.0714rem}.garage-race-action p{font-size:0.8571rem}.garage-start{font-size:0.9286rem;padding:13px 16px;min-height:46px}.garage-race-action p>span{display:none}
+ .garage-page .section-label{margin-bottom:10px}.tier-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px}.tier-picker button{min-height:76px;padding:12px 8px;gap:8px}.tier-picker button:last-child:nth-child(odd){grid-column:1/-1}.vehicle-caption{font-size:0.7857rem}.vehicle-name{font-size:1.1429rem}.vehicle-index{font-size:0.7857rem}.tier-picker button>svg{width:12px;height:12px}.roster-note{padding:0;margin:12px 0 0}
+ .car-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.garage-secondary-actions{display:block;padding-top:16px}.garage-secondary-actions>div{justify-content:space-between;gap:16px;margin-top:8px}.garage-secondary-actions a{font-size:0.9286rem}.garage-data-switch a{padding-inline:7px}
+}
+@media(max-width:600px){.wallet-area{flex-wrap:nowrap}.wallet-area>small{flex:1;min-width:0;max-width:none}.wallet-actions{min-width:0}.car-loop-btn{min-width:36px;min-height:36px;padding:4px}.car-loop-btn svg{width:26px;height:26px}.car-loop-btn.prev{left:6px}.car-loop-btn.next{right:6px}}
+@media(max-width:400px){.selected-car-heading{padding:18px 16px 12px;gap:12px}.selected-car-heading h2{font-size:2.1429rem}.vehicle-top-speed>span{display:block;max-width:76px}.vehicle-top-speed strong{font-size:2rem}.actual-car{height:270px}.garage-race-action{padding:16px;gap:12px}.garage-start{padding:12px;font-size:0.8571rem;gap:6px}.garage-race-action>div{min-width:0}.race-action-label{font-size:1rem;gap:6px}.showroom-hint{gap:5px}.showroom-control-divider{margin:0}.garage-balance strong{font-size:1rem}}
+@media(prefers-reduced-motion:reduce){.garage-page button,.garage-start{transition:none!important}.garage-page button:active:not(:disabled),.garage-start:active{transform:none!important}}
+
+/* Teks heading di atas foto: scrim gelap di kiri-atas agar tidak bertabrakan dengan logo RG di foto,
+   dan judul tanpa letter-spacing negatif supaya glyph lebar tidak menimpa tombol Spesifikasi. */
+.garage-showcase::before{content:'';position:absolute;z-index:0;inset:0;pointer-events:none;background:linear-gradient(105deg,rgba(6,7,10,.92) 0%,rgba(6,7,10,.72) 26%,rgba(6,7,10,0) 52%),linear-gradient(180deg,rgba(6,7,10,.55) 0%,rgba(6,7,10,0) 30%)}
+.garage-showcase .showroom-stage-wrap{position:relative;z-index:1}
+.garage-showcase .selected-car-heading{z-index:2}
+.garage-showcase .selected-car-heading h2{letter-spacing:0;text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.garage-showcase .selected-car-title-wrap{column-gap:18px;row-gap:10px}
+.garage-showcase .selected-car-class,.garage-showcase .vehicle-top-speed{text-shadow:0 1px 8px rgba(0,0,0,.7)}
+
+/* Showroom full-bleed: foto menjadi latar penuh antara header dan navigasi bawah (tanpa padding/kartu),
+   dan kanvas 3D menutupi seluruh foto sehingga perspektif mobil dan foto memakai bidang yang sama. */
+body.garage-route main{padding:0!important;max-width:none}
+body.garage-route .garage-page,body.garage-route .garage-layout{flex:1;min-height:0}
+body.garage-route .garage-showcase{flex:1;min-height:0;display:flex;flex-direction:column;border:0;border-radius:0;box-shadow:none;background-position:center bottom}
+body.garage-route .garage-showcase .showroom-stage-wrap{position:absolute;inset:0;z-index:1}
+body.garage-route .garage-showcase .actual-car{position:absolute;inset:0;height:100%!important;min-height:0;width:100%}
+body.garage-route .garage-showcase .selected-car-heading{padding:28px 40px 16px}
+@media(max-width:760px){body.garage-route .garage-showcase{min-height:calc(100dvh - 140px)}body.garage-route .garage-showcase .selected-car-heading{padding:20px 20px 12px}}
+
+/* Revisi showroom 22 Okt (malam): tombol geser menempel ke sisi mobil (posisi dari kanvas 3D: --car-left/--car-right/
+   --car-mid-y, diisi CarPreview) dan 1,5× lebih besar. Fallback bila variabel belum ada. */
+body.garage-route .car-loop-btn{top:var(--car-mid-y,58%);min-width:66px;min-height:66px;padding:12px}
+body.garage-route .car-loop-btn svg{width:54px;height:54px}
+body.garage-route .car-loop-btn.prev{left:max(8px,calc(var(--car-left,30%) - 78px))}
+body.garage-route .car-loop-btn.next{right:max(8px,calc(var(--car-right,30%) - 78px))}
+@media(max-width:600px){body.garage-route .car-loop-btn{min-width:54px;min-height:54px;padding:6px}body.garage-route .car-loop-btn svg{width:39px;height:39px}body.garage-route .car-loop-btn.prev{left:max(4px,calc(var(--car-left,10%) - 56px))}body.garage-route .car-loop-btn.next{right:max(4px,calc(var(--car-right,10%) - 56px))}}
+
+/* Tombol Spesifikasi di bawah nama mobil. */
+.garage-showcase .selected-car-title-wrap{flex-direction:column;align-items:flex-start}
+
+/* Mobil terkunci: gembok di depan mobil. Muncul saat hover di perangkat bertetikus, selalu tampil di layar sentuh. */
+.car-lock{position:absolute;z-index:3;left:var(--car-mid-x,50%);top:var(--car-mid-y,58%);transform:translate(-50%,-50%) scale(.92);display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none;opacity:0;transition:opacity .2s ease,transform .25s cubic-bezier(.16,1,.3,1)}
+.car-lock-badge{display:grid;place-items:center;width:84px;height:84px;border-radius:50%;background:rgba(8,10,14,.22);border:1.5px solid rgba(255,255,255,.12);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-shadow:0 8px 24px rgba(0,0,0,.25);color:#fff}
+.car-lock-badge svg{width:36px;height:36px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.75))}
+.showroom-stage-wrap:hover .car-lock{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@media(hover:none){.car-lock{opacity:.9;transform:translate(-50%,-50%) scale(1)}}
+@media(prefers-reduced-motion:reduce){.car-lock{transition:none}}

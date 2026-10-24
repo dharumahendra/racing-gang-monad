@@ -27,5 +27,8 @@ export class ChainBus {
         this.#onError(err, e);
       }
     }
+    // Satu batch relayer bisa membawa 60 mepet (±1–2 ms per event): beri giliran ke pesan WS pemain di antaranya
+    // supaya event loop tidak terblok ±100 ms sekaligus.
+    await new Promise<void>((r) => setImmediate(r));
   }
 }

@@ -1,0 +1,15 @@
+# Stitch UI implementation plan
+
+Spec: project5583154990675470015, Daylight Grand Prix + Cyber Arcade Drift, snapshots light/dark-DESIGN.md and garage HTML/screenshots. User chose LIGHT default plus DARK toggle. Branch raka/foundation at295c57f, clean checkpoint already remote.
+
+Ruling: work in existing FE branch as established user workflow, preserve contracts/auth/game rules and actual Quaternius assets. User-approved Stitch design overrides skill's random style draw, restrained colour budget and generic app-title ceiling. Use reference composition (navigation, vehicle list, central 3D showroom, stats/action) with actual game fields; omit fictional Tokyo server, tuning, lap records, inventory or nitro fuel. No new business endpoints, purchase, OAuth or transaction.
+
+1. Snapshot before with taste inspector at1440/768/390; baseline FE107 tests. Fetch team refs and inspect clean branch.
+2. Add theme regression tests first (default, saved/invalid/unavailable storage), run RED; implement theme context and accessible toggle, saved preference. Browser regression for reload persistence, both palettes/loaded fonts/model, keyboard controls and nav. No unit tests for CSS literals.
+3. Translate Stitch tokens to semantic CSS custom properties: surfaces, primary/secondary/positive/gold/violet, text, outlines, 4/8px radii, 4/8 spacing. Self-host font files + OFL. User tokens are source; readable foreground variants may darken small text, disabled controls stay legible.
+4. Rebuild App shell with real four destinations (garage/practice/room/watch), mobile navigation and actual Google auth; no fictional buttons. Rebuild Garage as list/model/spec grid with five real shared-config cars, actual Quaternius models and working rotate/reset, honest ownership/qualification, displayed mock balance label. Keep original heading/control accessible names where possible.
+5. Apply shared tokens to practice/online HUD, warning/energy states, forms/rooms/summary. Preserve all data selectors, controls, public routes and network behavior. Palette changes affect showroom only; racing scene/physics untouched.
+6. Browser Edge: theme/default/reload/storage blocked/mobile/tablet/desktop, all tier previews and rotate/reset, spectator no wallet, all54 existing UI regression groups. FE full suite/typecheck/build and actual backend integration4 when shell changed. Taste before/after screenshots and explicit appraisal; inspect findings assessed against Stitch, not automatically waived.
+7. Fresh independent code review per executing-plans; fix important findings with meaningful regressions, document gaps. Save .context STITCH_DESIGN_SYSTEM.md and implementation report/output screenshots. No main merge/deploy, no secret in artifacts; preserve local preview. Commit scoped UI if all checks pass; prior push authorization applies only FE branch, avoid unrelated changes.
+
+Interfaces: ThemeProvider->useTheme {theme:'light'|'dark',toggle():void}; ThemeToggle uses context. CarPreview consumes theme + tier and owns view rotation only. All other consumers use CSS tokens; transport/sim interfaces untouched.
