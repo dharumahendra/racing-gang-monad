@@ -114,3 +114,7 @@ Checklist manual pengguna (FE/demo):
 ## Setir tahan FE — 24 Oktober 2026
 
 Fast-forward dharu/smooth-steer2957341, CONFIG_VERSION2; keyboard/sentuh memakai pengelola held input bersama dengan OFF saat blur/visibility/pointer release/cancel/leave/lost capture/cleanup. Renderer tetap interpolasi player.x. 53 tes terarah serta build FE termasuk typecheck PASS. Browser scripts disesuaikan semantik tahan dan lolos pemeriksaan sintaks tanpa dijalankan. Tidak ada commit/push/transaksi/visual QA. Detail SMOOTH_STEER_FE.md. Perubahan lokal metadata/QR/audit tetap dijaga.
+
+## Landscape realistis — 24 Oktober 2026
+
+Terrain/scenery balapan diganti dengan aset Poly Haven CC0 yang dioptimalkan (sekitar3,18MB). Tidak mengubah sim/config/hitbox/ekonomi. Roadside memakai material PBR dan instancing; terrain dua tile periodik; HDRI balapan terpisah dari showroom. Tiga tes layout serta typecheck/build lulus; tidak ada klaim visual atau FPS perangkat. Detail REALISTIC_LANDSCAPE.md, lisensi dan manifest frontend/public/assets/landscape/. Fullscreen viewport dari pekerjaan sebelumnya tetap dijaga. Tidak commit/push/deploy.

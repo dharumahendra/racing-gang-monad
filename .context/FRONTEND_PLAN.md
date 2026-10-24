@@ -433,3 +433,7 @@ Main e015678 sudah masuk raka/foundation. ABI pembelian final Bayu diterima tes 
 ## 25. Setir tahan CONFIG_VERSION 2 — 24 Oktober 2026
 
 Branch dharu/smooth-steer 2957341 diintegrasikan fast-forward ke raka/foundation sambil mempertahankan perubahan lokal metadata/QR/audit. Shared sim/config versi2 berasal dari Dharu. FE memakai satu pengelola held input untuk keyboard, alias, dan pointer; LEFT_OFF/RIGHT_OFF/BRAKE_OFF dilepas saat keyup, pointer up/cancel/leave/lost capture, blur, visibilitychange, serta cleanup. Touch memakai pointer capture dan touch-action:none pada latihan/online. Posisi renderer sudah memakai interpolasi previous/current player.x, tidak memakai pusat targetLane. Run versi1 tetap summary read-only, tidak di-replay memakai versi2. Backend dan FE perlu restart/rebuild bersama. Rincian di SMOOTH_STEER_FE.md.
+
+## 26. Viewport balap dan landscape realistis — 24 Oktober 2026
+
+Mode countdown/run memenuhi viewport browser dengan scroll terkunci; navigasi/scroll pulih setelah selesai. Reconnect/audio tetap dapat diakses. Typecheck perubahan viewport PASS. Landscape memakai Poly Haven CC0: tanah/bukit PBR, pohon dan batu instanced, HDRI Pure Sky; sumber dan checksum lengkap di manifest aset. Tiga tes layout PASS, typecheck/build PASS sebelum penyesuaian final jarak batu; bundle final dicatat di REALISTIC_LANDSCAPE.md. Verifikasi visual/FPS diserahkan ke pengguna. Perubahan belum di-commit/push.
