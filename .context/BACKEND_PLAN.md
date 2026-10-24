@@ -488,13 +488,9 @@ Sisanya internal backend: formula `warnTick`, kolom `ord`, status 3 kolom, `owne
 
 ## P. Status eksekusi (24 Oktober 2026)
 
-Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan teruji di CI. PR #1–#7 (backend, frontend `raka/foundation`, kontrak + chain live Bayu) sudah di-merge ke `main`. Kontrak sudah di-deploy ke Monad testnet (blok 73297824); alamatnya di `packages/config/deployments/monad-testnet.json` dan README.
+Semua bagian backend yang tidak bergantung pada orang lain sudah selesai dan teruji di CI. PR #1–#8 sudah di-merge ke `main`: backend, frontend `raka/foundation`, kontrak + chain live Bayu, lalu PR #8 Raka yang ikut membawa `dharu/live-integration` (`chainMode` di `/config`, `live-e2e`, Foundry CI dikunci v1.7.1) dan `dharu/smooth-steer` (setir tahan, `CONFIG_VERSION` 2). Kontrak sudah di-deploy ke Monad testnet (blok 73297824); alamatnya di `packages/config/deployments/monad-testnet.json` dan README.
 
-Branch yang belum di-merge (bertumpuk, merge berurutan):
-1. `dharu/live-integration`: `chainMode` di `/config`, `live-e2e` (server live melawan kontrak di anvil: run, beli Tier 1, crash + restart), CI menjalankan `live-anvil.test` + `live-e2e`, Foundry CI dikunci v1.7.1.
-2. `dharu/smooth-steer`: setir tahan (`CONFIG_VERSION` 2), termasuk keyup di `use-driving-controls.ts`.
-
-Repo dipindah ke `dharumahendra/racing-gang-monad` (24 Okt) dengan riwayat dan nomor PR yang sama; setelah migrasi selesai, branch di atas dibuka sebagai PR #8 dan #9 di sana, lalu tim mengganti remote dan repo lama di-archive.
+Repo dipindah ke `dharumahendra/racing-gang-monad` (24 Okt) dengan riwayat dan nomor PR yang sama; setelah migrasi selesai, tim mengganti remote dan repo lama di-archive.
 
 Test terakhir: config 9, sim 47, backend 126, frontend 136, Forge 67; typecheck bersih.
 
@@ -534,7 +530,7 @@ Test terakhir: config 9, sim 47, backend 126, frontend 136, Forge 67; typecheck 
 | E2E-1 sampai E2E-7 | Fase 11 | Tim | Semua item di atas |
 | Akun presenter lulus Tier 1 secara manual | Fase 11 | Hari H | Main manual, bukan bot |
 | ~~Keputusan balance syarat mepet~~ | PRD §6.2 | — | **Diputuskan 22 Okt: tetap sesuai PRD (40 / 75 / 110 / 150).** Data `stats` (200 seed, autopilot): Starter p50 55 mepet, 68% run lulus Tier 1; Tier 1→2 30%, Tier 2→3 6%, Tier 3→4 2%. Median mepet tidak naik untuk mobil yang lebih cepat (±48), jadi Tier 3/4 sangat langka. Kalau mau diubah, harus sebelum kontrak di-deploy (syarat immutable): ubah `CARS`, PRD §6.2, lalu `pnpm config:export` |
-| Setir tahan (`CONFIG_VERSION` 2) | TECH_SPEC §3.4 | — | **23 Okt.** Mobil bergeser selama ←/→ ditahan dan bisa berhenti di atas garis (`LEFT_OFF`=5, `RIGHT_OFF`=6). Data `stats` setelah perubahan **sama persis** dengan versi 1 (68% / 30% / 6% / 2%), jadi syarat 40/75/110/150 di kontrak tidak perlu diubah. Secara geometri posisi bebas juga tidak menambah peluang mepet: mepet mobil butuh jarak pusat 180–360 cm, truk 215–395 cm, dan satu kendaraan hanya dihitung sekali; posisi di atas garis justru menabrak kendaraan di kedua lajur. Mepet dua sisi sekaligus tetap hanya mungkin di sekitar pusat lajur (±10 cm untuk dua mobil, ±45 cm kalau ada truk), dan versi 1 memang selalu berhenti di pusat lajur. Keyboard (tekan/lepas, auto-repeat, lepas otomatis saat blur) sudah di `use-driving-controls.ts`. Sisa untuk Raka: kontrol sentuh tahan di HP dan tampilan posisi bebas/`steer` |
+| Setir tahan (`CONFIG_VERSION` 2) | TECH_SPEC §3.4 | — | **23 Okt.** Mobil bergeser selama ←/→ ditahan dan bisa berhenti di atas garis (`LEFT_OFF`=5, `RIGHT_OFF`=6). Data `stats` setelah perubahan **sama persis** dengan versi 1 (68% / 30% / 6% / 2%), jadi syarat 40/75/110/150 di kontrak tidak perlu diubah. Secara geometri posisi bebas juga tidak menambah peluang mepet: mepet mobil butuh jarak pusat 180–360 cm, truk 215–395 cm, dan satu kendaraan hanya dihitung sekali; posisi di atas garis justru menabrak kendaraan di kedua lajur. Mepet dua sisi sekaligus tetap hanya mungkin di sekitar pusat lajur (±10 cm untuk dua mobil, ±45 cm kalau ada truk), dan versi 1 memang selalu berhenti di pusat lajur. Frontend sudah menyusul di PR #8: keyboard dan sentuh memakai pengelola input tahan yang sama, OFF dikirim saat blur/visibility/pointer lepas (lihat `SMOOTH_STEER_FE.md`). Sisa: uji di HP sungguhan |
 | Branch protection `main` | Repo | Dharu | Pasang di `racing-gang-monad` setelah migrasi selesai |
 
 ### P3. Catatan untuk frontend (Raka)
