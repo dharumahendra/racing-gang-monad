@@ -54,7 +54,7 @@ Jalankan **satu instance saja**: state run dan room ada di memori. Database SQLi
 | `pnpm --filter @racing-gang/backend spectators -- --url <api> --room <KODE> --count 50` | Uji beban penonton |
 | `pnpm --filter @racing-gang/backend status -- --url <api> [--skip-backend]` | Cek kesiapan demo: health, median latensi on-chain, parameter kontrak on-chain = `CARS`, kunci `.env` = attester/voucher signer kontrak, saldo attester > 10 MON |
 | `pnpm --filter @racing-gang/backend check-monad` | Cek asumsi chain tanpa wallet: chainId, waktu blok, `BLOCKHASH` di EVM = hash blok RPC |
-| `pnpm --filter @racing-gang/backend audit -- --url <api> --run <id> [--rpc <url> --registry <alamat>]` | Replay log publik satu run lalu cocokkan dengan catatan backend atau event on-chain |
+| `pnpm --filter @racing-gang/backend run audit -- --url <api> --run <id> [--rpc <url> --registry <alamat>]` | Replay log publik satu run lalu cocokkan dengan catatan backend atau event on-chain |
 | `pnpm --filter @racing-gang/backend stress -- --players 25 --spectators 50` | Uji beban: pemain real-time + penonton terhadap server sungguhan; cek mepet cocok dan jeda event loop |
 | `pnpm --filter @racing-gang/backend crash-test -- --players 5 --kill-after 15` | Bunuh server paksa di tengah run, start ulang, cek DB, pemulihan, audit, dan koin |
 | `pnpm --filter @racing-gang/backend bigdb -- --runs 50000` | Ukur endpoint baca dan rencana query di DB besar |
