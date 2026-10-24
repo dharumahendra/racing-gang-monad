@@ -11,13 +11,13 @@
 
 ```
  ┌──────────── Browser pemain (laptop) ────────────┐        ┌──── Browser penonton (HP) ────┐
- │ apps/web  ·  packages/sim (render + prediksi)    │        │ apps/web /watch               │
+ │ frontend  ·  packages/sim (render + prediksi)    │        │ frontend /watch               │
  │ wallet (wagmi/viem)                               │        │ tanpa wallet                  │
  └───────┬──────────────────────────┬───────────────┘        └──────────────┬────────────────┘
          │ WS /ws/play (input,        │ tx buy() + MON                       │ WS /ws/watch
          │ watermark, ack, snapshot)  │                                      │ (disrupt)
          ▼                            │                                      ▼
- ┌──────────────────────── apps/server (Node) ─────────────────────────────────────────────┐
+ ┌──────────────────────── backend (Node) ─────────────────────────────────────────────────┐
  │ auth SIWE · runs · rooms · verifikasi (packages/sim) · ledger koin · voucher EIP-712     │
  │ chain/relayer (1 tx per blok) · chain/indexer (event → DB → WS)                          │
  └───────┬───────────────────────────────────────────────────────────────┬─────────────────┘
@@ -41,14 +41,16 @@ Alur utama:
 ### 2.1 Struktur monorepo (pnpm workspaces)
 
 ```
-/apps/web          React + Vite + TypeScript, three.js (react-three-fiber), wagmi v2 + viem, zustand   (Raka)
-/apps/server       Node 20 + TypeScript, Fastify + @fastify/websocket, Drizzle + SQLite, viem           (Dharu)
-/apps/server/src/chain   relayer, indexer, voucher signer                                              (Bayu)
+/frontend          React + Vite + TypeScript, three.js (react-three-fiber), wagmi v2 + viem, zustand   (Raka)
+/backend           Node 20 + TypeScript, Fastify + @fastify/websocket, Drizzle + SQLite, viem           (Dharu)
+/backend/src/chain relayer, indexer, voucher signer                                                     (Bayu)
 /packages/sim      logika game deterministik + hash log + PRNG                                           (Dharu)
 /packages/config   konstanta game, ABI, alamat deployment                                                (bersama)
-/contracts         Foundry + OpenZeppelin v5                                                              (Bayu)
-/docs              PRD.md, TECH_SPEC.md, TASKS.md
+/contract          Foundry + OpenZeppelin v5 (bukan workspace pnpm)                                      (Bayu)
+/                  PRD.md, TECH_SPEC.md, TASKS.md, BACKEND_PLAN.md
 ```
+
+`pnpm-workspace.yaml` berisi `packages/*`, `backend`, dan `frontend`. Paket `config` dan `sim` diekspor sebagai source TypeScript, jadi tidak perlu build step.
 
 ### 2.2 `packages/config` — sumber kebenaran angka
 
@@ -321,7 +323,7 @@ Setiap pesan berbentuk `{ "t": "<tipe>", ...payload }`. Waktu server dalam ms ep
 | S→C | `disrupt.accepted` / `disrupt.rejected` | `id` / `reason: 'ENERGY' \| 'LIMIT' \| 'NO_RUN' \| 'RATE' \| 'ROOM_EXPIRED'` |
 | S→C | `nearMiss.recorded`, `run.result` | Sama dengan pemain |
 
-## 5. Backend (`apps/server`)
+## 5. Backend (`backend`)
 
 ### 5.1 REST API
 
@@ -405,7 +407,7 @@ chain_cursor(name PK, last_block)
 - Kecocokan klaim client vs hasil backend (flag).
 - P2: analisis pola waktu reaksi untuk deteksi bot.
 
-## 6. Smart contract (`/contracts`, Foundry + OpenZeppelin v5)
+## 6. Smart contract (`/contract`, Foundry + OpenZeppelin v5)
 
 ### 6.1 `RunRegistry.sol`
 
@@ -500,7 +502,7 @@ Lain-lain:
 
 Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 
-## 7. Integrasi chain (`apps/server/src/chain`)
+## 7. Integrasi chain (`backend/src/chain`)
 
 ### 7.1 Relayer
 
@@ -525,7 +527,7 @@ Isi wallet attester dengan MON testnet yang cukup untuk ratusan transaksi.
 
 `signVoucher(v)` memakai viem `signTypedData`. Fungsi ini dipanggil dari `POST /vouchers`.
 
-## 8. Frontend (`apps/web`)
+## 8. Frontend (`frontend`)
 
 ### 8.1 Halaman
 

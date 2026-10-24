@@ -4,9 +4,9 @@
 
 | Orang | Peran | Memegang |
 |---|---|---|
-| **Bayu** | Smart contract | `/contracts`, `apps/server/src/chain` (relayer, indexer, voucher signer), halaman audit |
-| **Dharu** | Backend | `packages/config`, `packages/sim`, `apps/server` (auth, runs, verifikasi, rooms, ledger, WS) |
-| **Raka** | Frontend | `apps/web` (game, HUD, garasi, room, penonton), aset visual |
+| **Bayu** | Smart contract | `contract/`, `backend/src/chain` (relayer, indexer, voucher signer), halaman audit |
+| **Dharu** | Backend | `packages/config`, `packages/sim`, `backend/` (auth, runs, verifikasi, rooms, ledger, WS) |
+| **Raka** | Frontend | `frontend/` (game, HUD, garasi, room, penonton), aset visual |
 
 Prioritas: **P0** wajib ada untuk demo · **P1** sangat membantu pitch · **P2** setelah lomba.
 
@@ -14,7 +14,7 @@ Prioritas: **P0** wajib ada untuk demo · **P1** sangat membantu pitch · **P2**
 
 ## 0. Aturan kerja
 
-1. **Kode baru dimulai saat hacking dibuka di hari H.** Sebelum itu, hanya baca dokumen, siapkan akun, wallet, dan bukti lisensi aset. Konfirmasi ke panitia soal menyiapkan aset sebelum hari H.
+1. **Repo ini bukan repo submission lomba**, jadi tidak terikat aturan Monad Blitz soal "kode dimulai saat hacking dibuka". Coding boleh dimulai kapan saja.
 2. Repo **publik** sejak commit pertama.
 3. `packages/config` dan `packages/sim` adalah sumber kebenaran. Perubahan angka atau logika harus lewat PR kecil dan diumumkan ke tim.
 4. **Interface dibekukan di M0**: tipe pesan WS (TECH_SPEC §4), REST (§5.1), ABI (§6). Perubahan setelah M0 harus disepakati bertiga.
@@ -22,10 +22,9 @@ Prioritas: **P0** wajib ada untuk demo · **P1** sangat membantu pitch · **P2**
 6. Di kode, gangguan "rantai" dinamai `SPIKES` supaya tidak tertukar dengan blockchain.
 7. **Jangan pernah menjadikan Claude (atau asisten AI lain) sebagai contributor di repo ini.** Commit, PR, dan riwayat git hanya atas nama anggota tim: tanpa trailer `Co-Authored-By: Claude`, tanpa author/committer Claude, dan tanpa teks "Generated with Claude" di pesan commit atau deskripsi PR.
 
-## 1. Persiapan sebelum hari H (tanpa coding)
+## 1. Persiapan sebelum hari H
 
 - [ ] Semua: baca `PRD.md` dan `TECH_SPEC.md`, catat pertanyaan, dan sepakati asumsi di PRD §12.
-- [ ] Dharu: konfirmasi tertulis ke panitia soal aturan aset dan kode sebelum acara; simpan screenshot-nya.
 - [ ] Bayu: siapkan 5 wallet testnet (deployer, attester, voucher signer, treasury, presenter) dan isi MON dari faucet; simpan kunci di password manager, bukan di repo.
 - [ ] Bayu: daftar RPC khusus Monad testnet (cadangan RPC publik) dan catat `CHAIN_ID` serta URL explorer dari dokumentasi resmi.
 - [ ] Dharu: siapkan akun hosting server yang mendukung WSS (misalnya Railway/Fly/VPS) dan domain HTTPS.
