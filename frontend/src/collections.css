@@ -1,0 +1,22 @@
+.collection-page{width:min(1280px,100%);margin:16px auto 40px;padding:0 12px}
+.collection-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:18px}
+.collection-heading h1{font-size:clamp(25px,3.3vw,44px);max-width:900px;line-height:1.25}
+.collection-heading>div>p:last-child{margin:18px 0 0;color:var(--muted)}
+.collection-heading>button{flex-shrink:0}.collection-note{max-width:800px;color:var(--muted);font-size:13px;margin-bottom:28px}
+.collection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}
+.collection-card{min-width:0;border:1px solid var(--line);background:var(--paper);border-radius:var(--radius-lg);overflow:hidden}
+.collection-art{position:relative;aspect-ratio:4/3;background:var(--surface-high);overflow:hidden}
+.collection-art img{display:block;width:100%;height:100%;object-fit:contain}
+.collection-owned{position:absolute;top:12px;right:12px;background:var(--positive-soft);color:var(--positive);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;font-weight:700}
+.collection-card-body{padding:24px}.collection-card h2{font-size:clamp(17px,1.6vw,23px);margin:8px 0 24px;line-height:1.4}
+.collection-price{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.collection-price strong{font-size:21px}.collection-price>span{font-size:12px;color:var(--muted)}
+.collection-rule{font-size:12px;color:var(--muted);margin:12px 0 24px}.collection-card .button{min-height:48px}
+.collection-card .quiet-link{display:inline-block;margin-top:14px}.collection-card .button+.button{margin-top:12px}
+.collection-success{font-size:12px;color:var(--positive);margin:16px 0 0}
+.collection-credits{border-top:1px solid var(--line);margin-top:24px;padding-top:16px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+.collection-credits summary{cursor:pointer;min-height:24px}.collection-credits p{margin:12px 0 0}.collection-footer{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:28px;font-size:12px}
+.racing-tabs[data-count="6"] .racing-tab-content{font-size:clamp(11px,1.25vw,18px)}
+@media(max-width:1100px){.racing-tabs[data-count="6"] .racing-tab-content{flex-direction:column;gap:6px;font-family:var(--font-body);font-size:11px;letter-spacing:0}.racing-tabs[data-count="6"] .racing-tab-skew{padding:10px 3px}}
+@media(max-width:900px){.collection-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.collection-page{padding:0 4px}.collection-heading{align-items:flex-start;gap:12px;flex-wrap:wrap}.collection-heading>div>p:last-child{font-size:13px}.collection-grid{grid-template-columns:1fr;gap:18px}.collection-card-body{padding:20px}.collection-note{font-size:12px}.racing-tabs[data-count="6"] .racing-tab-content{font-size:10px}.racing-tabs[data-count="6"] .racing-tab-skew{min-height:60px}}

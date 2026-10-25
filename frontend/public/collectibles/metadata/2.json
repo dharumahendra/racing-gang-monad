@@ -1,0 +1,39 @@
+{
+  "name": "Racing Gang Collectibles — Burger Car",
+  "description": "A sesame-bun vehicle with lettuce, cheese, a patty, blue windshield, red seats and a KK flag. Procedural interpretation of the user-supplied reference. Independent Racing Gang collectible; no gameplay tier or performance benefit.",
+  "image": "https://racing-gang-monad.vercel.app/collectibles/images/burger-car.png",
+  "animation_url": "https://racing-gang-monad.vercel.app/collectibles/models/burger-car.glb",
+  "external_url": "https://racing-gang-monad.vercel.app/collectibles/index.html?asset=burger-car",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Racing Gang Collectibles"
+    },
+    {
+      "trait_type": "Vehicle",
+      "value": "Burger Car"
+    },
+    {
+      "trait_type": "Gameplay effect",
+      "value": "None"
+    },
+    {
+      "trait_type": "Artwork",
+      "value": "Procedural 3D"
+    },
+    {
+      "trait_type": "Design",
+      "value": 2
+    },
+    {
+      "trait_type": "Soulbound",
+      "value": "Yes"
+    }
+  ],
+  "properties": {
+    "collectible_id": 2,
+    "credits": "Procedural Three.js interpretation of the burger-vehicle reference supplied by the user on 2026-10-24. Reference characters/branding remain associated with their respective owners.",
+    "design_id": 2,
+    "asset_catalogue_id": 3
+  }
+}

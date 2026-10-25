@@ -1,5 +1,6 @@
 import type {CSSProperties} from 'react';
 const paths={
+ collection:<><path d="m12 2 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></>,
  garage:<><path d="m3 10 9-7 9 7v11H3Z"/><path d="M7 21V11h10v10M7 15h10M7 18h10"/></>,
  race:<><path d="M5 21V3m0 1c5-4 9 4 14 0v10c-5 4-9-4-14 0"/><path d="M9 4v10m5-9v10M5 9c5-4 9 4 14 0"/></>,
  room:<><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m1-16a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 4v3"/></>,

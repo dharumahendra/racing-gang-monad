@@ -1,0 +1,41 @@
+{
+  "name": "Racing Gang Collectibles — Mine Cart",
+  "description": "Simplified Minecraft Minecart by Vlad94077. Independent Racing Gang collectible; no gameplay tier or performance benefit.",
+  "image": "https://racing-gang-monad.vercel.app/collectibles/images/minecraft-minecart.png",
+  "animation_url": "https://racing-gang-monad.vercel.app/collectibles/models/minecraft-minecart.glb",
+  "external_url": "https://sketchfab.com/3d-models/simplified-minecraft-minecart-e23fb7a1bfca43f881bb8140465873f7",
+  "attributes": [
+    {
+      "trait_type": "Collection",
+      "value": "Racing Gang Collectibles"
+    },
+    {
+      "trait_type": "Vehicle",
+      "value": "Minecraft Minecart"
+    },
+    {
+      "trait_type": "Gameplay effect",
+      "value": "None"
+    },
+    {
+      "trait_type": "Artwork",
+      "value": "Sketchfab source"
+    },
+    {
+      "trait_type": "Design",
+      "value": 1
+    },
+    {
+      "trait_type": "Soulbound",
+      "value": "Yes"
+    }
+  ],
+  "properties": {
+    "collectible_id": 1,
+    "credits": "Simplified Minecraft Minecart by Vlad94077, Sketchfab, CC BY 4.0. Original GLB downloaded from Sketchfab and bundled with embedded textures. Attribution retained.",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://sketchfab.com/3d-models/simplified-minecraft-minecart-e23fb7a1bfca43f881bb8140465873f7",
+    "design_id": 1,
+    "asset_catalogue_id": 1
+  }
+}

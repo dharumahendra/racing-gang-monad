@@ -12,3 +12,4 @@ import './result.css';
 
 import './stitch-components.css';
 import './garage.css';
+import './collections.css';
