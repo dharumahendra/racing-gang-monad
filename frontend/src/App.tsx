@@ -12,6 +12,7 @@ const Audit=lazy(()=>import('./pages/Audit').then(m=>({default:m.Audit})));
 const Practice=lazy(()=>import('./pages/Practice').then(m=>({default:m.Practice})));
 const Online=lazy(()=>import('./pages/Online').then(m=>({default:m.Online})));
 const Leaderboard=lazy(()=>import('./pages/Leaderboard').then(m=>({default:m.Leaderboard})));
+const Collections=lazy(()=>import('./pages/Collections').then(m=>({default:m.Collections})));
 const NetworkLab=import.meta.env.DEV?lazy(()=>import('./pages/NetworkLab').then(m=>({default:m.NetworkLab}))):null;
 const RoomsLab=import.meta.env.DEV?lazy(()=>import('./pages/RoomsLab').then(m=>({default:m.RoomsLab}))):null;
 const ResultLab=import.meta.env.DEV?lazy(()=>import('./pages/RunResult').then(m=>({default:m.ResultLab}))):null;
@@ -19,6 +20,7 @@ const Golden=import.meta.env.DEV?lazy(()=>import('./pages/Golden').then(m=>({def
 const PerformanceLab=import.meta.env.DEV?lazy(()=>import('./pages/PerformanceLab').then(m=>({default:m.PerformanceLab}))):null;
 const destinations:{to:string;label:string;icon:IconName}[]=[
   {to:'/',label:'GARAGE',icon:'garage'},
+  {to:'/collections',label:'NFTS',icon:'collection'},
   {to:'/play',label:'PLAY',icon:'speed'},
   {to:'/leaderboard',label:'RANKS',icon:'bolt'},
   {to:'/room',label:'ROOM',icon:'room'},
@@ -42,6 +44,7 @@ function Shell(){
     <main id="main" tabIndex={-1}>
       <Routes>
         <Route path="/" element={<Garage/>}/>
+        <Route path="/collections" element={<Suspense fallback={<p>Loading the collection…</p>}><Collections/></Suspense>}/>
         <Route path="/play" element={<Suspense fallback={<p>Setting up the road…</p>}><Practice/></Suspense>}/>
         <Route path="/online" element={<Suspense fallback={<p>Setting up the race…</p>}><Online/></Suspense>}/>
         <Route path="/leaderboard" element={<Suspense fallback={<p>Loading the leaderboard…</p>}><Leaderboard/></Suspense>}/>
@@ -59,9 +62,9 @@ function Shell(){
     </main>
   </div>
   <nav className="bottom-racing-bar" aria-label="Main navigation">
-    <div className="racing-tabs">
+    <div className="racing-tabs" data-count={destinations.length}>
       {destinations.map(d=>(
-        <NavLink key={d.to} to={d.to} end={d.to==='/'} aria-label={d.to==='/play'?'Start the race':d.label} className={({isActive})=>`racing-tab ${d.to==='/play'?'garage-start':''} ${isActive?'active':''}`}>
+        <NavLink key={d.to} to={d.to} end={d.to==='/'} aria-label={d.to==='/play'?'Start the race':d.to==='/collections'?'NFT collections':d.label} className={({isActive})=>`racing-tab ${d.to==='/play'?'garage-start':''} ${isActive?'active':''}`}>
           <div className="racing-tab-skew">
             <div className="racing-tab-content">
               <Icon name={d.icon}/>
